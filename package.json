@@ -3,22 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@wcp/wcpshared": "^2.2.7",
     "@types/jest": "^27.5.1",
     "@types/node": "^17.0.36",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
-    "socket.io-client": "^4.5.1",
+    "@wcp/wcpshared": "^2.2.7",
+    "moment": "^2.29.3",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
+    "socket.io-client": "^4.5.1",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^14.2.0",
-    "typescript": "^4.7.2",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "typescript": "^4.7.2"
   },
   "scripts": {
     "start": "react-scripts start",

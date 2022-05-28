@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { MENU_CATID } from './config';
 import useSocketio from './hooks/useSocketIo';
+import moment from 'moment';
 const wcpshared = require('@wcp/wcpshared'); 
 
 const ComputePotentialPrices = wcpshared.ComputePotentialPrices;
+const FilterProduct = wcpshared.FilterProduct;
+const FilterWMenu = wcpshared.FilterWMenu;
 
 const WProductComponent = ({product, description, allowadornment, dots, menu, displayContext, price}) => { 
   const adornmentHTML = useMemo(() => allowadornment && product.display_flags[displayContext].adornment ? product.display_flags[displayContext].adornment : "", [allowadornment, product, displayContext]); 
@@ -90,6 +93,9 @@ const App = () => {
   useEffect(() => {
     if (catalog) {
       const WMENU = new wcpshared.WMenu(catalog);
+      const current_time = moment();
+      const FilterProdsFxn = (item) => FilterProduct(item, WMENU, (x) => x.menu.hide, current_time);
+      FilterWMenu(WMENU, FilterProdsFxn, current_time);
       setMenu(WMENU);
       const MENU_CATEGORIES = WMENU.categories[MENU_CATID].children;
       // e.g.: [FOOD: [SMALL PLATES, PIZZAS], COCKTAILS: [], WINE: [BUBBLES, WHITE, RED, PINK]]
