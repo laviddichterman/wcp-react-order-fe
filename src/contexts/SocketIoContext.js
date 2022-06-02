@@ -74,6 +74,41 @@ function SocketIoProvider({ children }) {
     }
     else {
       socketRoClient.open();
+      socketRoClient.on("WCP_SERVICES", data => { 
+        dispatch({
+          type: 'SET_SERVICES',
+          payload: { services: data },
+        });
+        console.log(data);
+      });
+      socketRoClient.on("WCP_BLOCKED_OFF", data => {
+        data.forEach((svcBlock, i) => {
+          svcBlock.forEach((dayBlock, j) => {
+            dayBlock[1].forEach((interval, k) => {
+              data[i][j][1][k] = [Number(data[i][j][1][k][0]), Number(data[i][j][1][k][1])];
+            })
+          })
+        })
+        dispatch({
+          type: 'SET_BLOCKED_OFF',
+          payload: { blockedOff: data },
+        });
+        console.log(data);
+      });
+      socketRoClient.on("WCP_LEAD_TIMES", data => { 
+        dispatch({
+          type: 'SET_LEADTIME',
+          payload: { leadtime: data },
+        });
+        console.log(data);
+      });
+      socketRoClient.on("WCP_SETTINGS", data => {
+        dispatch({
+          type: 'SET_SETTINGS',
+          payload: { settings: data },
+        });
+        console.log(data);
+      });
       socketRoClient.on("connect", () => {
         socketRoClient.on("WCP_CATALOG", data => {
           dispatch({
@@ -99,7 +134,11 @@ function SocketIoProvider({ children }) {
     <SocketIoContext.Provider
       value={{
         ...state,
-        catalog: state?.catalog
+        catalog: state?.catalog,
+        services: state?.services,
+        blockedOff: state?.blockedOff,
+        leadtime: state?.leadtime,
+        settings: state?.settings,
       }}
     >
       {children}
