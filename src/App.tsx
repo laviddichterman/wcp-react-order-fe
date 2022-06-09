@@ -12,8 +12,8 @@ const App = () => {
 
   useEffect(() => {
     if (catalog) {
-      const MENU = GenerateMenu(catalog as unknown as ICatalog);
       const current_time = new Date();
+      const MENU = GenerateMenu(catalog as unknown as ICatalog, current_time);
       const FilterProdsFxn = (item : IProductInstance) => FilterProduct(item, MENU, (x) => x.menu.hide, current_time);
       FilterWMenu(MENU, FilterProdsFxn, current_time);
       setMenu(MENU);
@@ -32,7 +32,7 @@ const App = () => {
       <section className="article__content">
         <div className="container">
           <section className="page__content js-post-gallery cf">
-            <WMenuComponent menu={menu} catalog={catalog} displayMenu={displayMenu} />
+            <WMenuComponent menu={menu} displayMenu={displayMenu} />
           </section>
         </div>
       </section>

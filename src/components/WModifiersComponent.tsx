@@ -1,16 +1,16 @@
-import PropTypes, { InferProps } from "prop-types";
+import { IProduct, MenuModifiers } from "@wcp/wcpshared";
 
-export function WModifiersComponent({product, menu}: InferProps<typeof WModifiersComponent.propTypes>) {
+export function WModifiersComponent({product, menuModifiers}: { product: IProduct; menuModifiers: MenuModifiers}) {
   return (
   <>
-  { product.PRODUCT_CLASS.modifiers.map((mod_def : any, i : number) => 
+  { product.modifiers.map((mod_def, i) => 
     <li className="menu-list__item modifier-section" key={i}>
       <h4 className="menu-list__item-title">
-        {menu.modifiers[mod_def.mtid].modifier_type.display_name ? menu.modifiers[mod_def.mtid].modifier_type.display_name : menu.modifiers[mod_def.mtid].modifier_type.name}
+        {menuModifiers[mod_def.mtid].modifier_type.display_name ? menuModifiers[mod_def.mtid].modifier_type.display_name : menuModifiers[mod_def.mtid].modifier_type.name}
       </h4>
       <div className="menu-list">
         <ul className="flexitems menu-list__items">
-          { menu.modifiers[mod_def.mtid].options_list.map((opt : any, j: number) => 
+          { menuModifiers[mod_def.mtid].options_list.map((opt : any, j: number) => 
           <li key={j} className="flexitem menu-list__item">
             <p className="menu-list__item-desc">
               <span className="desc__content">{opt.name}</span>
@@ -23,9 +23,4 @@ export function WModifiersComponent({product, menu}: InferProps<typeof WModifier
   </>
   )
   };
-
-WModifiersComponent.propTypes = {
-  product: PropTypes.any.isRequired, 
-  menu:PropTypes.any.isRequired
-};
 
