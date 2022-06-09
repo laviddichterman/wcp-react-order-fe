@@ -32,7 +32,7 @@ export function WOrderCart({ menu, linearCart, isProductEditDialogOpen }: IOrder
                 <td>
                   <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
                     <div className="menu-list__item">
-                      <WProductComponent product={cartEntry.pi} description allowadornment={false} dots={false} menu={menu} displayContext="order" price={false} />
+                      <WProductComponent product={cartEntry.pi} description allowAdornment={false} dots={false} menu={menu} displayContext="order" price={false} />
                     </div>
                   </div>
                 </td>

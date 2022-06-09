@@ -5,20 +5,20 @@ import { PIZZAS_CATID, EXTRAS_CATID } from '../../config';
 import { CartEntry, OrderFulfillment } from '../common';
 import { WProductComponent } from '../WProductComponent';
 import { WOrderCart } from '../WOrderCartComponent';
-const wcpshared = require('@wcp/wcpshared');
+import { FilterEmptyCategories, FilterProduct, IMenu } from '@wcp/wcpshared';
 
 
-const FilterEmptyCategories = function (menu: any, order_time: Date) {
-  return wcpshared.FilterEmptyCategories(menu, function (x: any) { return x.order.hide; }, order_time);
+const FilterEmptyCategoriesWrapper = function (menu : IMenu, order_time : Date) {
+  return FilterEmptyCategories(menu, function (x: any) { return x.order.hide; }, order_time);
 };
 
 // NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
-const FilterProduct = function (menu: any, order_time: Date) {
-  return function (item: any) { return wcpshared.FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time); };
+const FilterProductWrapper = function (menu: IMenu, order_time: Date) {
+  return function (item: any) { return FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time); };
 };
 
 const ComputeExtrasCategories = (menu: any, time: Date): string[] => {
-  return menu.categories[EXTRAS_CATID].children.length ? menu.categories[EXTRAS_CATID].children.filter(FilterEmptyCategories(menu, time)) : []
+  return menu.categories[EXTRAS_CATID].children.length ? menu.categories[EXTRAS_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, time)) : []
 }
 
 interface IShopForProductsStage {
@@ -34,7 +34,7 @@ export function WShopForProductsStage({ menu, fulfillment }: IShopForProductsSta
   const [extrasCategories, setExtrasCategories] = useState<string[]>([]);
   const [selection, setSelection] = useState(null);
 
-  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => menu.categories[category].menu.filter(FilterProduct(menu, fulfillment.dt.day)).sort((p: any) => p.display_flags.order.ordinal), [menu.categories, fulfillment]);
+  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, fulfillment.dt.day)).sort((p: any) => p.display_flags.order.ordinal), [menu.categories, fulfillment]);
 
   // reinitialize the accordion if the expanded s still in range 
   useEffect(() => {
@@ -65,7 +65,7 @@ export function WShopForProductsStage({ menu, fulfillment }: IShopForProductsSta
           {ProductsForCategoryFilteredAndSorted(PIZZAS_CATID).map((p: any, i: number) =>
             <li className="flexitem menu-list__item" ng-repeat="pizza in pmenuCtrl.CONFIG.MENU.categories[pmenuCtrl.CONFIG.PIZZAS_CATID].menu | filter:orderCtrl.FilterProducts(pmenuCtrl.CONFIG.MENU) | orderBy:'display_flags.order.ordinal'">
               <div className="offer-link" ng-click="orderCtrl.ScrollTop(); orderCtrl.SelectProduct(pmenuCtrl.CONFIG.PIZZAS_CATID, pizza, pmenuCtrl)">
-                <WProductComponent product={p} allowadornment description dots price menu={menu} displayContext="order" />
+                <WProductComponent product={p} allowAdornment description dots price menu={menu} displayContext="order" />
               </div>
             </li>)}
         </ul>
@@ -83,7 +83,7 @@ export function WShopForProductsStage({ menu, fulfillment }: IShopForProductsSta
                 {ProductsForCategoryFilteredAndSorted(subcatid).map((p: any, j: number) =>
                   <li className="menu-list__item">
                     <div className="offer-link" ng-click="orderCtrl.SelectProduct(subcatid, extra, pmenuCtrl)">
-                      <WProductComponent product={p} allowadornment description dots price menu={menu} displayContext="order" />
+                      <WProductComponent product={p} allowAdornment description dots price menu={menu} displayContext="order" />
                     </div>
                   </li>)}
               </ul>

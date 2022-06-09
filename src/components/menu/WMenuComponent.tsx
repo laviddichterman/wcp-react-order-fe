@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import PropTypes, { InferProps } from "prop-types";
 
 import { WProductComponent } from '../WProductComponent';
 import { WModifiersComponent } from '../WModifiersComponent';
+import { IMenu, CategoryEntry } from '@wcp/wcpshared';
 
 
-function WMenuSection({ menu, section }: InferProps<typeof WMenuSection.propTypes>) {
+function WMenuSection({ menu, section } : { menu: IMenu; section: CategoryEntry;}) {
   return (
     <>
       <ul className="menu-list__items">
         {section.menu.sort((a: any, b: any) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product: any, k: number) => (
           <React.Fragment key={k}>
             <li className="menu-list__item">
-              <WProductComponent product={product} description allowadornment dots menu={menu} displayContext="menu" price />
+              <WProductComponent product={product} description allowAdornment dots menu={menu} displayContext="menu" price />
             </li>
             {product.display_flags.menu.show_modifier_options && product.PRODUCT_CLASS.modifiers.length ? <WModifiersComponent product={product} menu={menu} /> : ""}
           </React.Fragment>
@@ -26,12 +26,7 @@ function WMenuSection({ menu, section }: InferProps<typeof WMenuSection.propType
     </>);
 };
 
-WMenuSection.propTypes = {
-  menu: PropTypes.any.isRequired,
-  section: PropTypes.any.isRequired
-};
-
-export function WMenuComponent({ menu, displayMenu }: InferProps<typeof WMenuComponent.propTypes>) {
+export function WMenuComponent({ menu, displayMenu }: {menu: IMenu; displayMenu: string[];}) {
   const [active, setActive] = useState(0);
   return (
     <article className="article--page article--main border-simple post-69 page type-page status-publish has-post-thumbnail hentry">
@@ -88,8 +83,3 @@ export function WMenuComponent({ menu, displayMenu }: InferProps<typeof WMenuCom
       </section>
     </article>);
 }
-
-WMenuComponent.propTypes = {
-  menu: PropTypes.any.isRequired,
-  displayMenu: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired
-};

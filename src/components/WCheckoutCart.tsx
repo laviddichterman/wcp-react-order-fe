@@ -38,7 +38,7 @@ export function WCheckoutCart({ menu, linearCart, fulfillment, creditResponse, t
                 <td className="cart-item-description">
                   <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
                     <div className="menu-list__item">
-                      <WProductComponent product={cartEntry.pi} allowadornment={false} description dots={false} price={false} menu={menu} displayContext="order" />
+                      <WProductComponent product={cartEntry.pi} allowAdornment={false} description dots={false} price={false} menu={menu} displayContext="order" />
                     </div>
                   </div>
                 </td>

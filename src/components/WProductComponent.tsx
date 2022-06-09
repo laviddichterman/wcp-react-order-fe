@@ -4,8 +4,8 @@ const wcpshared = require('@wcp/wcpshared');
 
 const ComputePotentialPrices = wcpshared.ComputePotentialPrices;
 
-export function WProductComponent({ product, description, allowadornment, dots, menu, displayContext, price }: InferProps<typeof WProductComponent.propTypes>) {
-  const adornmentHTML = useMemo(() => allowadornment && product.display_flags[displayContext].adornment ? product.display_flags[displayContext].adornment : "", [allowadornment, product, displayContext]);
+export function WProductComponent({ product, description, allowAdornment, dots, menu, displayContext, price }: InferProps<typeof WProductComponent.propTypes>) {
+  const adornmentHTML = useMemo(() => allowAdornment && product.display_flags[displayContext].adornment ? product.display_flags[displayContext].adornment : "", [allowAdornment, product, displayContext]);
   const descriptionHTML = useMemo(() => description && product.processed_description ? product.processed_description : "", [description, product]);
   const showOptionsSections = useMemo(() => !product.display_flags[displayContext].suppress_exhaustive_modifier_list && !(product.options_sections.length === 1 && product.options_sections[0][1] === product.processed_name), [product, displayContext]);
   const priceText = useMemo(() => {
@@ -50,7 +50,7 @@ export function WProductComponent({ product, description, allowadornment, dots, 
 WProductComponent.propTypes = {
   product: PropTypes.any.isRequired,
   description: PropTypes.bool.isRequired,
-  allowadornment: PropTypes.bool.isRequired,
+  allowAdornment: PropTypes.bool.isRequired,
   dots: PropTypes.bool.isRequired,
   menu: PropTypes.any.isRequired,
   displayContext: PropTypes.string.isRequired,
