@@ -1,309 +1,450 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
-import { ExpandMore } from "@mui/icons-material";
-import { PIZZAS_CATID, EXTRAS_CATID } from '../config';
-import { CartEntry, OrderFulfillment } from './common';
+import React, { useCallback, useMemo } from 'react';
+import { useSnackbar } from 'notistack';
+import { FormControl, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
+import { SettingsTwoTone } from "@mui/icons-material";
+import { WProduct } from './common';
 import { WProductComponent } from './WProductComponent';
-import { WOrderCart } from './WOrderCartComponent';
-const wcpshared = require('@wcp/wcpshared');
+import { IMenu, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState } from '@wcp/wcpshared';
+import { clearCustomizer, selectAllowAdvancedPrompt, selectCartEntryBeingCustomized, selectOptionState, selectSelectedProduct, selectShowAdvanced, setAdvancedModifierOption, setShowAdvanced, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
+import { useAppDispatch, useAppSelector } from '../app/useHooks';
+import DialogContainer from './dialog.container';
+import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from './WCartSlice';
 
-const MODDISP_RADIO = 0;
-const MODDISP_TOGGLE = 1;
-const MODDISP_CHECKBOX = 2;
-
-const enum MODIFIER_DISPLAY { RADIO, TOGGLE, CHECKBOX };
-
-interface IModifierOptionCustomizerComponent {
-  option: any;
-  allowAdvanced: boolean;
-  displayType: MODIFIER_DISPLAY;
+interface IModifierOptionToggle {
+  toggleOptionChecked: WCPOption;
+  toggleOptionUnchecked: WCPOption;
+  menu: IMenu;
 }
 
-function WModifierOptionRadio({option}) {
-
-}
-
-export function WModifierOptionCustomizerComponent({option, allowAdvanced, displayType} : IModifierOptionCustomizerComponent) {
-  this.GetEnableState = function () {
-    // reference to the modifier map info for this particular option, READ ONLY
-    return this.modctrl.pmenuctrl.selection.modifier_map[this.modctrl.mtid].options[this.option.moid];
+function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecked }: IModifierOptionToggle) {
+  const dispatch = useAppDispatch();
+  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.mt._id, toggleOptionUnchecked.mo._id);
+  const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.mt._id, toggleOptionChecked.mo._id);
+  const optionValue = useMemo(() => optionCheckedState?.placement === OptionPlacement.WHOLE, [optionCheckedState?.placement]);
+  if (!optionUncheckedState || !optionCheckedState || !serviceDateTime) {
+    return null;
   }
-
-  this.AdvancedOptionEligible = function () {
-    var enable_state = this.GetEnableState();
-    // TODO: likely need to remove the this.placement !== TOPPING_NONE check since it won't allow a half topping to be added if there's still room on one side
-    // flag indicating there is an advanced option that could be selected, and we should show the button to access that
-    return this.allowadvanced && this.modctrl.display_type === MODDISP_CHECKBOX && (enable_state.enable_left || enable_state.enable_right) && this.placement !== TOPPING_NONE;
+  const toggleOption = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    //dispatch(set appropriate option value)
+    dispatch(updateModifierOptionStateToggleOrRadio({
+      mtId: toggleOptionChecked.mt._id,
+      moId: e.target.checked ? toggleOptionChecked.mo._id : toggleOptionUnchecked.mo._id,
+      menu,
+      serviceTime: serviceDateTime
+    }));
   }
-
-  this.Initialize = function () {
-    this.MENU = this.config.MENU;
-    var placement = GetPlacementFromMIDOID(this.selection, this.option.modifier._id, this.option.moid);
-    this.placement = placement;
-    this.advanced_option_selected = placement === TOPPING_LEFT || placement === TOPPING_RIGHT;
-    this.left = placement === TOPPING_LEFT;
-    this.right = placement === TOPPING_RIGHT;
-    this.whole = placement === TOPPING_WHOLE;
-  };
-
-  this.UpdateOption = function (new_placement, is_from_advanced_modal) {
-    this.modctrl.PostModifyCallback(this.option.moid, new_placement, is_from_advanced_modal);
-    this.placement = new_placement;
-    this.advanced_option_selected = new_placement === TOPPING_LEFT || new_placement === TOPPING_RIGHT;
-  };
-
-  this.WholePostProcess = function (is_from_advanced_modal) {
-    this.left = this.right = false;
-    var new_placement = (+this.right * TOPPING_RIGHT) + (+this.left * TOPPING_LEFT) + (+this.whole * TOPPING_WHOLE);
-    this.UpdateOption(new_placement, is_from_advanced_modal);
-  };
-
-  this.LeftPostProcess = function(is_from_advanced_modal) {
-    this.right = this.whole = false;
-    this.UpdateOption((+this.left * TOPPING_LEFT), is_from_advanced_modal);
-  }
-  this.RightPostProcess = function(is_from_advanced_modal) {
-    this.left = this.whole = false;
-    this.UpdateOption((+this.right * TOPPING_RIGHT), is_from_advanced_modal);
-  }
-
-  this.Initialize();
-  return (<>
-    <input ng-if="ctrl.modctrl.display_type === 0" type="radio" id="{{ctrl.option.shortname}}_whole" className="input-whole" ng-model="ctrl.modctrl.current_single_value" ng-value="ctrl.option.moid" ng-disabled="!ctrl.GetEnableState().enable_whole" ng-change="ctrl.UpdateOption(ctrl.config.WHOLE, false)" />
-  <input ng-if="ctrl.modctrl.display_type === 2" id="{{ctrl.option.shortname}}_whole" className="input-whole" ng-model="ctrl.whole" ng-disabled="!ctrl.GetEnableState().enable_whole" type="checkbox" ng-change="ctrl.WholePostProcess(false)" />
-    <input ng-if="ctrl.modctrl.display_type === 2" ng-show="ctrl.left || (!ctrl.GetEnableState().enable_whole && ctrl.GetEnableState().enable_left)" id="{{ctrl.option.shortname}}_left" className="input-left" ng-model="ctrl.left" ng-disabled="!ctrl.GetEnableState().enable_left" type="checkbox" ng-change="ctrl.LeftPostProcess(false)" />
-    <input ng-if="ctrl.modctrl.display_type === 2" ng-show="ctrl.right || (!ctrl.GetEnableState().enable_whole && ctrl.GetEnableState().enable_right)" id="{{ctrl.option.shortname}}_right" className="input-right" ng-model="ctrl.right" ng-disabled="!ctrl.GetEnableState().enable_right" type="checkbox" ng-change="ctrl.RightPostProcess(false)" />
+  return (
     <span className="option-circle-container">
-    <label ng-show="!ctrl.advanced_option_selected" for="{{ctrl.option.shortname}}_whole" className="option-whole option-circle" />
-    <label ng-if="ctrl.modctrl.display_type === 2" ng-show="ctrl.left || (!ctrl.GetEnableState().enable_whole && ctrl.GetEnableState().enable_left)" for="{{ctrl.option.shortname}}_left" className="option-left option-circle" />
-    <label ng-if="ctrl.modctrl.display_type === 2" ng-show="ctrl.right || (!ctrl.GetEnableState().enable_whole && ctrl.GetEnableState().enable_right)" for="{{ctrl.option.shortname}}_right" className="option-right option-circle" />
-    </span>
-    <label className="topping_text" for="{{ctrl.option.shortname}}_whole" ng-disabled="!ctrl.GetEnableState().enable_whole">{{ctrl.option.name}}</label>
-    <button name="edit" ng-if="ctrl.AdvancedOptionEligible()" ng-click="ctrl.modctrl.pmenuctrl.SetAdvancedOption($event, ctrl)" className="button-sml"><div className="icon-gear"></div></button>
+      <FormControlLabel className="option-whole option-circle"
+        disableTypography
+        control={<Checkbox
+
+          className="input-whole"
+          disabled={optionValue ? !optionUncheckedState.enable_whole : !optionUncheckedState.enable_whole}
+          value={optionValue}
+          onChange={toggleOption} />}
+        label={<span className='topping_text'>{toggleOptionChecked.mo.item.display_name}</span>} />
+    </span>);
+
+  //   <div class="flexitem" ng-if="ctrl.display_type === 1"> \
+  //     <input type="checkbox" id="{{ctrl.toggle_values[1].shortname}}_whole" class="input-whole" \
+  //       ng-disabled="!ctrl.pmenuctrl.selection.modifier_map[ctrl.mtid].options[ctrl.toggle_values[1].moid].enable_whole" \
+  //       ng-model="ctrl.current_single_value" ng-true-value="1" \
+  //       ng-false-value="0" ng-change="ctrl.PostModifyCallback(0, 0, false)"> \
+  //     <span class="option-circle-container"> \
+  //       <label for="{{ctrl.toggle_values[1].shortname}}_whole" class="option-whole option-circle"></label> \
+  //     </span> \
+  //     <label class="topping_text" for="{{ctrl.toggle_values[1].shortname}}_whole">{{ctrl.toggle_values[1].name}}</label> \
+  //   </div> \
+}
+
+interface IModifierRadioCustomizerComponent {
+  options: WCPOption[];
+  menu: IMenu;
+};
+
+export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomizerComponent) {
+  const dispatch = useAppDispatch();
+  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const getObjectStateSelector = useAppSelector(selectOptionState);
+  const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers[options[0].mt._id] ?? [])
+  const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].mt._id, moId), [options, getObjectStateSelector]);
+  if (!serviceDateTime) {
+    return null;
+  }
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    dispatch(updateModifierOptionStateToggleOrRadio({
+      mtId: options[0].mt._id,
+      moId: e.target.value,
+      menu,
+      serviceTime: serviceDateTime
+    }));
+  }
+  return (<RadioGroup
+    onChange={onChange}
+    value={modifierOptionState.length === 1 ? modifierOptionState[0].option_id : null}
+    aria-labelledby={`modifier_control_${options[0].mt._id}`}>{
+      options.map((opt, i) => <span className="option-circle-container" key={i}>
+        <FormControlLabel
+          disableTypography
+          className="option-whole option-circle"
+          value={opt.mo._id}
+          control={<Radio
+            className="input-whole"
+            disabled={!getOptionState(opt.mo._id)?.enable_whole}
+          />}
+          label={<span className='topping_text'>{opt.mo.item.display_name}</span>} />
+      </span>)}
+  </RadioGroup>
+  );
+  // <input type="radio" id="{{ctrl.option.shortname}}_whole" className="input-whole" ng-model="ctrl.modctrl.current_single_value" ng-value="ctrl.option.moid" ng-disabled="!ctrl.GetEnableState().enable_whole" ng-change="ctrl.UpdateOption(ctrl.config.WHOLE, false)" />
+  // <span className="option-circle-container">
+  //   <label ng-show="!ctrl.advanced_option_selected" htmlFor="{{ctrl.option.shortname}}_whole" className="option-whole option-circle" />
+  // </span>
+  // <label className="topping_text" htmlFor="{{ctrl.option.shortname}}_whole" ng-disabled="!ctrl.GetEnableState().enable_whole">{{ ctrl.option.name }}</label>
+
+};
+
+interface IModifierOptionCheckboxCustomizerComponent {
+  option: WCPOption;
+  menu: IMenu;
+}
+
+export function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheckboxCustomizerComponent) {
+  const dispatch = useAppDispatch();
+  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const canShowAdvanced = useAppSelector(selectShowAdvanced);
+  const optionState = useAppSelector(selectOptionState)(option.mt._id, option.mo._id);
+  const showAdvanced = useMemo(() => canShowAdvanced && (optionState.enable_left || optionState.enable_right), [canShowAdvanced, optionState]);
+  const advancedOptionSelected = useMemo(() => optionState.placement === OptionPlacement.LEFT || optionState.placement === OptionPlacement.RIGHT || optionState.qualifier !== OptionQualifier.REGULAR, [optionState.placement, optionState.qualifier]);
+  const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
+  const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
+  const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
+  if (optionState === null || serviceDateTime === null) {
+    return null;
+  }
+  const onUpdateOption = (optionState: IOptionState) => {
+    dispatch(updateModifierOptionStateCheckbox({
+      mt: option.mt,
+      mo: option.mo,
+      optionState,
+      menu,
+      serviceTime: serviceDateTime
+    }));
+  };
+  const onClickWhole = () => {
+    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier });
+  }
+  const onClickLeft = () => {
+    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier });
+  }
+  const onClickRight = () => {
+    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier });
+  }
+  const onClickAdvanced = () => {
+    dispatch(setAdvancedModifierOption([option.mt._id, option.mo._id]));
+  }
+
+  return (
+    <>
+      <FormControlLabel
+        disableTypography
+        control={
+          <span className="option-circle-container">
+            {!advancedOptionSelected ? <Checkbox
+              className={`input-whole`}
+              disabled={!optionState.enable_whole}
+              checked={isWhole}
+              onClick={onClickWhole} /> : null}
+            {isLeft || (!optionState.enable_whole && optionState.enable_left) ? <Checkbox
+              className={`input-left`}
+              disabled={!optionState.enable_left}
+              checked={isLeft}
+              onClick={onClickLeft} /> : null}
+            {isRight || (!optionState.enable_whole && optionState.enable_right) ? <Checkbox
+              className={`input-right`}
+              disabled={!optionState.enable_right}
+              checked={isRight}
+              onClick={onClickRight} /> : null}
+          </span>}
+        onClick={() => {
+          if (optionState.enable_whole) {
+            onClickWhole();
+          } else if (optionState.enable_left) {
+            onClickLeft();
+          } else if (optionState.enable_right) {
+            onClickRight();
+          }
+        }}
+        label={<span className='topping_text'>{option.mo.item.display_name}</span>} />
+      {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo._id}_advanced`} aria-label={`${option.mo._id}_advanced`} size="small">
+        <SettingsTwoTone fontSize="inherit" />
+      </IconButton> : null}
     </>);
 };
 
 
-
-interface IModifierTypeCustomizerComponent {
-  menu: any;
-  mtid: string;
-  allowAdvanced: boolean;
+const FilterUnselectable = (mmEntry: MetadataModifierMapEntry, moid: string) => {
+  const optionMapEntry = mmEntry.options[moid];
+  return optionMapEntry.enable_left || optionMapEntry.enable_right || optionMapEntry.enable_whole;
 }
-export function WModifierTypeCustomizerComponent({menu, mtid, allowAdvanced} : IModifierOptionCustomizerComponent) {
-  const displayedOptions = useMemo(() => ([]), [menu, mtid]);
-  const displayName = useMemo(() => menu.modifiers[mtid].modifier_type.display_name ? menu.modifiers[mtid].modifier_type.display_name : menu.modifiers[mtid].modifier_type.name, [menu, mtid]);
+interface IModifierTypeCustomizerComponent {
+  menu: IMenu;
+  mtid: string;
+  product: WProduct;
+}
+export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModifierTypeCustomizerComponent) {
+  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const visibleOptions = useMemo(() => {
+    const filterUnavailable = menu.modifiers[mtid].modifier_type.display_flags.omit_options_if_not_available;
+    const mmEntry = product.m.modifier_map[mtid];
+    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.item.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo._id))) : [];
+  }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
+  const modifierOptionsHtml = useMemo(() => {
+    const mEntry = menu.modifiers[mtid];
+    const mt = mEntry.modifier_type
+    if (mt.max_selected === 1) {
+      if (mt.min_selected === 1) {
+        if (mt.display_flags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
+          const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS._id];
+          const basePI = pcEntry.instances[pcEntry.base_id];
+          const mtIdX = basePI.modifiers.findIndex(x => x.modifier_type_id === mtid);
+          // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
+          if (mtIdX !== -1 && basePI.modifiers[mtIdX].options.length === 1) {
+            const baseOptionIndex = visibleOptions.findIndex(x => x.mo._id === basePI.modifiers[mtIdX].options[0].option_id);
+            if (baseOptionIndex !== -1) {
+              // we togglin'!
+              // since there are only two visible options, the base option is either at index 1 or 0
+              return (
+                <WModifierOptionToggle menu={menu} toggleOptionChecked={visibleOptions[baseOptionIndex === 0 ? 1 : 0]} toggleOptionUnchecked={visibleOptions[baseOptionIndex]} />
+              );
+            }
+          }
+          // the base product's option ${base_moid} isn't visible. switching to RADIO modifier display for ${this.mtid}`);
+        }
+
+        // return MODIFIER_DISPLAY.RADIO;
+        return <WModifierRadioComponent options={visibleOptions} menu={menu} />;
+      }
+    }
+    return <FormGroup className="modifier flexitems" aria-labelledby={`modifier_control_${mtid}`}>{
+      visibleOptions.map((option, i: number) =>
+        <WModifierOptionCheckboxComponent key={i} option={option} menu={menu} />
+      )}</FormGroup>
+  }, [menu, mtid, product.p.PRODUCT_CLASS._id, visibleOptions]);
   return (
-    <>
-    <div>{displayName}:</div>
-    <div className="modifier flexitems">
-      { displayedOptions.map((option:any, i: number) => 
-      <div className="flexitem" key={i}>
-        <WModifierOptionCustomizerComponent option={option} allowAdvanced={} />
-      </div>)}
-      <div ng-if="ctrl.display_type !== 1" className="flexitem" ng-repeat="option in ctrl.visible_options" wcpoptiondir
-        selection="ctrl.selection" modctrl="ctrl" option="option" config="ctrl.config" allowadvanced="ctrl.pmenuctrl.allow_advanced">
-      </div>
-      <div className="flexitem" ng-if="ctrl.display_type === 1">
-        <input type="checkbox" id="{{ctrl.toggle_values[1].shortname}}_whole" className="input-whole"
-          ng-disabled="!ctrl.pmenuctrl.selection.modifier_map[ctrl.mtid].options[ctrl.toggle_values[1].moid].enable_whole"
-          ng-model="ctrl.current_single_value" ng-true-value="1"
-          ng-false-value="0" ng-change="ctrl.PostModifyCallback(0, 0, false)" />
-        <span className="option-circle-container">
-          <label htmlFor={`${ctrl.toggle_values[1].shortname}_whole`} className="option-whole option-circle"></label>
-        </span>
-        <label className="topping_text" htmlFor="{{ctrl.toggle_values[1].shortname}}_whole">{ctrl.toggle_values[1].name}</label>
-      </div>
-    </div>
-    </>
+
+    // <div>{{ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.display_name ? ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.display_name : ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.name}}:</div> \
+    // <div class="modifier flexitems"> \
+    //   <div ng-if="ctrl.display_type !== 1" class="flexitem" ng-repeat="option in ctrl.visible_options" wcpoptiondir \
+    //     selection="ctrl.selection" modctrl="ctrl" option="option" config="ctrl.config" allowadvanced="ctrl.pmenuctrl.allow_advanced"> \
+    //   </div> 
+    // </div>',
+    <FormControl className="modifier flexitems">
+      <FormLabel id={`modifier_control_${mtid}`}>{menu.modifiers[mtid].modifier_type.display_name ? menu.modifiers[mtid].modifier_type.display_name : menu.modifiers[mtid].modifier_type.name}:</FormLabel>
+      {modifierOptionsHtml}
+    </FormControl>
   );
 }
-
-app.directive("wcpmodifierdir", function () {
-  return {
-    restrict: "A",
-    scope: {
-      mtid: "=mtid",
-      selection: "=selection",
-      config: "=config",
-      allowsplit: "=allowsplit",
-      pmenuctrl: "=pmenuctrl",
-      //servicetime: "=servicetime"
-    },
-    controllerAs: "ctrl",
-    bindToController: true,
-    controller: function () {
-      this.Initialize = function () {
-        // todo: deal with servicetime
-        var service_time = moment();//this.servicetime;
-        var menu = this.config.MENU;
-        var modmap = this.pmenuctrl.selection.modifier_map;
-        var mtid = this.mtid;
-        // determine list of visible options
-        var filtered_options = menu.modifiers[this.mtid].options_list.filter(function (x) {
-          return DisableDataCheck(x.disable_data, service_time);
-        })
-        if (menu.modifiers[this.mtid].modifier_type.display_flags.omit_options_if_not_available) {
-          var filterfxn = function (x) {
-            var modmap_entry = modmap[mtid].options[x.moid];
-            return modmap_entry.enable_left || modmap_entry.enable_right || modmap_entry.enable_whole;
-          };
-          filtered_options = filtered_options.filter(filterfxn);
-        }
-        this.visible_options = filtered_options;
-
-        // determines display type
-        // determines product base if this is a toggle style modifier
-        if (menu.modifiers[this.mtid].modifier_type.max_selected === 1) {
-          if (menu.modifiers[this.mtid].modifier_type.min_selected === 1) {
-            if (menu.modifiers[this.mtid].modifier_type.display_flags && menu.modifiers[this.mtid].modifier_type.display_flags.use_toggle_if_only_two_options &&
-              this.visible_options.length === 2) {
-              var BASE_PRODUCT_INSTANCE = menu.product_classes[this.selection.PRODUCT_CLASS._id].instances_list.find(function (prod) { return prod.is_base === true; });
-              console.assert(BASE_PRODUCT_INSTANCE, `Cannot find base product instance of ${JSON.stringify(this.selection)}.`);
-              var base_moid = BASE_PRODUCT_INSTANCE.modifiers.hasOwnProperty(this.mtid) && BASE_PRODUCT_INSTANCE.modifiers[this.mtid].length === 1 ? BASE_PRODUCT_INSTANCE.modifiers[this.mtid][0][1] : "";
-              var base_option = base_moid ? menu.modifiers[this.mtid].options[base_moid] : null;
-              if (!base_option || !this.visible_options.some(function (x) { return x.moid == base_moid; })) {
-                // the base product's option ${base_moid} isn't visible. switching to RADIO modifier display for ${this.mtid}`);
-                this.display_type = MODDISP_RADIO;
-              }
-              else {
-                this.display_type = MODDISP_TOGGLE;
-                var toggle_on_option = this.visible_options.find(function(x) { return x.moid != base_moid; });
-                console.assert(toggle_on_option, "should have found an option for the toggle!");
-                this.toggle_values = [base_option, toggle_on_option];
-              }
-              // sets the current single value to the MOID of the current selection
-              this.current_single_value = this.selection.modifiers.hasOwnProperty(this.mtid) && this.selection.modifiers[this.mtid].length === 1 ? this.selection.modifiers[this.mtid][0][1] : "";
-            }
-            else {
-              this.display_type = MODDISP_RADIO;
-              this.current_single_value = this.selection.modifiers.hasOwnProperty(this.mtid) && this.selection.modifiers[this.mtid].length === 1 ? this.selection.modifiers[this.mtid][0][1] : "";
-            }
-          }
-          else { // if (menu.modifiers[this.mtid].modifier_type.min_selected === 0)
-            // checkbox that kinda functions like a radio button
-            this.display_type = MODDISP_CHECKBOX;
-          }
-        }
-        else {
-          this.display_type = MODDISP_CHECKBOX;
-        }
-      };
-
-      this.PostModifyCallback = function (moid, placement, is_from_advanced_modal) { 
-        //console.log(`placement ${placement} of option ${JSON.stringify(moid)}`);
-        if (!this.pmenuctrl.selection.modifiers.hasOwnProperty(this.mtid)) {
-          this.pmenuctrl.selection.modifiers[this.mtid] = [];
-        }
-        if (this.display_type === MODDISP_CHECKBOX) {
-          if (placement === TOPPING_NONE) {
-            this.pmenuctrl.selection.modifiers[this.mtid] = this.pmenuctrl.selection.modifiers[this.mtid].filter(function(x) { return x[1] != moid; });
-          }
-          else {
-            if (this.config.MENU.modifiers[this.mtid].modifier_type.min_selected === 0 && 
-              this.config.MENU.modifiers[this.mtid].modifier_type.max_selected === 1) {
-              // checkbox that requires we unselect any other values since it kinda functions like a radio
-              this.pmenuctrl.selection.modifiers[this.mtid] = [];
-            }
-            var moidx = this.pmenuctrl.selection.modifiers[this.mtid].findIndex(function(x) { return x[1] == moid; });
-            if (moidx === -1) {
-              this.pmenuctrl.selection.modifiers[this.mtid].push([placement, moid]);
-            }
-            else {
-              this.pmenuctrl.selection.modifiers[this.mtid][moidx][0] = placement;
-            }
-          }
-        }
-        else { // display_type === MODDISP_TOGGLE || display_type === MODDISP_RADIO
-          if (this.display_type === MODDISP_TOGGLE) {
-            this.pmenuctrl.selection.modifiers[this.mtid] = [[TOPPING_WHOLE, this.toggle_values[this.current_single_value].moid]];
-          }
-          else {
-            this.pmenuctrl.selection.modifiers[this.mtid] = [[TOPPING_WHOLE, this.current_single_value]];
-          }
-        }
-        this.pmenuctrl.PostModifierChangeCallback(is_from_advanced_modal);
-      };
-      this.Initialize();
-    }
+interface IOptionDetailModal {
+  menu: IMenu;
+}
+function WOptionDetailModal({ menu }: IOptionDetailModal) {
+  const dispatch = useAppDispatch();
+  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
+  const intitialOptionState = useAppSelector(s => s.customizer.advancedModifierInitialState);
+  const option = useMemo(() => mtid_moid !== null && Object.hasOwn(menu.modifiers, mtid_moid[0]) && Object.hasOwn(menu.modifiers[mtid_moid[0]].options, mtid_moid[1]) ? menu.modifiers[mtid_moid[0]].options[mtid_moid[1]] : null, [menu.modifiers, mtid_moid]);
+  const optionState = useAppSelector(s => s.customizer.advancedModifierOption !== null ? selectOptionState(s)(...s.customizer.advancedModifierOption) : null);
+  const isWhole = useMemo(() => optionState?.placement === OptionPlacement.WHOLE, [optionState?.placement]);
+  const isLeft = useMemo(() => optionState?.placement === OptionPlacement.LEFT, [optionState?.placement]);
+  const isRight = useMemo(() => optionState?.placement === OptionPlacement.RIGHT, [optionState?.placement]);
+  if (option === null || optionState === null || serviceDateTime === null) {
+    return null;
   }
-});
+  const onUpdateOption = (optionState: IOptionState) => {
+    dispatch(updateModifierOptionStateCheckbox({
+      mt: option.mt,
+      mo: option.mo,
+      optionState,
+      menu,
+      serviceTime: serviceDateTime
+    }));
+  };
+  const onClickWhole = () => {
+    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier });
+  }
+  const onClickLeft = () => {
+    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier });
+  }
+  const onClickRight = () => {
+    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier });
+  }
+  const onConfirmCallback = () => {
+    dispatch(setAdvancedModifierOption(null));
+  }
 
+  const onCancelCallback = () => {
+    // set the modifier option state to what it was before we opened this modal
+    dispatch(updateModifierOptionStateCheckbox({ mt: option.mt, mo: option.mo, menu, optionState: intitialOptionState, serviceTime: serviceDateTime }));
+    onConfirmCallback();
+  };
 
-app.directive("wcpoptiondetailmodaldir", function () {
-return {
-  restrict: "A",
-  scope: {
-    optionctrl: "=optionctrl",
-  },
-  controller: function () {
-  },
-  controllerAs: 'ctrl',
-  bindToController: true,
-  template: '<md-dialog-content className="option-modal"><h2 className="option-modal-title">{{ctrl.optionctrl.option.name}} options</h2>\
-      <div layout="row" layout-align="center center">\
-      <div>Placement:</div><div></div>\
-      <div><input id="{{ctrl.optionctrl.option.shortname}}_modal_whole" className="input-whole" ng-model="ctrl.optionctrl.whole" ng-disabled="!ctrl.optionctrl.GetEnableState().enable_whole" type="checkbox" ng-change="ctrl.optionctrl.WholePostProcess(true)"> \
-      <input id="{{ctrl.optionctrl.option.shortname}}_modal_left" className="input-left" ng-model="ctrl.optionctrl.left" ng-disabled="!ctrl.optionctrl.GetEnableState().enable_left" type="checkbox" ng-change="ctrl.optionctrl.LeftPostProcess(true)"> \
-      <input id="{{ctrl.optionctrl.option.shortname}}_modal_right" className="input-right" ng-model="ctrl.optionctrl.right" ng-disabled="!ctrl.optionctrl.GetEnableState().enable_right" type="checkbox" ng-change="ctrl.optionctrl.RightPostProcess(true)"> \
-      <span className="option-circle-container"> \
-        <label for="{{ctrl.optionctrl.option.shortname}}_modal_left" className="option-left option-circle"></label> \
-      </span>\
-      <span className="option-circle-container"> \
-        <label for="{{ctrl.optionctrl.option.shortname}}_modal_whole" className="option-whole option-circle"></label> \
-      </span>\
-      <span className="option-circle-container"> \
-        <label for="{{ctrl.optionctrl.option.shortname}}_modal_right" className="option-right option-circle"></label> \
-      </span></div> \
-      </div></md-dialog-content>\
-      <md-dialog-actions>\
-        <button name="cancel" className="btn" ng-click="ctrl.optionctrl.modctrl.pmenuctrl.CancelAdvancedOptionModal()">Cancel</button>\
-        <span className="flex" flex></span>\
-        <button className="btn" name="confirm" ng-click="ctrl.optionctrl.modctrl.pmenuctrl.ConfirmAdvancedOptionModal()">Confirm</button>\
-      </md-dialog-actions>' 
-};
-});
+  return (
+    <DialogContainer
+      title={`${option.mo.item.display_name} options`}
+      onClose={onCancelCallback} // TODO: handle the clicking outside the container but we've made changes in the modal case
+      open={option !== null}
+      inner_component={
+        <Grid container spacing={3} justifyContent="center">
+          <Grid item xs={12}>Placement:</Grid>
+          <Grid className="option-circle-container" item>
+            <FormControlLabel
+              disableTypography
+              className="option-left option-circle"
+              control={
+                <Checkbox className="input-left" disabled={!optionState.enable_left} checked={isLeft} onChange={onClickLeft} />
+              }
+              label={null}
+            />
+          </Grid>
+          <Grid className="option-circle-container" item>
+            <FormControlLabel
+              className="option-whole option-circle"
+              control={
+                <Checkbox className="input-whole" disabled={!optionState.enable_whole} checked={isWhole} onChange={onClickWhole} />
+              }
+              label={null}
+            />
+          </Grid>
+          <Grid className="option-circle-container" item>
+            <FormControlLabel
+              className="option-right option-circle"
+              control={
+                <Checkbox className="input-right" disabled={!optionState.enable_right} checked={isRight} onChange={onClickRight} />
+              }
+              label={null}
+            />
+          </Grid>
+          <Grid container justifyContent="flex-end" item xs={12}>
+            <Grid item>
+              <Button onClick={onCancelCallback}>
+                Cancel
+              </Button>
+            </Grid>
+            <Grid item>
+              <Button
+                onClick={onConfirmCallback}>
+                Confirm
+              </Button>
+            </Grid>
+          </Grid>
+        </Grid>
+      }
+    />);
+}
+
+const FilterModifiersCurry = function (menuModifiers: MenuModifiers) {
+  return function ([mtid, entry]: [string, MetadataModifierMapEntry]) {
+    const modifier_entry = menuModifiers[mtid];
+    const disp_flags = modifier_entry.modifier_type.display_flags;
+    const omit_section_if_no_available_options = disp_flags.omit_section_if_no_available_options;
+    const hidden = disp_flags.hidden;
+    // cases to not show:
+    // modifier.display_flags.omit_section_if_no_available_options && (has selected item, all other options cannot be selected, currently selected items cannot be deselected)
+    // modifier.display_flags.hidden is true
+    return !hidden && (!omit_section_if_no_available_options || entry.has_selectable);
+  };
+}
 
 interface IProductCustomizerComponent {
-  menu: any;
-  fulfillment: OrderFulfillment;
-
+  menu: IMenu;
+  suppressGuide: boolean;
 }
-export function WProductCustomizerComponent() {
+export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCustomizerComponent) {
+  const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const categoryId = useAppSelector(s => s.customizer.categoryId);
+  const selectedProduct = useAppSelector(s => selectSelectedProduct(s));
+  const cartEntry = useAppSelector(selectCartEntryBeingCustomized);
+  const allowAdvancedOptionPrompt = useAppSelector(s => selectAllowAdvancedPrompt(s));
+  const cart = useAppSelector(s => getCart(s.cart));
+  const showAdvanced = useAppSelector(s => selectShowAdvanced(s));
+  const hasAdvancedOptionSelected = useMemo(() => selectedProduct?.m.advanced_option_selected ?? false, [selectedProduct?.m.advanced_option_selected]);
+  const customizerTitle = useMemo(() => selectedProduct !== null && selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun ? `your ${selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun}` : "it", [selectedProduct]);
+  const filteredModifiers = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).filter(FilterModifiersCurry(menu.modifiers)) : [], [selectedProduct, menu.modifiers]);
+  const orderGuideMessages = useMemo(() => suppressGuide ? [] as string[] : [], [suppressGuide]);
+  const orderGuideErrors = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).reduce(
+    (msgs, [mtId, v]) => v.meets_minimum ? msgs :
+      [...msgs, `Please select your choice of ${String(menu.modifiers[mtId].modifier_type.display_name || menu.modifiers[mtId].modifier_type.name).toLowerCase()}`], [] as String[]) : [], [selectedProduct, menu.modifiers]);
+  if (categoryId === null || selectedProduct === null) {
+    return null;
+  }
+
+  const toggleAllowAdvancedOption = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setShowAdvanced(e.target.checked));
+  }
+  const unselectProduct = () => {
+    dispatch(clearCustomizer());
+  }
+  const confirmCustomization = () => {
+    const matchingCartEntry = FindDuplicateInCart(cart, menu.modifiers, categoryId, selectedProduct, cartEntry?.id);
+    if (matchingCartEntry) {
+      const amountToAdd = cartEntry?.quantity ?? 1;
+      dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity: matchingCartEntry.quantity + amountToAdd }));
+      enqueueSnackbar(`Merged duplicate ${selectedProduct.m.name} in your order.`, { variant: 'success' });
+    }
+    else {
+      // cartEntry being undefined means it's an addition 
+      if (cartEntry === undefined) {
+        dispatch(addToCart({ categoryId, product: selectedProduct }))
+      }
+      else {
+        dispatch(updateCartProduct({ id: cartEntry.id, product: selectedProduct }))
+        dispatch(unlockCartEntry(cartEntry.id));
+      }
+      enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success' });
+    }
+    // TODO: scroll to top
+    unselectProduct();
+  }
   return (
     <div className="customizer menu-list__items" ng-if="pmenuCtrl.selection">
-      <div style="visibility: hidden">
-        <div className="md-dialog-container customizer" id="wcpoptionmodal">
-          <md-dialog wcpoptiondetailmodaldir optionctrl="pmenuCtrl.advanced_option"></md-dialog>
-        </div>
-      </div>
-      <h3 className="flush--top"><strong>Customize {pmenuCtrl.selection.PRODUCT_CLASS.display_flags && pmenuCtrl.selection.PRODUCT_CLASS.display_flags.singular_noun ? "your " + pmenuCtrl.selection.PRODUCT_CLASS.display_flags.singular_noun : "it"}!</strong></h3>
+      <WOptionDetailModal menu={menu} />
+      <h3 className="flush--top">
+        <strong>Customize {customizerTitle}!</strong>
+      </h3>
       <div className="menu-list__item">
-        <wcppizzacartitem prod="pmenuCtrl.selection" description="true" dots="true" price="true" menu="pmenuCtrl.CONFIG.MENU" displayctx="order"></wcppizzacartitem>
+        <WProductComponent productMetadata={selectedProduct.m} allowAdornment={false} description dots price menuModifiers={menu.modifiers} displayContext="order" />
       </div>
-      <hr className="separator">
-        <div wcpmodifierdir ng-repeat="(mtid, value) in pmenuCtrl.FilterModifiers(pmenuCtrl.selection.modifier_map)" mtid="mtid" selection="pmenuCtrl.selection" pmenuctrl="pmenuCtrl" config="orderCtrl.CONFIG">
-        </div>
-        <div ng-if="!pmenuCtrl.suppress_guide && pmenuCtrl.messages.length">
-          <div className="wpcf7-response-output wpcf7-validation-errors" ng-repeat="msg in pmenuCtrl.messages">{{ msg }}</div>
-        </div>
-        <div ng-if="pmenuCtrl.errors.length">
-          <div className="wpcf7-response-output" ng-repeat="msg in pmenuCtrl.errors">{{ msg }}</div>
-        </div>
-        <div ng-if="orderCtrl.s.enable_split_toppings && pmenuCtrl.selection.advanced_option_eligible"><label><input ng-disabled="pmenuCtrl.selection.advanced_option_selected" type="checkbox" ng-model="pmenuCtrl.allow_advanced">
-          I desperately need to order a split topping pizza and I know it's going to be a bad value and bake poorly.</label></div>
-        <div className="order-nav">
-          <span className="one-fifth">
-            <button name="remove" className="btn button-remove" ng-click="orderCtrl.ScrollTop(); pmenuCtrl.UnsetProduct()">Cancel</button>
-          </span>
-          <span className="four-fifths">
-            <span className="order-nav-item float--right">
-              <button ng-disabled="pmenuCtrl.errors.length || pmenuCtrl.selection.incomplete" ng-if="pmenuCtrl.is_addition" name="add" className="btn" ng-click="orderCtrl.ScrollTop(); orderCtrl.AddToOrder(pmenuCtrl.catid, pmenuCtrl.selection); pmenuCtrl.UnsetProduct()">Add to order</button>
-              <button ng-disabled="pmenuCtrl.errors.length || pmenuCtrl.selection.incomplete" ng-if="!pmenuCtrl.is_addition" name="save" className="btn" ng-click="orderCtrl.ScrollTop(); orderCtrl.UpdateOrderEntry(pmenuCtrl.cart_entry, pmenuCtrl.selection); pmenuCtrl.UnsetProduct()">Save Changes</button>
-            </span>
-          </span>
-        </div>
+      <hr className="separator" />
+      {filteredModifiers.map(([mtid, modifierMapEntry], i) =>
+        <WModifierTypeCustomizerComponent menu={menu} mtid={mtid} key={i} product={selectedProduct} />
+      )}
+      {orderGuideMessages.map((msg, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{msg}</div>)}
+      {orderGuideErrors.map((msg, i) => <div key={i} className="wpcf7-response-output">{msg}</div>)}
+      {allowAdvancedOptionPrompt ? <FormControlLabel
+        control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
+        label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}
+      <div className="order-nav">
+        <Grid container justifyContent="flex-end" item xs={12}>
+          <Grid item>
+            <Button className="btn button-remove" onClick={unselectProduct}>
+              Cancel
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button className="btn" disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
+              onClick={confirmCustomization}>
+              {cartEntry === undefined ? "Add to order" : "Save changes"}
+            </Button>
+          </Grid>
+        </Grid>
+      </div>
     </div>
-  )
+  );
 }
-

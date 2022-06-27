@@ -10,11 +10,11 @@ export function WModifiersComponent({product, menuModifiers}: { product: IProduc
       </h4>
       <div className="menu-list">
         <ul className="flexitems menu-list__items">
-          { menuModifiers[mod_def.mtid].options_list.map((opt : any, j: number) => 
+          { menuModifiers[mod_def.mtid].options_list.map((opt, j) => 
           <li key={j} className="flexitem menu-list__item">
             <p className="menu-list__item-desc">
-              <span className="desc__content">{opt.name}</span>
-              <span className="menu-list__item-price">{opt.price ? opt.price : "No Charge"}</span>
+              <span className="desc__content">{opt.mo.item.display_name}</span>
+              <span className="menu-list__item-price">{opt.mo.item.price.amount ? (opt.mo.item.price.amount / 100) : "No Charge"}</span>
             </p>
           </li>) }
         </ul>

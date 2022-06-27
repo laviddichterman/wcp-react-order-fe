@@ -1,38 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { WMenuComponent } from './components/menu/WMenuComponent';
-import { MENU_CATID } from './config';
-import useSocketio from './app/useSocketIo';
-import {FilterProduct, FilterWMenu, GenerateMenu, ICatalog, IMenu, IProductInstance} from '@wcp/wcpshared';
+import React, { useEffect } from 'react';
+import { SocketIoActions } from './app/SocketIoSlice';
+import { useAppDispatch, useAppSelector } from "./app/useHooks";
+import { WOrderingComponent } from './components/WOrderingComponent';
 
 
 const App = () => {
-  const { catalog } = useSocketio();
-  const [menu, setMenu] = useState<IMenu | null>(null);
-  const [displayMenu, setDisplayMenu] = useState<string[]>([]);
-
+  const dispatch = useAppDispatch();
+  const socketIoState = useAppSelector((s) => s.ws.status);
+  // const catalog = useAppSelector((s) => s.ws.catalog);
+  // const [menu, setMenu] = useState<IMenu | null>(null);
+  // const [displayMenu, setDisplayMenu] = useState<string[]>([]);
   useEffect(() => {
-    if (catalog) {
-      const current_time = new Date();
-      const MENU = GenerateMenu(catalog as unknown as ICatalog, current_time);
-      const FilterProdsFxn = (item : IProductInstance) => FilterProduct(item, MENU, (x) => x.menu.hide, current_time);
-      FilterWMenu(MENU, FilterProdsFxn, current_time);
-      setMenu(MENU);
-      const MENU_CATEGORIES = MENU.categories[MENU_CATID as string].children;
-      // e.g.: [FOOD: [SMALL PLATES, PIZZAS], COCKTAILS: [], WINE: [BUBBLES, WHITE, RED, PINK]]
-      // create a menu from the filtered categories and products.
-      const is_tabbed_menu = MENU_CATEGORIES.reduce((acc, child_id) => acc || MENU.categories[child_id].children.length > 0, false);
-      setDisplayMenu(is_tabbed_menu ? MENU_CATEGORIES : [MENU_CATID as string]);
+    if (socketIoState === 'NONE') { 
+      console.log("hiiii")
+      dispatch(SocketIoActions.startConnection());
     }
-  }, [catalog]);
-  if (!menu) {
-    return <div>Loading...</div>
-  }
+  }, [socketIoState, dispatch]);
   return (
     <article className="article--page article--main border-simple post-69 page type-page status-publish has-post-thumbnail hentry">
       <section className="article__content">
         <div className="container">
           <section className="page__content js-post-gallery cf">
-            <WMenuComponent menu={menu} displayMenu={displayMenu} />
+            <WOrderingComponent />
           </section>
         </div>
       </section>

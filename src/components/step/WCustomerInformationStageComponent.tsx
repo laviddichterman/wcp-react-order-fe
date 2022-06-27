@@ -43,7 +43,7 @@ export function WCustomerInformationStage() {
       </form>
       <div className="order-nav">
         <button type="submit" className="btn" ng-show="orderCtrl.HasPreviousStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.PreviousStage()">Previous</button>
-        <button type="submit" className="btn" ng-disabled="!stage3.$valid || orderCtrl.s.submit_failed" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage()">{(!stage3.$valid || orderCtrl.s.submit_failed) ? "Fill out above" : "Next"}</button>
+        {/* <button type="submit" className="btn" ng-disabled="!stage3.$valid || orderCtrl.s.submit_failed" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage()">{(!stage3.$valid || orderCtrl.s.submit_failed) ? "Fill out above" : "Next"}</button> */}
       </div>
     </div>
   )

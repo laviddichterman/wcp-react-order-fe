@@ -4,19 +4,21 @@ import { Provider } from 'react-redux';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { SocketIoProvider } from './contexts/SocketIoContext';
 import { store } from './app/store';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <SocketIoProvider >
-        <App />
-      </SocketIoProvider>
-    </Provider>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Provider store={store}>
+          <App />
+      </Provider>
+    </LocalizationProvider>
   </React.StrictMode>
 );
 

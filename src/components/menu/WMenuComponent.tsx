@@ -1,21 +1,30 @@
 import React, { useState, useCallback } from 'react';
-
 import { WProductComponent } from '../WProductComponent';
 import { WModifiersComponent } from '../WModifiersComponent';
+import { useAppSelector } from "../../app/useHooks";
+
 import { IMenu, CategoryEntry, IProductInstance } from '@wcp/wcpshared';
+import { IProductsSelectors } from '../../app/store';
 
 
 function WMenuSection({ menu, section } : { menu: IMenu; section: CategoryEntry;}) {
-  const getProductClass = useCallback((product : IProductInstance) => menu.product_classes[product.product_id].product, [menu.product_classes])
+  const productClassSelector = useAppSelector(s => (id : string) => IProductsSelectors.selectById(s, id)); 
+  const productDisplay = useCallback((product : IProductInstance) => {
+    const productClass = productClassSelector(product.product_id);
+    return productClass ? <>
+    <li className="menu-list__item">
+      <WProductComponent description allowAdornment dots menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product._id]} />
+    </li>
+    {product.display_flags.menu.show_modifier_options && productClass.modifiers.length ? <WModifiersComponent product={productClass} menuModifiers={menu.modifiers} /> : ""}
+  </> : "";
+  }, [productClassSelector, menu.modifiers, menu.product_instance_metadata]) 
+
   return (
     <>
       <ul className="menu-list__items">
         {section.menu.sort((a: any, b: any) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k: number) => (
           <React.Fragment key={k}>
-            <li className="menu-list__item">
-              <WProductComponent product={product} description allowAdornment dots menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product._id]} />
-            </li>
-            {product.display_flags.menu.show_modifier_options && getProductClass(product).modifiers.length ? <WModifiersComponent product={getProductClass(product)} menuModifiers={menu.modifiers} /> : ""}
+            {productDisplay(product)}
           </React.Fragment>
         ))}
       </ul>

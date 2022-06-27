@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { ComputePotentialPrices, IProductInstance, WProductMetadata, WProductDisplayOptions, MenuModifiers } from '@wcp/wcpshared';
+import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuModifiers, PriceDisplay } from '@wcp/wcpshared';
+import { IProductInstancesSelectors } from '../app/store';
+import { useAppSelector } from '../app/useHooks';
 interface WProductComponentProps { 
-  product: IProductInstance;
   productMetadata: WProductMetadata;
   description: boolean;
   allowAdornment: boolean;
@@ -11,31 +12,32 @@ interface WProductComponentProps {
   price: boolean;
 };
 
-export function WProductComponent({ product, productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price }: WProductComponentProps) {
-  const adornmentHTML = useMemo(() => allowAdornment && product.display_flags[displayContext].adornment ? product.display_flags[displayContext].adornment : "", [allowAdornment, product, displayContext]);
+export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price }: WProductComponentProps) {
+  const productInstance = useAppSelector(s => IProductInstancesSelectors.selectById(s, productMetadata.pi[0]));
+  const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.display_flags[displayContext].adornment ? productInstance.display_flags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
   const descriptionHTML = useMemo(() => description && productMetadata.description ? productMetadata.description : "", [description, productMetadata.description]);
   const optionsSections = useMemo(() => {
-    if (!description || product.display_flags[displayContext].suppress_exhaustive_modifier_list) {
+    if (!description || !productInstance || productInstance.display_flags[displayContext].suppress_exhaustive_modifier_list) {
       return [[]];
     }
     const options = WProductDisplayOptions(menuModifiers, productMetadata.exhaustive_modifiers);
     return !(options.length === 1 && options[0][1] === productMetadata.name) ? options : [[]];
-  }, [description, product.display_flags, displayContext, menuModifiers, productMetadata.exhaustive_modifiers, productMetadata.name]);
+  }, [description, displayContext, menuModifiers, productInstance, productMetadata.exhaustive_modifiers, productMetadata.name]);
   const priceText = useMemo(() => {
-    if (productMetadata.incomplete) {
-      switch (product.display_flags[displayContext].price_display) {
-        case "FROM_X": return `from ${productMetadata.price}`;
-        case "VARIES": return "MP";
-        case "MIN_TO_MAX": {
+    if (productInstance && productMetadata.incomplete) {
+      switch (productInstance.display_flags[displayContext].price_display) {
+        case PriceDisplay.FROM_X: return `from ${productMetadata.price}`;
+        case PriceDisplay.VARIES: return "MP";
+        case PriceDisplay.MIN_TO_MAX: {
           const prices = ComputePotentialPrices(productMetadata, menuModifiers);
           return prices.length > 1 && prices[0] !== prices[prices.length - 1] ? `from ${prices[0]} to ${prices[prices.length - 1]}` : `${prices[0]}`;
         }
-        case "LIST": return ComputePotentialPrices(productMetadata, menuModifiers).join("/");
-        case "ALWAYS": default: return `${productMetadata.price}`;
+        case PriceDisplay.LIST: return ComputePotentialPrices(productMetadata, menuModifiers).join("/");
+        case PriceDisplay.ALWAYS: default: return `${productMetadata.price}`;
       }
     }
     return `${productMetadata.price}`;
-  }, [product.display_flags, productMetadata, displayContext, menuModifiers]);
+  }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
     <div className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
       {adornmentHTML ? <span className="menu-list__item-highlight-title" dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
