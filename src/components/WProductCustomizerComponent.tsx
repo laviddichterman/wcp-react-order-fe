@@ -4,7 +4,7 @@ import { FormControl, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, Ico
 import { SettingsTwoTone } from "@mui/icons-material";
 import { WProduct } from './common';
 import { WProductComponent } from './WProductComponent';
-import { IMenu, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState } from '@wcp/wcpshared';
+import { IMenu, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
 import { clearCustomizer, selectAllowAdvancedPrompt, selectCartEntryBeingCustomized, selectOptionState, selectSelectedProduct, selectShowAdvanced, setAdvancedModifierOption, setShowAdvanced, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
@@ -109,41 +109,58 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
 
 };
 
+function useModifierOptionCheckbox(menu: IMenu, option: WCPOption) {
+  const dispatch = useAppDispatch();
+  const optionState = useAppSelector(selectOptionState)(option.mt._id, option.mo._id);
+  const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
+  const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
+  const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
+  const onUpdateOption = (newState: IOptionState, serviceDateTime: number) => {
+    dispatch(updateModifierOptionStateCheckbox({
+      mt: option.mt,
+      mo: option.mo,
+      optionState: newState,
+      menu,
+      serviceTime: serviceDateTime
+    }));
+  };
+  const onClickWhole = (serviceDateTime: number) => {
+    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier }, serviceDateTime);
+  }
+  const onClickLeft = (serviceDateTime: number) => {
+    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier }, serviceDateTime);
+  }
+  const onClickRight = (serviceDateTime: number) => {
+    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier }, serviceDateTime);
+  }
+  return {
+    onClickWhole,
+    onClickLeft,
+    onClickRight,
+    onUpdateOption,
+    isWhole,
+    isLeft,
+    isRight,
+    optionState
+  }
+}
+
 interface IModifierOptionCheckboxCustomizerComponent {
   option: WCPOption;
   menu: IMenu;
 }
 
-export function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheckboxCustomizerComponent) {
+function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheckboxCustomizerComponent) {
   const dispatch = useAppDispatch();
+  const { onClickWhole, onClickLeft, onClickRight,
+    isWhole, isLeft, isRight,
+    optionState } = useModifierOptionCheckbox(menu, option);
   const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
   const canShowAdvanced = useAppSelector(selectShowAdvanced);
-  const optionState = useAppSelector(selectOptionState)(option.mt._id, option.mo._id);
   const showAdvanced = useMemo(() => canShowAdvanced && (optionState.enable_left || optionState.enable_right), [canShowAdvanced, optionState]);
   const advancedOptionSelected = useMemo(() => optionState.placement === OptionPlacement.LEFT || optionState.placement === OptionPlacement.RIGHT || optionState.qualifier !== OptionQualifier.REGULAR, [optionState.placement, optionState.qualifier]);
-  const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
-  const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
-  const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
   if (optionState === null || serviceDateTime === null) {
     return null;
-  }
-  const onUpdateOption = (optionState: IOptionState) => {
-    dispatch(updateModifierOptionStateCheckbox({
-      mt: option.mt,
-      mo: option.mo,
-      optionState,
-      menu,
-      serviceTime: serviceDateTime
-    }));
-  };
-  const onClickWhole = () => {
-    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier });
-  }
-  const onClickLeft = () => {
-    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier });
-  }
-  const onClickRight = () => {
-    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier });
   }
   const onClickAdvanced = () => {
     dispatch(setAdvancedModifierOption([option.mt._id, option.mo._id]));
@@ -159,25 +176,25 @@ export function WModifierOptionCheckboxComponent({ option, menu }: IModifierOpti
               className={`input-whole`}
               disabled={!optionState.enable_whole}
               checked={isWhole}
-              onClick={onClickWhole} /> : null}
+              onClick={() => onClickWhole(serviceDateTime)} /> : null}
             {isLeft || (!optionState.enable_whole && optionState.enable_left) ? <Checkbox
               className={`input-left`}
               disabled={!optionState.enable_left}
               checked={isLeft}
-              onClick={onClickLeft} /> : null}
+              onClick={() => onClickLeft(serviceDateTime)} /> : null}
             {isRight || (!optionState.enable_whole && optionState.enable_right) ? <Checkbox
               className={`input-right`}
               disabled={!optionState.enable_right}
               checked={isRight}
-              onClick={onClickRight} /> : null}
+              onClick={() => onClickRight(serviceDateTime)} /> : null}
           </span>}
         onClick={() => {
           if (optionState.enable_whole) {
-            onClickWhole();
+            onClickWhole(serviceDateTime);
           } else if (optionState.enable_left) {
-            onClickLeft();
+            onClickLeft(serviceDateTime);
           } else if (optionState.enable_right) {
-            onClickRight();
+            onClickRight(serviceDateTime);
           }
         }}
         label={<span className='topping_text'>{option.mo.item.display_name}</span>} />
@@ -252,45 +269,25 @@ export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModif
 }
 interface IOptionDetailModal {
   menu: IMenu;
+  mtid_moid: MTID_MOID;
 }
-function WOptionDetailModal({ menu }: IOptionDetailModal) {
+function WOptionDetailModal({ menu, mtid_moid }: IOptionDetailModal) {
   const dispatch = useAppDispatch();
   const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
-  const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
+  const option = useMemo(() => menu.modifiers[mtid_moid[0]].options[mtid_moid[1]], [menu.modifiers, mtid_moid]);
+  const { onClickWhole, onClickLeft, onClickRight, onUpdateOption,
+    isWhole, isLeft, isRight,
+    optionState } = useModifierOptionCheckbox(menu, option);
   const intitialOptionState = useAppSelector(s => s.customizer.advancedModifierInitialState);
-  const option = useMemo(() => mtid_moid !== null && Object.hasOwn(menu.modifiers, mtid_moid[0]) && Object.hasOwn(menu.modifiers[mtid_moid[0]].options, mtid_moid[1]) ? menu.modifiers[mtid_moid[0]].options[mtid_moid[1]] : null, [menu.modifiers, mtid_moid]);
-  const optionState = useAppSelector(s => s.customizer.advancedModifierOption !== null ? selectOptionState(s)(...s.customizer.advancedModifierOption) : null);
-  const isWhole = useMemo(() => optionState?.placement === OptionPlacement.WHOLE, [optionState?.placement]);
-  const isLeft = useMemo(() => optionState?.placement === OptionPlacement.LEFT, [optionState?.placement]);
-  const isRight = useMemo(() => optionState?.placement === OptionPlacement.RIGHT, [optionState?.placement]);
-  if (option === null || optionState === null || serviceDateTime === null) {
+  if (serviceDateTime === null) {
     return null;
-  }
-  const onUpdateOption = (optionState: IOptionState) => {
-    dispatch(updateModifierOptionStateCheckbox({
-      mt: option.mt,
-      mo: option.mo,
-      optionState,
-      menu,
-      serviceTime: serviceDateTime
-    }));
-  };
-  const onClickWhole = () => {
-    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier });
-  }
-  const onClickLeft = () => {
-    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier });
-  }
-  const onClickRight = () => {
-    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier });
   }
   const onConfirmCallback = () => {
     dispatch(setAdvancedModifierOption(null));
   }
-
   const onCancelCallback = () => {
     // set the modifier option state to what it was before we opened this modal
-    dispatch(updateModifierOptionStateCheckbox({ mt: option.mt, mo: option.mo, menu, optionState: intitialOptionState, serviceTime: serviceDateTime }));
+    onUpdateOption(intitialOptionState, serviceDateTime);
     onConfirmCallback();
   };
 
@@ -307,7 +304,11 @@ function WOptionDetailModal({ menu }: IOptionDetailModal) {
               disableTypography
               className="option-left option-circle"
               control={
-                <Checkbox className="input-left" disabled={!optionState.enable_left} checked={isLeft} onChange={onClickLeft} />
+                <Checkbox
+                  className="input-left"
+                  disabled={!optionState.enable_left}
+                  checked={isLeft}
+                  onChange={() => onClickLeft(serviceDateTime)} />
               }
               label={null}
             />
@@ -316,7 +317,11 @@ function WOptionDetailModal({ menu }: IOptionDetailModal) {
             <FormControlLabel
               className="option-whole option-circle"
               control={
-                <Checkbox className="input-whole" disabled={!optionState.enable_whole} checked={isWhole} onChange={onClickWhole} />
+                <Checkbox
+                  className="input-whole"
+                  disabled={!optionState.enable_whole}
+                  checked={isWhole}
+                  onChange={() => onClickWhole(serviceDateTime)} />
               }
               label={null}
             />
@@ -325,7 +330,11 @@ function WOptionDetailModal({ menu }: IOptionDetailModal) {
             <FormControlLabel
               className="option-right option-circle"
               control={
-                <Checkbox className="input-right" disabled={!optionState.enable_right} checked={isRight} onChange={onClickRight} />
+                <Checkbox
+                  className="input-right"
+                  disabled={!optionState.enable_right}
+                  checked={isRight}
+                  onChange={() => onClickRight(serviceDateTime)} />
               }
               label={null}
             />
@@ -375,6 +384,7 @@ export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCus
   const cart = useAppSelector(s => getCart(s.cart));
   const showAdvanced = useAppSelector(s => selectShowAdvanced(s));
   const hasAdvancedOptionSelected = useMemo(() => selectedProduct?.m.advanced_option_selected ?? false, [selectedProduct?.m.advanced_option_selected]);
+  const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
   const customizerTitle = useMemo(() => selectedProduct !== null && selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun ? `your ${selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun}` : "it", [selectedProduct]);
   const filteredModifiers = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).filter(FilterModifiersCurry(menu.modifiers)) : [], [selectedProduct, menu.modifiers]);
   const orderGuideMessages = useMemo(() => suppressGuide ? [] as string[] : [], [suppressGuide]);
@@ -413,8 +423,8 @@ export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCus
     unselectProduct();
   }
   return (
-    <div className="customizer menu-list__items" ng-if="pmenuCtrl.selection">
-      <WOptionDetailModal menu={menu} />
+    <div className="customizer menu-list__items">
+      { mtid_moid !== null ? <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} /> : "" }
       <h3 className="flush--top">
         <strong>Customize {customizerTitle}!</strong>
       </h3>
