@@ -1,4 +1,4 @@
-import { ICatalog, IWBlockedOff, IWSettings } from '@wcp/wcpshared';
+import { ICatalog, IWSettings, JSFEBlockedOff } from '@wcp/wcpshared';
 import { Middleware } from 'redux'
 import { io, Socket } from "socket.io-client";
 import { SOCKETIO, HOST_API } from '../config';
@@ -25,7 +25,7 @@ const SocketIoMiddleware: Middleware = store => {
         store.dispatch(SocketIoActions.receiveServices(data));
       });
 
-      socket.on("WCP_BLOCKED_OFF", (data: IWBlockedOff) => {
+      socket.on("WCP_BLOCKED_OFF", (data: JSFEBlockedOff) => {
         console.log(data);
         store.dispatch(SocketIoActions.receiveBlockedOff(data));
       });

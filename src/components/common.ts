@@ -1,8 +1,10 @@
 import { WCPProduct, WProductMetadata } from '@wcp/wcpshared';
-import { ReactNode } from 'react';
-import { TypedUseSelectorHook } from 'react-redux';
-import { RootState } from '../app/store';
+import React from 'react';
 import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
+
+export const TIMING_POLLING_INTERVAL = 30000;
+
+export const MAX_PARTY_SIZE = 10;
 
 export interface WProduct { 
   p: WCPProduct;
@@ -156,15 +158,11 @@ export class DineInOrderFulfillment extends AOrderFulfillment {
   }
 }
 
+export type StepNav = (onSubmitCallback: () => void, canNext: boolean, canBack: boolean) => React.ReactNode;
+
 export interface StepData {
   stepperTitle: string;
-  title: string;
-  isComplete: (s: RootState) => boolean;
-  content: ReactNode;
-}
-
-export const StepDataToStep = (s : StepData, hook: TypedUseSelectorHook<RootState>) => {
-  return {...s, isComplete: hook(s.isComplete)};
+  content: ({navComp} : {navComp : StepNav}) => React.ReactNode;
 }
 
 

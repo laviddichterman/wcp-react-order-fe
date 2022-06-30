@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, Checkbox, FormControlLabel } from '@mui/material';
+import { Typography, Link, Checkbox, FormControlLabel } from '@mui/material';
 
 import { StoreCreditInputComponent } from '../StoreCreditInputComponent';
 import { WCheckoutCart } from '../WCheckoutCart';
@@ -159,6 +159,7 @@ export function WCheckoutStage({ linearCart, fulfillment, totals, menu, creditRe
   // }
   // case: it's processing... show that we're waiting on the results
   return (<div className="wpcf7 wpcf7-response-output wpcf7-mail-sent-ok">
+    <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
     Submitting order! This can take a few seconds.<span className="ajax-loader"></span>
   </div>);
 }

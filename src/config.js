@@ -20,7 +20,7 @@ export const TAX_RATE = 0.1025;
 export const EXTRAS_CATID = "5ef6cf1a3991a469ceda2598";
 export const DELIVERY_LINK = "http://bit.ly/2QsrfV8";
 export const DELIVERY_SERVICE = 2;
-export const DINEIN_SERVICE = 2;
+export const DINEIN_SERVICE = 1;
 
 // var WARIO_ENDPOINT = "https://wario.windycitypie.com/";
 // //var WARIO_ENDPOINT = "http://localhost:4001/";

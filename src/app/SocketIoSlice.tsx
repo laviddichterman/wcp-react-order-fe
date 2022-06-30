@@ -1,5 +1,6 @@
 import { createEntityAdapter, createSlice, EntityState, PayloadAction } from "@reduxjs/toolkit";
-import { ICatalog, ICategory, IOption, IOptionType, IProduct, IProductInstance, IProductInstanceFunction, IWBlockedOff, IWSettings } from "@wcp/wcpshared";
+import { ICatalog, ICategory, IOption, IOptionType, IProduct, IProductInstance, IProductInstanceFunction, IWSettings, JSFEBlockedOff } from "@wcp/wcpshared";
+import { RootState } from "./store";
 
 export const ProductInstanceFunctionsAdapter = createEntityAdapter<IProductInstanceFunction>({selectId: entry => entry._id});
 export const IProductsAdapter = createEntityAdapter<IProduct>({selectId: entry => entry._id});
@@ -17,7 +18,7 @@ export interface SocketIoState {
   categories: EntityState<ICategory>;
   productInstanceFunctions: EntityState<IProductInstanceFunction>;
   services: { [index:string] : string } | null;
-  blockedOff: IWBlockedOff | null;
+  blockedOff: JSFEBlockedOff | null;
   leadtime: number[] | null;
   settings: IWSettings | null;
   status: 'NONE' | 'START' | 'CONNECTED' | 'FAILED'; 
@@ -63,8 +64,9 @@ const SocketIoSlice = createSlice({
     receiveServices(state, action : PayloadAction<{ [index:string] : string }>) {
       state.services = action.payload;
     },
-    receiveBlockedOff(state, action : PayloadAction<IWBlockedOff>) {
-      state.blockedOff = action.payload;
+    receiveBlockedOff(state, action : PayloadAction<JSFEBlockedOff>) {
+      // key here is that we've re-cast the intervals to numbers
+      state.blockedOff = action.payload.map(v=> v.map(e => [e[0], e[1].map(i => [Number(i[0]), Number(i[1])])]));
     },
     receiveLeadTime(state, action : PayloadAction<number[]>) {
       state.leadtime = action.payload;
@@ -77,5 +79,7 @@ const SocketIoSlice = createSlice({
 
 
 export const SocketIoActions = SocketIoSlice.actions;
+
+export const IsSocketDataLoaded = (s : SocketIoState) => s.blockedOff !== null && s.catalog !== null && s.settings !== null && s.services !== null && s.leadtime !== null;
 
 export default SocketIoSlice.reducer;

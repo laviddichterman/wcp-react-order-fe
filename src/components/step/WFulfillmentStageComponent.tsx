@@ -1,181 +1,199 @@
-import React, { useState, useCallback } from 'react';
-import { TextField, Link, FormControl, RadioGroup, Radio, FormLabel, Checkbox, FormControlLabel } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
-import { parse, isValid } from 'date-fns';
-import { Controller, useForm } from "react-hook-form";
+import React, { useCallback, useMemo, useEffect } from 'react';
+import { Typography } from '@mui/material';
+
+import { isValid as isDateValid, add } from 'date-fns';
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { getTermsForService, StepData } from '../common';
-import { useAppSelector } from '../../app/useHooks';
-import { DELIVERY_LINK } from '../../config';
+import { getTermsForService, MAX_PARTY_SIZE, StepNav } from '../common';
+import { useAppDispatch, useAppSelector } from '../../app/useHooks';
+import { FormProvider, RHFCheckbox, RHFRadioGroup, RHFDatePicker, RHFSelect } from '../hook-form';
+import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import * as yup from "yup";
+import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
+import { FulfillmentSchema, fulfillmentSchemaInstance, setFulfillment } from '../WFulfillmentSlice';
 
-const schema = yup.object().shape({
-  serviceDate: yup
-    .string()
-    .test("serviceDate", "Enter a valid date", v => v !== undefined && isValid(parse(v, 'yyyy/MM/dd', new Date())))
-    .required("Please select a service date")
-});
+const SERVICE_DATE_FORMAT = 'EEEE, MMMM dd, yyyy';
 
-export function WFulfillmentStageComponent() {
-  const services = useAppSelector(s=>s.ws.services)
-  const { handleSubmit, control } = useForm({
-    resolver: yupResolver(schema)
-  });
-  const [selectedService, setSelectedService] = useState<number | null>(null);
-  const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
-  const canSelectService = useCallback((service: number) => true, []);
-  const updateSelectedService = (selection: number) => {
-    setSelectedService(selection);
+export interface CartInfoToDepricate {
+  cart_based_lead_time: number;
+  size: number;
+};
+
+function useAvailabilityHook() {
+  const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
+  const settings = useAppSelector(s => s.ws.settings) as IWSettings;
+  const currentDate = useAppSelector(s => s.metrics.currentTime) as number;
+  const operatingHours = useMemo(() => settings.operating_hours, [settings]);
+  const blockedOff = useAppSelector(s => s.ws.blockedOff) as JSFEBlockedOff;
+  const leadtimes = useAppSelector(s => s.ws.leadtime) as number[];
+  const HasOperatingHoursForService = useCallback((serviceNumber: number) =>
+    Object.hasOwn(services, String(serviceNumber)) && serviceNumber < operatingHours.length && operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false),
+    [services, operatingHours]);
+  const AvailabilityInfoMapForServicesAndDate = useCallback((selectedDate: Date, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) =>
+    WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtimes, selectedDate, serviceSelection, cartInfo), [settings, leadtimes, blockedOff]);
+  const OptionsForServicesAndDate = useCallback((selectedDate: Date, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) => {
+    const INFO = AvailabilityInfoMapForServicesAndDate(selectedDate, serviceSelection, cartInfo);
+    const opts = WDateUtils.GetOptionsForDate(INFO, selectedDate, new Date(currentDate));
+    return opts;
+  }, [AvailabilityInfoMapForServicesAndDate, currentDate])
+  return {
+    operatingHours,
+    blockedOff,
+    leadtimes,
+    services,
+    HasOperatingHoursForService,
+    AvailabilityInfoMapForServicesAndDate,
+    OptionsForServicesAndDate
   };
-  if (services === null) {
+}
+
+function useFulfillmentForm(availability: ReturnType<typeof useAvailabilityHook>) {
+
+  const useFormApi = useForm<FulfillmentSchema>({
+
+//  seems to be a bug here where this cannot be set?
+    // defaultValues: {
+    //   serviceEnum: 0,
+    //   deliveryInfo: null,
+    //   dineInInfo: null,
+    //   hasAgreedToTerms: false,
+    //   serviceDate: new Date(),
+    //   serviceTime: 0
+    // },
+    resolver: yupResolver(fulfillmentSchemaInstance),
+    mode: "onChange",
+
+  });
+
+  return useFormApi;
+}
+
+export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) {
+  const dispatch = useAppDispatch();
+  const availability = useAvailabilityHook();
+  const { services, HasOperatingHoursForService, OptionsForServicesAndDate } = availability;
+  const fulfillmentForm = useFulfillmentForm(availability);
+  const { watch, trigger, formState: {isSubmitting, isDirty, isValid}, handleSubmit } = fulfillmentForm;
+  const values = watch();
+  const { serviceEnum, serviceDate } = values;
+  const serviceTerms = useMemo(() => serviceEnum ? getTermsForService(serviceEnum) : [], [serviceEnum]);
+  const OptionsForDate = useCallback((d: Date) => {
+    if (serviceEnum === undefined || !isDateValid(d)) {
+      return [];
+    }
+    const serviceSelectionMap: { [index: string]: boolean } = {};
+    serviceSelectionMap[String(serviceEnum)] = true;
+    return OptionsForServicesAndDate(d, serviceSelectionMap, { size: 0, cart_based_lead_time: 0 });
+  }, [OptionsForServicesAndDate, serviceEnum])
+  const canSelectService = useCallback((service: number) => true, []);
+  const ServiceOptions = useMemo(() => {
+    return Object.entries(services).filter(([serviceNum, _]) =>
+      HasOperatingHoursForService(parseInt(serviceNum, 10))).map(([serviceNum, serviceName]) => {
+        const parsedNum = parseInt(serviceNum, 10);
+        return { label: serviceName, value: parsedNum, disabled: !canSelectService(parsedNum) };
+      });
+  }, [services, canSelectService, HasOperatingHoursForService]);
+  const onSubmitCallback = useCallback(() => {
+    console.log("submit")
+    dispatch(setFulfillment(watch()))
+  }, [dispatch, watch]);
+  if (services === null || ServiceOptions.length === 0) {
     return null;
-  }
-  const submitForm = (data : any) => {
-    console.log(data);
   }
 
   return (<>
-      <form
-          noValidate
-          onSubmit={handleSubmit(submitForm)}
-          className="signup-form"
-        >
-    <FormControl>
-      <FormLabel id="service-selection-radio-buttons-label">Requested Service:</FormLabel>
-      <RadioGroup row aria-labelledby="service-selection-radio-buttons-label" value={selectedService} onChange={(_, value: string) => updateSelectedService(Number(value))}>
-        {Object.values(services).map((serviceName: string, i: number) =>
-          <FormControlLabel disabled={!canSelectService(i)} key={i} value={i} control={<Radio />} label={serviceName} />
-        )}
-      </RadioGroup>
-    </FormControl>
-    {getTermsForService(selectedService).length ?
-      <span>
-        <br />
-        <FormControlLabel control={
-          <><Checkbox value={hasAgreedToTerms} onChange={(e) => setHasAgreedToTerms(e.target.checked)} />
+    <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
+    <div>Service Enum: {serviceEnum}</div>
+    <FormProvider methods={fulfillmentForm} >
 
-          </>} label={
-            <>
-              REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
-              <ul>
-                {getTermsForService(selectedService).map((term: string) => <li>{term}</li>)}
-              </ul>
-            </>
-          } />
-      </span> : ""}
+      <span id="service-selection-radio-buttons-label">Requested Service:</span>
+      <RHFRadioGroup name="serviceEnum" options={ServiceOptions} />
+      {serviceTerms.length > 0 ?
+        <span>
+          <RHFCheckbox name="hasAgreedToTerms" label={<>
+            REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
+            <ul>
+              {serviceTerms.map((term, i) => <li key={i}>{term}</li>)}
+            </ul>
+          </>}
+          />
+        </span> : ""}
+      <span className="service-date">
+        <RHFDatePicker
+          disabled={serviceEnum === undefined}
+          name="serviceDate"
+          label={serviceEnum === undefined ? "Select a requested service first" : "Service Date"}
+          format={SERVICE_DATE_FORMAT}
+          disableMaskedInput
+          closeOnSelect
+          disablePast
+          placeholder={"Select Date"}
+          maxDate={add(new Date(), { days: 60 })}
+          shouldDisableDate={(e: Date) => OptionsForDate(e).length === 0}
+        />
+      </span>
 
-    <label htmlFor="service-date">
-      <span className="service-date-text">Date</span>
-    </label>
-    <span className="service-date">
-
-    <Controller
-              name="dateOfBirth"
-              control={control}
-              defaultValue={""}
-              render={({
-                field: { onChange, value },
-                fieldState: { error, invalid }
-              }) => (
-    <DatePicker
-      renderInput={(params) => (
-        <TextField
-          helperText={invalid && error ? error.message : null}
-          id="dateOfBirth"
-          variant="standard"
-          margin="dense"
-          fullWidth
-          color="primary"
-          autoComplete="bday"
-          {...params}
-          error={invalid} />
-      )} 
-      label="Service Date"
-      value={value}
-      onChange={(value) =>
-        {
-          console.log(value);
-          return onChange(parse(value, "yyyy-MM-dd", new Date()));
-        }
+      {serviceDate !== null ?
+        <RHFSelect className="service-time" name='serviceTime' label="Time">
+          {OptionsForDate(serviceDate).map((o, i) => <option key={i} disabled={o.disabled} value={o.value}>
+            {o.value}
+          </option>)}
+        </RHFSelect> : ""}
+      <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-if="orderCtrl.s.selected_time_timeout">The previously selected service time has expired.</div>
+      {Number(serviceEnum) === Number(DINEIN_SERVICE) ?
+        (<span>
+          <RHFSelect className="guest-count" name='dineInInfo.partySize' label="Party Size" >
+            {[...Array(MAX_PARTY_SIZE)].map((_, i) => (<option key={i} value={i}>{i}</option>))}
+          </RHFSelect>
+        </span>) : ""
       }
-      />
-      )}
-            />
-
-      <input type="text" name="service-date" id="service-date" value="" size={40} ng-model="orderCtrl.s.date_string" ng-change="orderCtrl.ValidateDate()" required autoComplete="off" />
-    </span>
-    <label htmlFor="service-time">
-      <span className="service-time-text">Time</span>
-    </label>
-    <span className="service-time">
-      <select ng-disabled="!orderCtrl.s.date_valid" id="service-time" name="service-time" ng-model="orderCtrl.s.service_time" ng-options="servicetime | MinutesToPrintTime:orderCtrl.s.service_type for servicetime in orderCtrl.s.service_times" ng-change="orderCtrl.ServiceTimeChanged()" />
-    </span>
-    <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-if="orderCtrl.s.selected_time_timeout">The previously selected service time has expired.</div>
-    <span ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN">
-      <label htmlFor="guest-count">
-        <span className="guest-count-text">Party Size</span>
-      </label>
-      <span className="guest-count">
-        <select name="guest-count" id="guest-count" ng-model="orderCtrl.s.number_guests" ng-options="value for value in [] | Range:orderCtrl.CONFIG.MAX_PARTY_SIZE" ng-change="orderCtrl.fix_number_guests(false)" />
-      </span>
-    </span>
-    <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
-      <span className="flexbox__item one-whole">Delivery Information:</span>
-    </span>
-    <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
-      <span className="flexbox__item one-half">
-        <label htmlFor="address-line1">
-          <span className="delivery-address-text">Address:</span>
-        </label>
-        <input type="text" name="address" id="address-line1" size={40} ng-model="orderCtrl.s.delivery_address" autoComplete="shipping address-line1" />
-      </span>
-      <span className="flexbox__item one-quarter soft-half--sides">
-        <label htmlFor="address-line2">
-          <span className="delivery-address-text">Apt/Unit:</span>
-        </label>
-        <input type="text" name="address-line2" size={10} id="address-line2" ng-model="orderCtrl.s.delivery_address_2" autoComplete="shipping address-line2" />
-      </span>
-      <span className="flexbox__item one-quarter">
-        <label htmlFor="zipcode" >
-          <span className="delivery-zipcode-text">Zip Code:</span>
-        </label>
-        <span className="zipcode">
-          <input type="text" name="zipcode" id="zipcode" size={10} ng-model="orderCtrl.s.delivery_zipcode" autoComplete="postal-code" />
-        </span>
-      </span>
-    </span>
-    <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">
-      <span className="flexbox__item one-whole">
-        <label htmlFor="delivery-instructions-text">
-          <span className="delivery-instructions-text">Delivery Instructions (optional):</span>
-        </label>
-        <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} ng-model="orderCtrl.s.delivery_instructions" ng-change="orderCtrl.ChangedEscapableInfo()" />
-      </span>
-    </span>
-    <button type="submit" className="btn" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !(stage1.address.$error.address || stage1.zipcode.$error.zipcode) && !orderCtrl.s.is_address_validated" ng-click="orderCtrl.ValidateDeliveryAddress()">Validate Delivery Address</button>
-    <span ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && orderCtrl.s.validated_delivery_address" className="">
-      <div className="wpcf7-response-output wpcf7-mail-sent-ok" ng-show="orderCtrl.s.is_address_validated">
-        Found an address in our delivery area: <br />
-        {/* <span className="title cart">{orderCtrl.s.validated_delivery_address} <button name="remove" ng-click="orderCtrl.ClearAddress()" className="button-remove">X</button></span> */}
-      </div>
-      {/* <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="!orderCtrl.s.is_address_validated">The address {orderCtrl.s.validated_delivery_address} isn't in our <Link target="_blank" href={DELIVERY_LINK}>delivery area</Link></div> */}
-    </span>
-    <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="orderCtrl.s.address_invalid">Unable to determine the specified address. Send us a text or email if you continue having issues.</div>
-    <span ng-show="orderCtrl.s.service_type === orderCtrl.CONFIG.PICKUP && orderCtrl.CONFIG.ALLOW_SLICING">
-      <br /><label><input type="checkbox" ng-model="orderCtrl.s.slice_pizzas" />
-        Please slice my pizzas (not recommended)</label>
-      <span ng-show="orderCtrl.s.slice_pizzas">Crust, like any good bread, should be given time to rest after baking. Slicing your pizzas as they come out of the oven also causes the trapped moisture at the top of the pizza to permiate the crust itself. If you do stick with this option, we'd recommend crisping up your slice on a hot skillet, as needed.</span>
-    </span>
-    <div className="order-nav">
-      <button type="submit" className="btn" ng-disabled="!orderCtrl.s.date_valid || (orderCtrl.CONFIG.TERMS_LIST[orderCtrl.s.service_type].length > 0 && !orderCtrl.s.acknowledge_terms) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && (!orderCtrl.s.is_address_validated)) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN && (Number.isNaN(orderCtrl.s.number_guests) || orderCtrl.s.number_guests < 1 || orderCtrl.s.number_guests > orderCtrl.CONFIG.MAX_PARTY_SIZE))" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage(); orderCtrl.ClearTimeoutFlag();">Next</button>
-    </div>
-    </form>
+      {Number(values.serviceEnum) === DELIVERY_SERVICE ?
+        <>
+          <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
+            <span className="flexbox__item one-whole">Delivery Information:</span>
+          </span>
+          <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
+            <span className="flexbox__item one-half">
+              <label htmlFor="address-line1">
+                <span className="delivery-address-text">Address:</span>
+              </label>
+              <input type="text" name="address" id="address-line1" size={40} ng-model="orderCtrl.s.delivery_address" autoComplete="shipping address-line1" />
+            </span>
+            <span className="flexbox__item one-quarter soft-half--sides">
+              <label htmlFor="address-line2">
+                <span className="delivery-address-text">Apt/Unit:</span>
+              </label>
+              <input type="text" name="address-line2" size={10} id="address-line2" ng-model="orderCtrl.s.delivery_address_2" autoComplete="shipping address-line2" />
+            </span>
+            <span className="flexbox__item one-quarter">
+              <label htmlFor="zipcode" >
+                <span className="delivery-zipcode-text">Zip Code:</span>
+              </label>
+              <span className="zipcode">
+                <input type="text" name="zipcode" id="zipcode" size={10} ng-model="orderCtrl.s.delivery_zipcode" autoComplete="postal-code" />
+              </span>
+            </span>
+          </span>
+          <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">
+            <span className="flexbox__item one-whole">
+              <label htmlFor="delivery-instructions-text">
+                <span className="delivery-instructions-text">Delivery Instructions (optional):</span>
+              </label>
+              <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} ng-model="orderCtrl.s.delivery_instructions" ng-change="orderCtrl.ChangedEscapableInfo()" />
+            </span>
+          </span>
+          <button type="submit" className="btn" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !(stage1.address.$error.address || stage1.zipcode.$error.zipcode) && !orderCtrl.s.is_address_validated" ng-click="orderCtrl.ValidateDeliveryAddress()">Validate Delivery Address</button>
+          <span ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && orderCtrl.s.validated_delivery_address" className="">
+            <div className="wpcf7-response-output wpcf7-mail-sent-ok" ng-show="orderCtrl.s.is_address_validated">
+              Found an address in our delivery area: <br />
+              {/* <span className="title cart">{orderCtrl.s.validated_delivery_address} <button name="remove" ng-click="orderCtrl.ClearAddress()" className="button-remove">X</button></span> */}
+            </div>
+            {/* <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="!orderCtrl.s.is_address_validated">The address {orderCtrl.s.validated_delivery_address} isn't in our <Link target="_blank" href={DELIVERY_LINK}>delivery area</Link></div> */}
+          </span>
+          <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="orderCtrl.s.address_invalid">Unable to determine the specified address. Send us a text or email if you continue having issues.</div>
+        </> : ""
+      }
+      {navComp(handleSubmit(onSubmitCallback), !isValid , false)}
+    </FormProvider>
   </>);
 }
-
-WFulfillmentStageComponent.Stage = {
-  title: "How and when would you like your order?",
-  stepperTitle: "Timing",
-  isComplete: () => false,
-  content: <WFulfillmentStageComponent />
-} as StepData

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Checkbox, FormControlLabel } from '@mui/material';
+import { Typography, Checkbox, FormControlLabel } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { ICREDIT_RESPONSE, OrderFulfillment, DeliveryOrderFulfillment, CustomerInfo, ITOTALS, GenerateServiceTimeDisplayString, DineInOrderFulfillment, CartEntry } from '../common';
@@ -56,7 +56,7 @@ export function WReviewOrderStage({ menu, linearCart, totals, creditResponse, cu
   }
   return (
     <div ng-show="orderCtrl.s.stage === 5 && !orderCtrl.s.isProcessing">
-      <h3 className="flush--top">Everything look right?</h3>
+      <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Everything look right?</Typography>
       <table>
         <tr>
           <td>Name</td>

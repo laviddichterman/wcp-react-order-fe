@@ -2,6 +2,7 @@ import { configureStore, createSelector, EntityId } from "@reduxjs/toolkit";
 import WCartReducer, { getCartEntry } from '../components/WCartSlice';
 import WCustomizerReducer from '../components/WCustomizerSlice';
 import WFulfillmentReducer from '../components/WFulfillmentSlice';
+import WMetricsReducer from '../components/WMetricsSlice';
 import SocketIoReducer, { ICategoriesAdapter, IOptionTypesAdapter, IOptionsAdapter, IProductInstancesAdapter, IProductsAdapter, ProductInstanceFunctionsAdapter } from './SocketIoSlice';
 import SocketIoMiddleware from "./SocketIoMiddleware";
 import { CartEntry } from "../components/common";
@@ -11,7 +12,8 @@ export const store = configureStore({
     fulfillment: WFulfillmentReducer,
     customizer: WCustomizerReducer,
     cart: WCartReducer,
-    ws: SocketIoReducer
+    ws: SocketIoReducer,
+    metrics: WMetricsReducer
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware().concat([SocketIoMiddleware])

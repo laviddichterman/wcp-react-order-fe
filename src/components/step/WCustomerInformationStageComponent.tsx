@@ -1,7 +1,10 @@
+import { Typography } from '@mui/material';
 
 
 export function WCustomerInformationStage() {
   return (
+    <>
+    <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
     <div ng-show="orderCtrl.s.stage === 4">
       <h3 className="flush--top">Tell us a little about you.</h3>
       All information is used solely to facilitate the getting of your pizza to you. We don't sell or share customer information, ever.
@@ -46,5 +49,6 @@ export function WCustomerInformationStage() {
         {/* <button type="submit" className="btn" ng-disabled="!stage3.$valid || orderCtrl.s.submit_failed" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage()">{(!stage3.$valid || orderCtrl.s.submit_failed) ? "Fill out above" : "Next"}</button> */}
       </div>
     </div>
+    </>
   )
 };
