@@ -10,7 +10,7 @@ import { CreateWCPProductFromPI, FilterEmptyCategories, FilterProduct, IMenu, IP
 import { customizeProduct, selectSelectedProduct } from '../WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
-import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors, RootState } from '../../app/store';
+import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart } from '../WCartSlice';
 import useMenu from '../../app/useMenu';
 
@@ -33,6 +33,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
   const { enqueueSnackbar } = useSnackbar();
   const selectProductClassById = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   const selectProductInstanceById = useAppSelector(s => (id: string) => IProductInstancesSelectors.selectById(s, id));
+  const isComplete = useAppSelector(s => s.customizer.selectedProduct === null && s.cart.ids.length > 0);
   const cart = useAppSelector(s => getCart(s.cart));
   const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
   const selectedProduct = useAppSelector(selectSelectedProduct);
@@ -68,7 +69,6 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
       if (productClass) {
         const productCopy: WProduct = { p: CreateWCPProductFromPI(productClass, productInstance, menu.modifiers), m: structuredClone(menu.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu)).length > 0;
-        console.log(productHasSelectableModifiers);
         if ((productInstance.display_flags?.order.skip_customization) || !productHasSelectableModifiers) {
           const matchInCart = FindDuplicateInCart(cart, menu.modifiers, cid, productCopy);
           if (matchInCart !== null) {
@@ -139,7 +139,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
         </div>) : null}
       {selectedProduct !== null ? (<WProductCustomizerComponent menu={menu} suppressGuide={false} />) : null}
       <WOrderCart isProductEditDialogOpen menu={menu} />
-      {selectedProduct === null && navComp(() => { return }, false, false)}
+      {selectedProduct === null && navComp(() => { return }, isComplete, true)}
     </div>
   );
 }

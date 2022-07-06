@@ -1,5 +1,6 @@
 import { useFormContext, Controller } from 'react-hook-form';
-import { Checkbox, FormControlLabel, FormGroup } from '@mui/material';
+import { Checkbox, FormControlLabel, FormGroup, FormHelperText } from '@mui/material';
+import { ErrorMessage } from '@hookform/error-message';
 import { Key } from 'react';
 
 // ----------------------------------------------------------------------
@@ -13,7 +14,11 @@ export function RHFCheckbox({ name, label, ...other } : {name: string, label: Re
           name={name}
           control={control}
           defaultValue={''}
-          render={({ field }) => <Checkbox {...field} checked={field.value === true} />}
+          render={({ field, formState: {errors} }) => <>
+          <Checkbox {...field} checked={field.value === true} />
+          <ErrorMessage errors={errors} name={name} render={({message}) => <FormHelperText error>{message}</FormHelperText>} />
+          </>
+          }
         />
       }
       label={label}
@@ -30,7 +35,7 @@ export function RHFMultiCheckbox({ name, options, ...other } : {name: string, op
     <Controller
       name={name}
       control={control}
-      render={({ field }) => {
+      render={({ field, fieldState: {error} }) => {
         const onSelected = (option : Key) =>
           field.value.includes(option) ? field.value.filter((value: any) => value !== option) : [...field.value, option];
 

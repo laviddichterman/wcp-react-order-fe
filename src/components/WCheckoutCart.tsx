@@ -4,17 +4,23 @@ import { WProductComponent } from './WProductComponent';
 import { CartEntry, ICREDIT_RESPONSE, ITOTALS, OrderFulfillment} from './common';
 import { fCurrency, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE, TAX_RATE } from '../config';
+import useMenu from '../app/useMenu';
+import { useAppSelector } from '../app/useHooks';
+import { getCart } from './WCartSlice';
 
 
 interface ICheckoutCart {
-  menu: any;
-  linearCart: CartEntry[],
-  fulfillment: OrderFulfillment,
   creditResponse?: ICREDIT_RESPONSE,
   totals: ITOTALS
 };
 
-export function WCheckoutCart({ menu, linearCart, fulfillment, creditResponse, totals }: ICheckoutCart) {
+export function WCheckoutCart({ creditResponse, totals }: ICheckoutCart) {
+  const { menu } = useMenu();
+  const cart = useAppSelector(s=>getCart(s.cart));
+  const selectedService = useAppSelector(s=>s.fulfillment.selectedService) as number;
+  if (menu === null) {
+    return null;
+  }
   return (
     <div className="cart">
       <div className="content border-bottom border-none-at-medium">
@@ -33,12 +39,12 @@ export function WCheckoutCart({ menu, linearCart, fulfillment, creditResponse, t
             </tr>
           </thead>
           <tbody>
-            {linearCart.map((cartEntry: CartEntry, i: number) => (
+            {cart.map((cartEntry: CartEntry, i: number) => (
               <tr key={i} className="cart-item">
                 <td className="cart-item-description">
                   <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
                     <div className="menu-list__item">
-                      {/* <WProductComponent product={cartEntry.product.p} allowAdornment={false} description dots={false} price={false} menu={menu} displayContext="order" /> */}
+                      <WProductComponent productMetadata={cartEntry.product.m} allowAdornment={false} description dots={false} price={false} menuModifiers={menu.modifiers} displayContext="order" />
                     </div>
                   </div>
                 </td>
@@ -54,7 +60,7 @@ export function WCheckoutCart({ menu, linearCart, fulfillment, creditResponse, t
                 </td>
               </tr>
             ))}
-            {fulfillment.getType() === DELIVERY_SERVICE ? (
+            {selectedService === DELIVERY_SERVICE ? (
               <tr className="cart-item">
                 <td className="cart-item-description">
                   <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">

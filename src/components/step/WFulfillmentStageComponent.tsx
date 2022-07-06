@@ -4,15 +4,13 @@ import { Typography } from '@mui/material';
 import { isValid as isDateValid, add } from 'date-fns';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { getTermsForService, MAX_PARTY_SIZE, StepNav } from '../common';
+import { getTermsForService, MAX_PARTY_SIZE, StepNav, SERVICE_DATE_FORMAT } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { FormProvider, RHFCheckbox, RHFRadioGroup, RHFDatePicker, RHFSelect } from '../hook-form';
 import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import * as yup from "yup";
 import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
 import { FulfillmentSchema, fulfillmentSchemaInstance, setFulfillment } from '../WFulfillmentSlice';
-
-const SERVICE_DATE_FORMAT = 'EEEE, MMMM dd, yyyy';
 
 export interface CartInfoToDepricate {
   cart_based_lead_time: number;
@@ -52,14 +50,14 @@ function useFulfillmentForm(availability: ReturnType<typeof useAvailabilityHook>
   const useFormApi = useForm<FulfillmentSchema>({
 
 //  seems to be a bug here where this cannot be set?
-    // defaultValues: {
-    //   serviceEnum: 0,
-    //   deliveryInfo: null,
-    //   dineInInfo: null,
-    //   hasAgreedToTerms: false,
-    //   serviceDate: new Date(),
-    //   serviceTime: 0
-    // },
+    defaultValues: {
+      // serviceNum: 0,
+      // deliveryInfo: null,
+      // dineInInfo: null,
+      // hasAgreedToTerms: false,
+      // serviceDate: new Date(),
+      // serviceTime: 0
+    },
     resolver: yupResolver(fulfillmentSchemaInstance),
     mode: "onChange",
 
@@ -73,18 +71,20 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
   const availability = useAvailabilityHook();
   const { services, HasOperatingHoursForService, OptionsForServicesAndDate } = availability;
   const fulfillmentForm = useFulfillmentForm(availability);
-  const { watch, trigger, formState: {isSubmitting, isDirty, isValid}, handleSubmit } = fulfillmentForm;
+  const { watch, getValues, formState: {errors, isSubmitting, isDirty, isValid}, handleSubmit } = fulfillmentForm;
   const values = watch();
-  const { serviceEnum, serviceDate } = values;
-  const serviceTerms = useMemo(() => serviceEnum ? getTermsForService(serviceEnum) : [], [serviceEnum]);
+  const { serviceNum, serviceDate } = values;
+  const serviceTerms = useMemo(() => {
+    const num = parseInt(serviceNum, 10);
+    return Number.isInteger(num) ? getTermsForService(parseInt(serviceNum, 10)) : [];}, [serviceNum]);
   const OptionsForDate = useCallback((d: Date) => {
-    if (serviceEnum === undefined || !isDateValid(d)) {
+    if (serviceNum === "" || !isDateValid(d)) {
       return [];
     }
     const serviceSelectionMap: { [index: string]: boolean } = {};
-    serviceSelectionMap[String(serviceEnum)] = true;
+    serviceSelectionMap[String(serviceNum)] = true;
     return OptionsForServicesAndDate(d, serviceSelectionMap, { size: 0, cart_based_lead_time: 0 });
-  }, [OptionsForServicesAndDate, serviceEnum])
+  }, [OptionsForServicesAndDate, serviceNum])
   const canSelectService = useCallback((service: number) => true, []);
   const ServiceOptions = useMemo(() => {
     return Object.entries(services).filter(([serviceNum, _]) =>
@@ -93,21 +93,24 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
         return { label: serviceName, value: parsedNum, disabled: !canSelectService(parsedNum) };
       });
   }, [services, canSelectService, HasOperatingHoursForService]);
-  const onSubmitCallback = useCallback(() => {
+  const onSubmitCallback = () => {
     console.log("submit")
-    dispatch(setFulfillment(watch()))
-  }, [dispatch, watch]);
+
+    dispatch(setFulfillment(getValues()))
+  };
   if (services === null || ServiceOptions.length === 0) {
     return null;
   }
+console.log(isValid);
+console.log(errors);
 
   return (<>
     <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
-    <div>Service Enum: {serviceEnum}</div>
+    <div>Service Enum: {serviceNum}</div>
     <FormProvider methods={fulfillmentForm} >
 
       <span id="service-selection-radio-buttons-label">Requested Service:</span>
-      <RHFRadioGroup name="serviceEnum" options={ServiceOptions} />
+      <RHFRadioGroup name="serviceNum" options={ServiceOptions} />
       {serviceTerms.length > 0 ?
         <span>
           <RHFCheckbox name="hasAgreedToTerms" label={<>
@@ -120,9 +123,9 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
         </span> : ""}
       <span className="service-date">
         <RHFDatePicker
-          disabled={serviceEnum === undefined}
+          disabled={serviceNum === ""}
           name="serviceDate"
-          label={serviceEnum === undefined ? "Select a requested service first" : "Service Date"}
+          label={serviceNum === "" ? "Select a requested service first" : "Service Date"}
           format={SERVICE_DATE_FORMAT}
           disableMaskedInput
           closeOnSelect
@@ -140,14 +143,14 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
           </option>)}
         </RHFSelect> : ""}
       <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-if="orderCtrl.s.selected_time_timeout">The previously selected service time has expired.</div>
-      {Number(serviceEnum) === Number(DINEIN_SERVICE) ?
+      {Number(serviceNum) === Number(DINEIN_SERVICE) ?
         (<span>
           <RHFSelect className="guest-count" name='dineInInfo.partySize' label="Party Size" >
             {[...Array(MAX_PARTY_SIZE)].map((_, i) => (<option key={i} value={i}>{i}</option>))}
           </RHFSelect>
         </span>) : ""
       }
-      {Number(values.serviceEnum) === DELIVERY_SERVICE ?
+      {Number(values.serviceNum) === DELIVERY_SERVICE ?
         <>
           <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
             <span className="flexbox__item one-whole">Delivery Information:</span>
@@ -193,7 +196,7 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
           <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="orderCtrl.s.address_invalid">Unable to determine the specified address. Send us a text or email if you continue having issues.</div>
         </> : ""
       }
-      {navComp(handleSubmit(onSubmitCallback), !isValid , false)}
+      {navComp(handleSubmit(() => onSubmitCallback()), !!isValid , false)}
     </FormProvider>
   </>);
 }

@@ -3,14 +3,17 @@ import WCartReducer, { getCartEntry } from '../components/WCartSlice';
 import WCustomizerReducer from '../components/WCustomizerSlice';
 import WFulfillmentReducer from '../components/WFulfillmentSlice';
 import WMetricsReducer from '../components/WMetricsSlice';
+import WCustomerInfoReducer from "../components/WCustomerInfoSlice";
 import SocketIoReducer, { ICategoriesAdapter, IOptionTypesAdapter, IOptionsAdapter, IProductInstancesAdapter, IProductsAdapter, ProductInstanceFunctionsAdapter } from './SocketIoSlice';
 import SocketIoMiddleware from "./SocketIoMiddleware";
 import { CartEntry } from "../components/common";
 import { IMenu, MetadataModifierMap } from "@wcp/wcpshared";
+
 export const store = configureStore({
   reducer: {
     fulfillment: WFulfillmentReducer,
     customizer: WCustomizerReducer,
+    ci: WCustomerInfoReducer,
     cart: WCartReducer,
     ws: SocketIoReducer,
     metrics: WMetricsReducer

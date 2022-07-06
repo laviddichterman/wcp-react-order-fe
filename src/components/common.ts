@@ -1,11 +1,13 @@
 import { WCPProduct, WProductMetadata } from '@wcp/wcpshared';
 import React from 'react';
 import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
+import { WFulfillmentState } from './WFulfillmentSlice';
 
 export const TIMING_POLLING_INTERVAL = 30000;
 
 export const MAX_PARTY_SIZE = 10;
 
+export const SERVICE_DATE_FORMAT = 'EEEE, MMMM dd, yyyy';
 export interface WProduct { 
   p: WCPProduct;
   m: WProductMetadata;
@@ -44,7 +46,7 @@ const SERVICE_TERMS_LIST = [[], ["All of our party members 5 years of age and up
   "Our full party will arrive at least 15 minutes before the time we select below. We understand the pizza is scheduled to come out of the oven at the time selected below."],
 []];
 
-export const getTermsForService = (service: number | null) => service !== null ? SERVICE_TERMS_LIST[service] : [];
+export const getTermsForService = (service: number) => SERVICE_TERMS_LIST[service]; 
 
 // var FilterModifiersCurry = function (menu) {
 //   return function (mods) {
@@ -111,7 +113,8 @@ export type CustomerInfo = {
   givenName: string,
   familyName: string,
   mobileNum: string,
-  email: string
+  email: string,
+  referral: string
 };
 
 export interface FulfillmentDT { 
@@ -168,4 +171,4 @@ export interface StepData {
 
 export type OrderFulfillment = PickupOrderFulfillment | DeliveryOrderFulfillment | DineInOrderFulfillment;
 
-export const GenerateServiceTimeDisplayString = (fulfillment : OrderFulfillment) => fulfillment.getType() === DELIVERY_SERVICE ? `${fulfillment.dt.time} to later` : `${fulfillment.dt.time}`;
+

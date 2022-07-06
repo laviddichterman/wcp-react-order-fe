@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import PropTypes, { InferProps } from "prop-types";
 import {TextField } from '@mui/material';
 const wcpshared = require('@wcp/wcpshared');
 

@@ -2,9 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Typography, Checkbox, FormControlLabel } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { ICREDIT_RESPONSE, OrderFulfillment, DeliveryOrderFulfillment, CustomerInfo, ITOTALS, GenerateServiceTimeDisplayString, DineInOrderFulfillment, CartEntry } from '../common';
+import { ICREDIT_RESPONSE, DeliveryOrderFulfillment, CustomerInfo, ITOTALS, DineInOrderFulfillment, StepNav, SERVICE_DATE_FORMAT } from '../common';
 
 import { DELIVERY_SERVICE, DINEIN_SERVICE, ENABLE_DINE_IN_PREPAYMENT } from '../../config';
+import { useAppSelector } from '../../app/useHooks';
+import { SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
+import { format } from 'date-fns';
 
 
 const REQUEST_ANY = "By adding any special instructions, you will only be able to pay in person.";
@@ -13,17 +16,20 @@ const REQUEST_SLICING = "In order to ensure the quality of our pizzas, we will n
 const REQUEST_VEGAN = "Our pizzas cannot be made vegan or without cheese. If you're looking for a vegan option, our Beets By Schrute salad can be made vegan by omitting the bleu cheese.";;
 const REQUEST_SOONER = "It looks like you're trying to ask us to make your pizza sooner. While we would love to do so, the times you were able to select represents our real-time availability. Please send us a text if you're looking for your pizza earlier and it's not a Friday, Saturday, or Sunday, otherwise, you'll need to remove this request to continue with your order.";
 
-interface IWReviewOrderStage {
-  menu: any;
-  services: [string];
-  linearCart: CartEntry[];
-  customerInfo: CustomerInfo;
-  creditResponse: ICREDIT_RESPONSE;
-  fulfillmentInfo: OrderFulfillment;
-  totals: ITOTALS;
-}
-export function WReviewOrderStage({ menu, linearCart, totals, creditResponse, customerInfo, services, fulfillmentInfo }: IWReviewOrderStage) {
-  const serviceTimeDisplayString = useMemo(() => GenerateServiceTimeDisplayString(fulfillmentInfo), [fulfillmentInfo]);
+// interface IWReviewOrderStage {
+//   linearCart: CartEntry[];
+//   customerInfo: CustomerInfo;
+//   creditResponse: ICREDIT_RESPONSE;
+//   fulfillmentInfo: OrderFulfillment;
+//   totals: ITOTALS;
+// }
+export function WReviewOrderStage({ navComp } : { navComp : StepNav }) {
+  const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
+  const { givenName, familyName, mobileNum, email } = useAppSelector(s=> s.ci);
+  const partySize = useAppSelector(s=>s.fulfillment.partySize);
+  const selectedService = useAppSelector(s=>s.fulfillment.selectedService) as number;
+  const serviceTimeDisplayString = useAppSelector(s=>SelectServiceTimeDisplayString(s.fulfillment));
+  const serviceDateTime = useAppSelector(s=>s.fulfillment.dateTime);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [acknowledgeInstructionsDialogue, setAcknowledgeInstructionsDialogue] = useState(false);
   const [disableSubmit, setDisableSubmit] = useState(false);
@@ -32,7 +38,7 @@ export function WReviewOrderStage({ menu, linearCart, totals, creditResponse, cu
     const special_instructions_responses = [];
     let disableorder = false;
     const lowered = ins ? ins.toLowerCase() : "";
-    if (REQUEST_ANY && acknowledgeInstructionsDialogue && !(fulfillmentInfo.getType() === DINEIN_SERVICE && !ENABLE_DINE_IN_PREPAYMENT)) {
+    if (REQUEST_ANY && acknowledgeInstructionsDialogue && !(selectedService === DINEIN_SERVICE && !ENABLE_DINE_IN_PREPAYMENT)) {
       special_instructions_responses.push({level: 0, text: REQUEST_ANY});
     }
     if (REQUEST_HALF && (lowered.indexOf("split") >= 0 || lowered.indexOf("half") >= 0 || lowered.indexOf("1/2") >= 0)) {
@@ -55,38 +61,38 @@ export function WReviewOrderStage({ menu, linearCart, totals, creditResponse, cu
 
   }
   return (
-    <div ng-show="orderCtrl.s.stage === 5 && !orderCtrl.s.isProcessing">
+    <div>
       <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Everything look right?</Typography>
       <table>
         <tr>
           <td>Name</td>
-          <td>{customerInfo.givenName} {customerInfo.familyName}</td>
+          <td>{givenName} {familyName}</td>
         </tr>
         <tr>
           <td>Mobile Number</td>
-          <td>{customerInfo.mobileNum}</td>
+          <td>{mobileNum}</td>
         </tr>
         <tr>
           <td>E-Mail</td>
-          <td>{customerInfo.email}</td>
+          <td>{email}</td>
         </tr>
         <tr>
           <td>Service</td>
-          <td><>{services[fulfillmentInfo.getType()]} on {fulfillmentInfo.dt.day} at {serviceTimeDisplayString}</></td>
+          <td><>{services[selectedService]} on {format(serviceDateTime as number, SERVICE_DATE_FORMAT)} at {serviceTimeDisplayString}</></td>
         </tr>
-        {fulfillmentInfo.getType() === DELIVERY_SERVICE ?
+        {selectedService === DELIVERY_SERVICE ?
           <tr>
             <td>Address</td>
             <td>{(fulfillmentInfo as DeliveryOrderFulfillment).address.formatted_address}{(fulfillmentInfo as DeliveryOrderFulfillment).address.address2 ? `, ${(fulfillmentInfo as DeliveryOrderFulfillment).address.address2}` : ""}</td>
           </tr> : ""}
-        {fulfillmentInfo.getType() === DINEIN_SERVICE ?
-          <tr ng-if="orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN">
+        {selectedService === DINEIN_SERVICE ?
+          <tr>
             <td>Party Size</td>
-            <td>{(fulfillmentInfo as DineInOrderFulfillment).partySize}</td>
+            <td>{partySize as number}</td>
           </tr> : ""}
       </table>
-      <WCheckoutCart menu={menu} linearCart={linearCart} totals={totals} fulfillment={fulfillmentInfo} creditResponse={creditResponse} />
-      {fulfillmentInfo.getType() !== DELIVERY_SERVICE && (!creditResponse || !creditResponse.validation_successful) ?
+      <WCheckoutCart totals={totals} creditResponse={creditResponse} />
+      {selectedService !== DELIVERY_SERVICE && (!creditResponse || !creditResponse.validation_successful) ?
         <div>
           <FormControlLabel
             control={<Checkbox checked={acknowledgeInstructionsDialogue} onChange={(_, checked) => setAcknowledgeInstructionsDialogue(checked)} />}
@@ -95,11 +101,10 @@ export function WReviewOrderStage({ menu, linearCart, totals, creditResponse, cu
           {acknowledgeInstructionsDialogue ? <textarea value={specialInstructions} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} ng-change="orderCtrl.ChangedEscapableInfo()" /> : ""}
         </div> : ""}
       { specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>) }
-      <div className="order-nav">
-        <button type="submit" className="btn" ng-show="orderCtrl.HasPreviousStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.PreviousStage()">Previous</button>
-        <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
-        <button type="submit" className="btn" disabled={disableSubmit} ng-show="orderCtrl.s.acknowledge_instructions_dialogue || (orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT)" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()">Submit Order</button>
-      </div>
+
+      {navComp(() => {return}, !disableSubmit , true)}
+        {/* <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
+        <button type="submit" className="btn" disabled={disableSubmit} ng-show="orderCtrl.s.acknowledge_instructions_dialogue || (orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT)" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()">Submit Order</button> */}
     </div>
   )
 }

@@ -8,6 +8,9 @@ import { useAppDispatch } from '../app/useHooks';
 import { StepData, TIMING_POLLING_INTERVAL } from './common';
 import { setCurrentTime, setPageLoadTime } from './WMetricsSlice';
 import { MenuProvider } from '../app/MenuContext';
+import { WCustomerInformationStage } from './step/WCustomerInformationStageComponent';
+import { WReviewOrderStage } from './step/WReviewOrderStage';
+import { WCheckoutStage } from './step/WCheckoutStageComponent';
 
 export function WOrderingComponent() {
   const dispatch = useAppDispatch();
@@ -30,21 +33,23 @@ export function WOrderingComponent() {
     }
 
     const handleNext = function (cb: () => void) {
+      console.log("trying to handle next");
       if (canNext) {
+        cb();
         setStage(stage + 1);
       }
     }
     return (<Box className="order-nav" sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
       <Button
         color="inherit"
-        disabled={canBack}
-        onSubmit={handleBack}
+        disabled={!canBack}
+        onClick={handleBack}
         sx={{ mr: 1 }}
       >
         Back
       </Button>
       <Box sx={{ flex: '1 1 auto' }} />
-      <Button onSubmit={() => handleNext(onSubmitCallback)} disabled={canNext} sx={{ mr: 1 }}>
+      <Button onClick={() => handleNext(onSubmitCallback)} disabled={!canNext} sx={{ mr: 1 }}>
         Next
       </Button>
       {/* <button type="submit" className="btn" ng-disabled="!orderCtrl.s.date_valid || (orderCtrl.CONFIG.TERMS_LIST[orderCtrl.s.service_type].length > 0 && !orderCtrl.s.acknowledge_terms) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && (!orderCtrl.s.is_address_validated)) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN && (Number.isNaN(orderCtrl.s.number_guests) || orderCtrl.s.number_guests < 1 || orderCtrl.s.number_guests > orderCtrl.CONFIG.MAX_PARTY_SIZE))" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage(); orderCtrl.ClearTimeoutFlag();">Next</button> */}
@@ -60,6 +65,18 @@ export function WOrderingComponent() {
     {
       stepperTitle: "Add items",
       content: <WShopForProductsStage navComp={NavigationCallback} />
+    },
+    {
+      stepperTitle: "Your info",
+      content: <WCustomerInformationStage navComp={NavigationCallback} />
+    },
+    {
+      stepperTitle: "Review order",
+      content: <WReviewOrderStage navComp={NavigationCallback} />
+    },
+    {
+      stepperTitle: "Check Out",
+      content: <WCheckoutStage navComp={NavigationCallback} />
     },
   ];
   
