@@ -30,6 +30,7 @@ export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(false);
   const [storeCreditCode, setStoreCreditCode] = useState("");
   const [orderSubmissionResponse, setOrderSubmissionResponse] = useState({ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
+  const creditResponse = undefined;
   const setAndSubmitStoreCreditIfAble = (value: string) => {
     if (creditResponse && !creditResponse.validation_processing) {
       // if complete credit code format

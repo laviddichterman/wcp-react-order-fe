@@ -1,7 +1,7 @@
 import { Typography } from '@mui/material';
 
 import { WProductComponent } from './WProductComponent';
-import { CartEntry, ICREDIT_RESPONSE, ITOTALS, OrderFulfillment} from './common';
+import { CartEntry, ICREDIT_RESPONSE, ITOTALS } from './common';
 import { fCurrency, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE, TAX_RATE } from '../config';
 import useMenu from '../app/useMenu';

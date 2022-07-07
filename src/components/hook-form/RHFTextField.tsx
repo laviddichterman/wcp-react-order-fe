@@ -2,9 +2,7 @@
 import { useFormContext, Controller } from 'react-hook-form';
 // @mui
 import { TextField } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
-import { useState } from 'react';
-
+import { StaticDatePicker } from '@mui/x-date-pickers';
 
 // ----------------------------------------------------------------------
 export function RHFTextField({ name, label, ...other }: { name: string, label: React.ReactNode, [x: string]: any }) {
@@ -24,7 +22,7 @@ export function RHFTextField({ name, label, ...other }: { name: string, label: R
 // ----------------------------------------------------------------------
 export function RHFDatePicker({ name, label, format, placeholder, disabled, inputProps, ...other }: { name: string, label: React.ReactNode, disabled?: boolean, format: string, inputProps?: object, placeholder?: string, [x: string]: any }) {
   const { control } = useFormContext();
-  const [open, setOpen] = useState(false);
+
   return (
     <Controller
       name={name}
@@ -33,37 +31,29 @@ export function RHFDatePicker({ name, label, format, placeholder, disabled, inpu
       render={({
         field: { onChange, value },
         fieldState: { error }
-      }) => (
-        <DatePicker
+      }) =>
+        {
+          // console.log(error);
+          // console.log(value);
+          return <StaticDatePicker
           {...other}
           disabled={disabled}
-          open={open}
-          onOpen={() => setOpen(disabled === undefined || !disabled)}
-          onClose={() => setOpen(false)}
+          displayStaticWrapperAs="desktop"
+          openTo="day"
           label={label}
-          value={value}
+          value={value || ""}
           inputFormat={format}
           onChange={(value) => onChange(value)}
           renderInput={(params) => (
             (
               <TextField
-                error={error !== undefined}
-                onClick={(e) => setOpen(disabled === undefined || !disabled)}
-                helperText={error?.message}
-                placeholder={placeholder}
-                id={name}
-                fullWidth
-                inputProps={inputProps}
-                disabled={disabled}
-                variant="standard"
-                margin="dense"
-                color="primary"
+                
                 {...params}
               />
             )
           )}
-        />
-      )}
+        />}
+      }
     />
   );
 }

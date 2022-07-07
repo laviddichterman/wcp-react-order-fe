@@ -14,7 +14,7 @@ export default function RHFRadioGroup({ name, options, ...other } : { name: stri
       defaultValue=''
       render={({ field, fieldState: { error } }) => (
         <div>
-          <RadioGroup {...field} row {...other}>
+          <RadioGroup {...field} row {...other} /*onChange={() => trigger([name])}*/ >
             {options.map((option) => (
               <FormControlLabel key={option.value} value={option.value} disabled={option.disabled} control={<Radio />} label={option.label} />
             ))}

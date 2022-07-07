@@ -1,16 +1,16 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
-import { Typography } from '@mui/material';
+import React, { useCallback, useMemo } from 'react';
+import { Typography, FormHelperText } from '@mui/material';
 
-import { isValid as isDateValid, add } from 'date-fns';
+import { isValid as isDateValid, add, startOfDay, differenceInMinutes } from 'date-fns';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { getTermsForService, MAX_PARTY_SIZE, StepNav, SERVICE_DATE_FORMAT } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { FormProvider, RHFCheckbox, RHFRadioGroup, RHFDatePicker, RHFSelect } from '../hook-form';
+import { FormProvider, RHFPhoneInput, RHFCheckbox, RHFRadioGroup, RHFDatePicker, RHFSelect } from '../hook-form';
 import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
-import * as yup from "yup";
 import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { FulfillmentSchema, fulfillmentSchemaInstance, setFulfillment } from '../WFulfillmentSlice';
+import { AggreedToTermsSchema, BaseFulfillmentInfoSchema, DineInInfoRHFSchema, dineInSchema, fulfillmentSchemaInstance, setFulfillment } from '../WFulfillmentSlice';
+import { useEffect } from 'react';
 
 export interface CartInfoToDepricate {
   cart_based_lead_time: number;
@@ -27,9 +27,9 @@ function useAvailabilityHook() {
   const HasOperatingHoursForService = useCallback((serviceNumber: number) =>
     Object.hasOwn(services, String(serviceNumber)) && serviceNumber < operatingHours.length && operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false),
     [services, operatingHours]);
-  const AvailabilityInfoMapForServicesAndDate = useCallback((selectedDate: Date, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) =>
+  const AvailabilityInfoMapForServicesAndDate = useCallback((selectedDate: number, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) =>
     WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtimes, selectedDate, serviceSelection, cartInfo), [settings, leadtimes, blockedOff]);
-  const OptionsForServicesAndDate = useCallback((selectedDate: Date, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) => {
+  const OptionsForServicesAndDate = useCallback((selectedDate: number, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) => {
     const INFO = AvailabilityInfoMapForServicesAndDate(selectedDate, serviceSelection, cartInfo);
     const opts = WDateUtils.GetOptionsForDate(INFO, selectedDate, new Date(currentDate));
     return opts;
@@ -45,46 +45,70 @@ function useAvailabilityHook() {
   };
 }
 
-function useFulfillmentForm(availability: ReturnType<typeof useAvailabilityHook>) {
-
-  const useFormApi = useForm<FulfillmentSchema>({
-
-//  seems to be a bug here where this cannot be set?
+function useFulfillmentForm() {
+  const preselectedServiceDate = useAppSelector(s => s.fulfillment.dateTime);
+  const beginningOfPreselectedDate = useMemo(() => preselectedServiceDate ? startOfDay(preselectedServiceDate) : null, [preselectedServiceDate]);
+  const useFormApi = useForm<BaseFulfillmentInfoSchema & AggreedToTermsSchema>({
     defaultValues: {
-      // serviceNum: 0,
-      // deliveryInfo: null,
-      // dineInInfo: null,
-      // hasAgreedToTerms: false,
-      // serviceDate: new Date(),
-      // serviceTime: 0
+      serviceNum: useAppSelector(s => s.fulfillment.selectedService)?.toString(),
+      serviceDate: beginningOfPreselectedDate?.valueOf(),
+      serviceTime: preselectedServiceDate ? differenceInMinutes(preselectedServiceDate, beginningOfPreselectedDate as Date) : undefined,
+      hasAgreedToTerms: useAppSelector(s=>s.fulfillment.hasAgreedToTerms)
     },
     resolver: yupResolver(fulfillmentSchemaInstance),
     mode: "onChange",
-
   });
 
   return useFormApi;
 }
 
-export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) {
+function useDineInInfoForm() {
+  const preSelectedPartySize = useAppSelector(s => s.fulfillment.dineInInfo?.partySize);
+  const useFormApi = useForm<DineInInfoRHFSchema>({
+    defaultValues: {
+      partySize: preSelectedPartySize
+    },
+    resolver: yupResolver(dineInSchema),
+    mode: "onChange",
+  });
+  return useFormApi;
+}
+
+export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
   const dispatch = useAppDispatch();
   const availability = useAvailabilityHook();
+  const hasSelectedTimeExpired = useAppSelector(s=>s.fulfillment.hasSelectedTimeExpired); // this needs to watch whatever we have selected but not submitted
+  const hasSelectedDateExpired = useAppSelector(s=>s.fulfillment.hasSelectedDateExpired); // this needs to watch whatever we have selected but not submitted
   const { services, HasOperatingHoursForService, OptionsForServicesAndDate } = availability;
-  const fulfillmentForm = useFulfillmentForm(availability);
-  const { watch, getValues, formState: {errors, isSubmitting, isDirty, isValid}, handleSubmit } = fulfillmentForm;
-  const values = watch();
-  const { serviceNum, serviceDate } = values;
+  const fulfillmentForm = useFulfillmentForm();
+  const dineInForm = useDineInInfoForm();
+  const { reset: resetDineInForm,     getValues: getValuesDineInForm, 
+  } = dineInForm;
+  const { watch: watchFulfillmentForm, 
+    getValues: getValuesFulfillmentForm, 
+    reset: resetFulfillmentForm,
+    formState: { errors: errorsFulfillmentForm, isValid }, handleSubmit } = fulfillmentForm;
+  const valuesFulfillmentForm = watchFulfillmentForm();
+  const { serviceNum, serviceDate } = valuesFulfillmentForm;
   const serviceTerms = useMemo(() => {
     const num = parseInt(serviceNum, 10);
-    return Number.isInteger(num) ? getTermsForService(parseInt(serviceNum, 10)) : [];}, [serviceNum]);
-  const OptionsForDate = useCallback((d: Date) => {
+    return Number.isInteger(num) ? getTermsForService(parseInt(serviceNum, 10)) : [];
+  }, [serviceNum]);
+  const OptionsForDate = useCallback((d: number) => {
     if (serviceNum === "" || !isDateValid(d)) {
       return [];
     }
     const serviceSelectionMap: { [index: string]: boolean } = {};
     serviceSelectionMap[String(serviceNum)] = true;
     return OptionsForServicesAndDate(d, serviceSelectionMap, { size: 0, cart_based_lead_time: 0 });
-  }, [OptionsForServicesAndDate, serviceNum])
+  }, [OptionsForServicesAndDate, serviceNum]);
+  
+  // this resets our forms when we change the serviceNum
+  useEffect(() => {
+    resetFulfillmentForm({...getValuesFulfillmentForm(), hasAgreedToTerms: false});
+    resetDineInForm();
+    //resetDeliveryForm();
+  }, [getValuesFulfillmentForm, resetFulfillmentForm, resetDineInForm, serviceNum])
   const canSelectService = useCallback((service: number) => true, []);
   const ServiceOptions = useMemo(() => {
     return Object.entries(services).filter(([serviceNum, _]) =>
@@ -96,14 +120,11 @@ export function WFulfillmentStageComponent({ navComp } : { navComp : StepNav }) 
   const onSubmitCallback = () => {
     console.log("submit")
 
-    dispatch(setFulfillment(getValues()))
+    dispatch(setFulfillment({...getValuesFulfillmentForm(), dineInInfo: getValuesDineInForm(), deliveryInfo: null}))
   };
   if (services === null || ServiceOptions.length === 0) {
     return null;
   }
-console.log(isValid);
-console.log(errors);
-
   return (<>
     <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
     <div>Service Enum: {serviceNum}</div>
@@ -132,17 +153,17 @@ console.log(errors);
           disablePast
           placeholder={"Select Date"}
           maxDate={add(new Date(), { days: 60 })}
-          shouldDisableDate={(e: Date) => OptionsForDate(e).length === 0}
+          shouldDisableDate={(e: Date) => OptionsForDate(e.valueOf()).length === 0}
         />
+        { hasSelectedDateExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service date has expired.</FormHelperText> : "" }
       </span>
-
       {serviceDate !== null ?
-        <RHFSelect className="service-time" name='serviceTime' label="Time">
+        <RHFSelect  className="service-time" name='serviceTime' label="Time" defaultValue="">
           {OptionsForDate(serviceDate).map((o, i) => <option key={i} disabled={o.disabled} value={o.value}>
             {o.value}
           </option>)}
         </RHFSelect> : ""}
-      <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-if="orderCtrl.s.selected_time_timeout">The previously selected service time has expired.</div>
+        { hasSelectedTimeExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service time has expired.</FormHelperText> : "" }
       {Number(serviceNum) === Number(DINEIN_SERVICE) ?
         (<span>
           <RHFSelect className="guest-count" name='dineInInfo.partySize' label="Party Size" >
@@ -150,7 +171,7 @@ console.log(errors);
           </RHFSelect>
         </span>) : ""
       }
-      {Number(values.serviceNum) === DELIVERY_SERVICE ?
+      {Number(serviceNum) === DELIVERY_SERVICE ?
         <>
           <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && !orderCtrl.s.is_address_validated">
             <span className="flexbox__item one-whole">Delivery Information:</span>
@@ -196,7 +217,7 @@ console.log(errors);
           <div className="wpcf7-response-output wpcf7-mail-sent-ng" ng-show="orderCtrl.s.address_invalid">Unable to determine the specified address. Send us a text or email if you continue having issues.</div>
         </> : ""
       }
-      {navComp(handleSubmit(() => onSubmitCallback()), !!isValid , false)}
+      {navComp(handleSubmit(() => onSubmitCallback()), !!isValid, false)}
     </FormProvider>
   </>);
 }

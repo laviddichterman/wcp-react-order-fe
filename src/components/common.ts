@@ -1,7 +1,10 @@
 import { WCPProduct, WProductMetadata } from '@wcp/wcpshared';
 import React from 'react';
 import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
-import { WFulfillmentState } from './WFulfillmentSlice';
+//import {MetadataJson } from 'libphonenumber-js/core';
+import metadata_custom from '../metadata.custom.json';
+
+export const LIBPHONE_METADATA = metadata_custom;
 
 export const TIMING_POLLING_INTERVAL = 30000;
 
@@ -108,7 +111,6 @@ export interface ITOTALS {
   computed_subtotal: number;
 }
 
-export type DeliveryAddress = { formatted_address: string, address2?: string };
 export type CustomerInfo = {
   givenName: string,
   familyName: string,
@@ -121,45 +123,7 @@ export interface FulfillmentDT {
   time: number;
   day: Date;
 }
-export abstract class AOrderFulfillment {
-  abstract getType(): number;
-  dt: FulfillmentDT;
-  constructor(dt : FulfillmentDT) {
-    this.dt = dt;
-  } 
-}
 
-export class PickupOrderFulfillment extends AOrderFulfillment {
-  getType(): number {
-      return 0;
-  }
-};
-
-export class DeliveryOrderFulfillment extends AOrderFulfillment {
-  getType(): number {
-    return 2;
-  };
-  service_fee: number;
-  address: DeliveryAddress;
-  instructions: string | null;
-  constructor(dt : FulfillmentDT, fee: number, address: DeliveryAddress, instructions: string) {
-    super(dt);
-    this.service_fee = fee;
-    this.address = address;
-    this.instructions = instructions;
-  }
-}
-
-export class DineInOrderFulfillment extends AOrderFulfillment {
-  getType(): number {
-    return 1;
-  };
-  partySize: number;
-  constructor(dt : FulfillmentDT, partySize: number) {
-    super(dt);
-    this.partySize = partySize;
-  }
-}
 
 export type StepNav = (onSubmitCallback: () => void, canNext: boolean, canBack: boolean) => React.ReactNode;
 
@@ -167,8 +131,5 @@ export interface StepData {
   stepperTitle: string;
   content: ({navComp} : {navComp : StepNav}) => React.ReactNode;
 }
-
-
-export type OrderFulfillment = PickupOrderFulfillment | DeliveryOrderFulfillment | DineInOrderFulfillment;
 
 

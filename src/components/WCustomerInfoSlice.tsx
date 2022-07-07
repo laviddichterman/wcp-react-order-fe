@@ -10,18 +10,16 @@ export interface ICustomerInfo {
 
 }
 export const customerInfoSchema = yup.object().shape({
-  givenName: yup.string().required("Please enter your given name."),
-  familyName: yup.string().required("Please enter your family name."),
-  mobileNum: yup.string(),
-  email: yup.string().default("").email().required(),
-  referral: yup.string().default("").notRequired()
+  givenName: yup.string().ensure().required("Please enter your given name."),
+  familyName: yup.string().ensure().required("Please enter your family name."),
+  mobileNum: yup.string().ensure(),
+  email: yup.string().ensure().email().required(),
+  referral: yup.string().ensure().notRequired()
 });
 
-//export interface ICustomerInfo extends yup.InferType<typeof customerInfoSchema> { };
 
 
 const initialState: ICustomerInfo = {
-
   givenName: "",
   familyName: "",
   mobileNum: "",

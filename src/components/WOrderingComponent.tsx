@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { SnackbarProvider } from 'notistack';
-import { Typography, Button, Box, Stepper, Step, StepLabel } from '@mui/material';
+import { Button, Box, Stepper, Step, StepLabel } from '@mui/material';
 import { WShopForProductsStage } from './step/WShopForProductsStageComponent';
-import { GenerateMenu, IMenu } from '@wcp/wcpshared';
 import { WFulfillmentStageComponent } from './step/WFulfillmentStageComponent';
 import { useAppDispatch } from '../app/useHooks';
-import { StepData, TIMING_POLLING_INTERVAL } from './common';
+import { TIMING_POLLING_INTERVAL } from './common';
 import { setCurrentTime, setPageLoadTime } from './WMetricsSlice';
 import { MenuProvider } from '../app/MenuContext';
 import { WCustomerInformationStage } from './step/WCustomerInformationStageComponent';
