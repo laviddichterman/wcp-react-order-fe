@@ -1,10 +1,15 @@
+// form
 import { useFormContext, Controller } from 'react-hook-form';
-import { Checkbox, FormControlLabel, FormGroup, FormHelperText } from '@mui/material';
+// @mui
+import { Checkbox, FormControlLabel, FormGroup, FormHelperText, FormControlLabelProps } from '@mui/material';
 import { ErrorMessage } from '@hookform/error-message';
-import { Key } from 'react';
 
 // ----------------------------------------------------------------------
-export function RHFCheckbox({ name, label, ...other } : {name: string, label: React.ReactNode, [x:string]: any}) {
+interface RHFCheckboxProps extends Omit<FormControlLabelProps, 'control'> {
+  name: string;
+}
+
+export function RHFCheckbox({ name, ...other }: RHFCheckboxProps) {
   const { control } = useFormContext();
 
   return (
@@ -13,7 +18,6 @@ export function RHFCheckbox({ name, label, ...other } : {name: string, label: Re
         <Controller
           name={name}
           control={control}
-          defaultValue={''}
           render={({ field, formState: {errors} }) => <>
           <Checkbox {...field} checked={field.value === true} />
           <ErrorMessage errors={errors} name={name} render={({message}) => <FormHelperText error>{message}</FormHelperText>} />
@@ -21,14 +25,21 @@ export function RHFCheckbox({ name, label, ...other } : {name: string, label: Re
           }
         />
       }
-      label={label}
       {...other}
     />
   );
 }
 
 // ----------------------------------------------------------------------
-export function RHFMultiCheckbox({ name, options, ...other } : {name: string, options: {value: Key, label: React.ReactNode}[], [x:string]: any}) {
+interface RHFMultiCheckboxProps extends Omit<FormControlLabelProps, 'control' | 'label'> {
+  name: string;
+  options: {
+    label: React.ReactNode;
+    value: string;
+  }[];
+}
+
+export function RHFMultiCheckbox({ name, options, ...other }: RHFMultiCheckboxProps) {
   const { control } = useFormContext();
 
   return (
@@ -36,9 +47,10 @@ export function RHFMultiCheckbox({ name, options, ...other } : {name: string, op
       name={name}
       control={control}
       render={({ field, fieldState: {error} }) => {
-        const onSelected = (option : Key) =>
-          field.value.includes(option) ? field.value.filter((value: any) => value !== option) : [...field.value, option];
-
+        const onSelected = (option: string) =>
+        field.value.includes(option)
+          ? field.value.filter((value: string) => value !== option)
+          : [...field.value, option];
         return (
           <FormGroup>
             {options.map((option) => (

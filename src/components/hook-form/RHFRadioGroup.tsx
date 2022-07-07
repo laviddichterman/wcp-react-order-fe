@@ -1,22 +1,43 @@
 // form
 import { useFormContext, Controller } from 'react-hook-form';
 // @mui
-import { Radio, RadioGroup, FormHelperText, FormControlLabel } from '@mui/material';
-import { Key } from 'react';
+import {
+  Radio,
+  RadioGroup,
+  FormHelperText,
+  RadioGroupProps,
+  FormControlLabel,
+} from '@mui/material';
 
 // ----------------------------------------------------------------------
-export default function RHFRadioGroup({ name, options, ...other } : { name: string, options: { value : Key, label: React.ReactNode, disabled: boolean }[], [index:string]: any }) {
+
+type IProps = {
+  name: string;
+  options: {
+    label: string;
+    value: any;
+  }[];
+};
+
+type Props = IProps & RadioGroupProps;
+
+export function RHFRadioGroup({ name, options, ...other }: Props) {
   const { control } = useFormContext();
+
   return (
     <Controller
       name={name}
       control={control}
-      defaultValue=''
       render={({ field, fieldState: { error } }) => (
         <div>
-          <RadioGroup {...field} row {...other} /*onChange={() => trigger([name])}*/ >
+          <RadioGroup {...field} row {...other}>
             {options.map((option) => (
-              <FormControlLabel key={option.value} value={option.value} disabled={option.disabled} control={<Radio />} label={option.label} />
+              <FormControlLabel
+                key={option.value}
+                value={option.value}
+                control={<Radio />}
+                label={option.label}
+              />
             ))}
           </RadioGroup>
 

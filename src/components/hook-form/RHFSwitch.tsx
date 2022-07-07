@@ -5,7 +5,7 @@ import { Switch, FormControlLabel } from '@mui/material';
 import React from 'react';
 
 // ----------------------------------------------------------------------
-export default function RHFSwitch({ name, label, ...other } : { name : string, label: React.ReactNode }) {
+export function RHFSwitch({ name, label, ...other } : { name : string, label: React.ReactNode }) {
   const { control } = useFormContext();
 
   return (

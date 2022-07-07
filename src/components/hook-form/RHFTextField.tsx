@@ -1,11 +1,17 @@
 // form
 import { useFormContext, Controller } from 'react-hook-form';
 // @mui
-import { TextField } from '@mui/material';
-import { StaticDatePicker } from '@mui/x-date-pickers';
+import { TextField, TextFieldProps } from '@mui/material';
+import { StaticDatePicker, StaticDatePickerProps } from '@mui/x-date-pickers';
 
 // ----------------------------------------------------------------------
-export function RHFTextField({ name, label, ...other }: { name: string, label: React.ReactNode, [x: string]: any }) {
+type IProps = {
+  name: string;
+};
+
+type Props = IProps & TextFieldProps;
+
+export function RHFTextField({ name, ...other }: Props) {
   const { control } = useFormContext();
 
   return (
@@ -13,14 +19,23 @@ export function RHFTextField({ name, label, ...other }: { name: string, label: R
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
-        <TextField {...field} fullWidth label={label} error={!!error} helperText={error?.message} {...other} />
+        <TextField
+          {...field}
+          fullWidth
+          value={typeof field.value === 'number' && field.value === 0 ? '' : field.value}
+          error={!!error}
+          helperText={error?.message}
+          {...other}
+        />
       )}
     />
   );
 }
 
 // ----------------------------------------------------------------------
-export function RHFDatePicker({ name, label, format, placeholder, disabled, inputProps, ...other }: { name: string, label: React.ReactNode, disabled?: boolean, format: string, inputProps?: object, placeholder?: string, [x: string]: any }) {
+
+type RHFDatePickerProps<TInputDate, TDate> = IProps & StaticDatePickerProps<TInputDate, TDate>;
+export function RHFDatePicker<TInputDate, TDate>({ name, ...other }: RHFDatePickerProps<TInputDate, TDate>) {
   const { control } = useFormContext();
 
   return (
@@ -37,12 +52,9 @@ export function RHFDatePicker({ name, label, format, placeholder, disabled, inpu
           // console.log(value);
           return <StaticDatePicker
           {...other}
-          disabled={disabled}
           displayStaticWrapperAs="desktop"
           openTo="day"
-          label={label}
           value={value || ""}
-          inputFormat={format}
           onChange={(value) => onChange(value)}
           renderInput={(params) => (
             (
