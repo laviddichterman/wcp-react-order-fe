@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Typography, Checkbox, FormControlLabel } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { ICREDIT_RESPONSE, DeliveryOrderFulfillment, CustomerInfo, ITOTALS, DineInOrderFulfillment, StepNav, SERVICE_DATE_FORMAT } from '../common';
+import { ICREDIT_RESPONSE, CustomerInfo, ITOTALS, StepNav, SERVICE_DATE_FORMAT } from '../common';
 
 import { DELIVERY_SERVICE, DINEIN_SERVICE, ENABLE_DINE_IN_PREPAYMENT } from '../../config';
 import { useAppSelector } from '../../app/useHooks';

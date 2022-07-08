@@ -1,26 +1,29 @@
 import { WProductComponent } from './WProductComponent';
 import { CartEntry } from './common';
-import { getCart, lockCartEntry } from './WCartSlice';
+import { getCart, lockCartEntry, updateCartQuantity } from './WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
 import { IMenu } from '@wcp/wcpshared';
 import { GetSelectableModifiersForCartEntry } from '../app/store';
 import { editCartEntry } from './WCustomizerSlice';
-import { TextField } from '@mui/material';
+import { CheckedNumericInput } from './CheckedNumericTextInput';
 
-interface IOrderCart { 
+interface IOrderCart {
   menu: IMenu;
   isProductEditDialogOpen: boolean;
 }
 
 export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
   const dispatch = useAppDispatch();
-  const cart = useAppSelector(s=>getCart(s.cart));
-  const selectSelectableModifiersForEntry = useAppSelector(s => (id : string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
-  const productHasSelectableModifiers = useCallback((id : string, menu: IMenu) => Object.values(selectSelectableModifiersForEntry(id, menu)).length > 0, [selectSelectableModifiersForEntry]);
+  const cart = useAppSelector(s => getCart(s.cart));
+  const selectSelectableModifiersForEntry = useAppSelector(s => (id: string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
+  const productHasSelectableModifiers = useCallback((id: string, menu: IMenu) => Object.values(selectSelectableModifiersForEntry(id, menu)).length > 0, [selectSelectableModifiersForEntry]);
   const setRemoveEntry = (i: number) => {
   };
-  const setEntryQuantity = (i: number, quantity: string, check: boolean) => {
+  const setEntryQuantity = (id: string, quantity: number | null) => {
+    if (quantity !== null) {
+      dispatch(updateCartQuantity({ id, newQuantity: quantity }));
+    }
   };
   const setProductToEdit = (entry: CartEntry) => {
     dispatch(lockCartEntry(entry.id));
@@ -50,7 +53,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
                 </td>
                 <td>
                   <div className="grid-flex grid-valign-middle">
-                    <TextField inputProps={{ inputMode: 'numeric', min: 0, max: 99, pattern: '[0-9]*' }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onBlur={(e) => setEntryQuantity(i, e.target.value, true)} />
+                    <CheckedNumericInput inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*' }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onChange={(value) => setEntryQuantity(cartEntry.id, value)} />
                     <span className="cart-item-remove">
                       <button disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(i)} className="button-remove">X</button>
                     </span>

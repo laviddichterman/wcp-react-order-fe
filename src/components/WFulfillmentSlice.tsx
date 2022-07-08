@@ -3,6 +3,7 @@ import { DELIVERY_SERVICE, DINEIN_SERVICE } from "../config";
 import { getTermsForService, SERVICE_DATE_FORMAT } from "./common";
 import { addMinutes, format } from "date-fns";
 import * as yup from "yup";
+import { WDateUtils } from "@wcp/wcpshared";
 
 
 export const deliveryAddressSchema = yup.object().shape({
@@ -39,50 +40,36 @@ export const fulfillmentSchemaInstance = yup.object().shape({
 });
 
 // export interface FulfillmentSchema extends yup.InferType<typeof fulfillmentSchemaInstance> { };
-export interface AggreedToTermsSchema {
-  hasAgreedToTerms: boolean;
-};
-
-export interface DeliveryInfoSchema {
-  deliveryInfo: {
-    address: string;
-    address2: string;
-    zipcode: string;
-    deliveryInstructions: string;
-    isDeliveryAddressValidated: boolean;
-  } | null;
+export interface DeliveryInfoRHFSchema {
+  address: string;
+  address2: string;
+  zipcode: string;
+  deliveryInstructions: string;
+  validationStatus: 'UNVALIDATED' | 'VALID' | 'INVALID' | 'OUTSIDE_RANGE';
 };
 
 export interface DineInInfoRHFSchema {
   partySize: number;
 };
 
-export interface DineInInfoSchema {
-  dineInInfo: DineInInfoRHFSchema | null;
-};
 
-export interface BaseFulfillmentInfoSchema {
-  serviceNum: string;
-  serviceDate: number | null;
-  serviceTime: number | null;
-};
-
-export type FulfillmentSchema = BaseFulfillmentInfoSchema & AggreedToTermsSchema & DineInInfoSchema & DeliveryInfoSchema;
-
-interface ReduxFulfillmentStateBase {
+export interface WFulfillmentState {
   hasSelectedTimeExpired: boolean;
   hasSelectedDateExpired: boolean;
+  hasAgreedToTerms: boolean;
   selectedService: number | null;
-  dateTime: number | null;
-} 
-
-export type WFulfillmentState = ReduxFulfillmentStateBase & DineInInfoSchema & DeliveryInfoSchema & AggreedToTermsSchema
+  selectedDate: number | null;
+  selectedTime: number | null;
+  dineInInfo: DineInInfoRHFSchema | null;
+  deliveryInfo: DeliveryInfoRHFSchema | null;
+}
 
 const initialState: WFulfillmentState = {
   hasSelectedTimeExpired: false,
   hasSelectedDateExpired: false,
   selectedService: null,
-  dateTime: null,
+  selectedDate: null,
+  selectedTime: null,
   dineInInfo: null,
   deliveryInfo: null,
   hasAgreedToTerms: false
@@ -92,25 +79,41 @@ const WFulfillmentSlice = createSlice({
   name: 'fulfillment',
   initialState: initialState,
   reducers: {
-    setFulfillment(state, action: PayloadAction<FulfillmentSchema>) {
-      state = { 
-        hasSelectedDateExpired: action.payload.serviceDate !== null, // TODO this hasn't been thought out
-        hasSelectedTimeExpired: action.payload.serviceTime !== null,// TODO this hasn't been thought out
-        selectedService: parseInt(action.payload.serviceNum, 10),
-        dateTime: action.payload.serviceDate && action.payload.serviceTime ? addMinutes(action.payload.serviceDate, action.payload.serviceTime).valueOf() : state.dateTime,
-        ...action.payload
-      };
-    }
+    setService(state, action: PayloadAction<number>) {
+      if (state.selectedService !== action.payload) {
+        state.hasSelectedDateExpired = false;
+        state.hasAgreedToTerms = false;
+        state.deliveryInfo = null;
+        state.dineInInfo = null;
+        state.selectedService = action.payload;
+      }
+    },
+    setDate(state, action: PayloadAction<number>) {
+      state.selectedDate = action.payload;
+      state.hasSelectedDateExpired = false;
+    },
+    setTime(state, action: PayloadAction<number>) {
+      state.selectedTime = action.payload;
+      state.hasSelectedTimeExpired = false;
+    },
+    setHasAgreedToTerms(state, action: PayloadAction<boolean>) {
+    },
+    setDineInInfo(state, action: PayloadAction<DineInInfoRHFSchema>) {
+
+    },
+    setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema>) {
+      
+    },
   }
 });
 
 export const SelectServiceTimeDisplayString = createSelector(
   (s: WFulfillmentState) => s.selectedService,
-  (s: WFulfillmentState) => s.dateTime,
-  (service: number | null, dateTime: number | null) => service !== null && dateTime !== null ?
-    (service === DELIVERY_SERVICE ? `${format(dateTime, SERVICE_DATE_FORMAT)} to later` : format(dateTime, SERVICE_DATE_FORMAT)) : "");
+  (s: WFulfillmentState) => s.selectedTime,
+  (service: number | null, selectedTime: number | null) => service !== null && selectedTime !== null ?
+    (service === DELIVERY_SERVICE ? `${WDateUtils.MinutesToPrintTime(selectedTime)} to later` : WDateUtils.MinutesToPrintTime(selectedTime)) : "");
 
-export const { setFulfillment } = WFulfillmentSlice.actions;
+export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms } = WFulfillmentSlice.actions;
 
 
 export default WFulfillmentSlice.reducer;

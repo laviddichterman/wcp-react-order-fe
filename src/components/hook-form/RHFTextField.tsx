@@ -34,7 +34,8 @@ export function RHFTextField({ name, ...other }: Props) {
 
 // ----------------------------------------------------------------------
 
-type RHFDatePickerProps<TInputDate, TDate> = IProps & StaticDatePickerProps<TInputDate, TDate>;
+type RHFDatePickerProps<TInputDate, TDate> = IProps & Omit<StaticDatePickerProps<TInputDate, TDate>, 'value' | 'onSubmit' | 'onChange' | 'renderInput'>;
+
 export function RHFDatePicker<TInputDate, TDate>({ name, ...other }: RHFDatePickerProps<TInputDate, TDate>) {
   const { control } = useFormContext();
 
@@ -59,7 +60,6 @@ export function RHFDatePicker<TInputDate, TDate>({ name, ...other }: RHFDatePick
           renderInput={(params) => (
             (
               <TextField
-                
                 {...params}
               />
             )

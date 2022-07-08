@@ -104,7 +104,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
 
   return (
     <div>
-      <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>{cart.length > 0 ? "Click a pizza below or next to continue." : "Click a pizza below to get started"}</Typography>
+      {selectedProduct === null && <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>{cart.length > 0 ? "Click a pizza below or next to continue." : "Click a pizza below to get started"}</Typography>}
       {menuStage === "MAIN" && selectedProduct === null ? (
         <div className="ordering-menu menu-list menu-list__dotted">
           <ul className="flexitems menu-list__items">
