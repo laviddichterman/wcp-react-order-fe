@@ -1,7 +1,7 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DELIVERY_SERVICE, DINEIN_SERVICE } from "../config";
-import { getTermsForService, SERVICE_DATE_FORMAT } from "./common";
-import { addMinutes, format } from "date-fns";
+import { getTermsForService } from "./common";
+import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
 import { WDateUtils } from "@wcp/wcpshared";
 
@@ -102,10 +102,16 @@ const WFulfillmentSlice = createSlice({
 
     },
     setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema>) {
-      
+
     },
   }
 });
+
+export const SelectServiceDateTime = createSelector(
+  (s: WFulfillmentState) => s.selectedDate,
+  (s: WFulfillmentState) => s.selectedTime,
+  (selectedDate: number | null, selectedTime : number | null) => selectedDate !== null && selectedTime !== null ? subMinutes(addDays(selectedTime, 1), 1440-selectedTime) : null
+);
 
 export const SelectServiceTimeDisplayString = createSelector(
   (s: WFulfillmentState) => s.selectedService,

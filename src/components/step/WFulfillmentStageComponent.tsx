@@ -120,15 +120,15 @@ function DeliveryInfoForm() {
           </span>
         </FormProvider>
       }
-      {validationStatus === 'OUTSIDE_RANGE' ?
+      {validationStatus === 'OUTSIDE_RANGE' &&
         <div className="wpcf7-response-output wpcf7-mail-sent-ng">
           The address {validatedDeliveryAddress} isn't in our <Link target="_blank" href={DELIVERY_LINK}>delivery area</Link>
-        </div> : ""
+        </div>
       }
-      {validationStatus === 'INVALID' ?
+      {validationStatus === 'INVALID' &&
         <div className="wpcf7-response-output wpcf7-mail-sent-ng">
           Unable to determine the specified address. Send us a text or email if you continue having issues.
-        </div> : ""
+        </div>
       }
 
 

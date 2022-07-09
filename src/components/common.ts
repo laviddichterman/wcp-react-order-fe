@@ -1,10 +1,10 @@
 import { WCPProduct, WProductMetadata } from '@wcp/wcpshared';
 import React from 'react';
 import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
-//import {MetadataJson } from 'libphonenumber-js/core';
+import { MetadataJson } from 'libphonenumber-js/core';
 import metadata_custom from '../metadata.custom.json';
 
-export const LIBPHONE_METADATA = metadata_custom;
+export const LIBPHONE_METADATA = metadata_custom as unknown as MetadataJson;
 
 export const TIMING_POLLING_INTERVAL = 30000;
 

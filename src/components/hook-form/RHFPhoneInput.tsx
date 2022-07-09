@@ -1,11 +1,9 @@
-
-import PhoneInput from 'react-phone-number-input/input-core'
-import {Country, Metadata}  from 'react-phone-number-input';
+import PhoneInput, { Country } from 'react-phone-number-input/react-hook-form-input-core'
 import { TextField } from '@mui/material';
-import { Controller, useFormContext } from 'react-hook-form';
-import metadata from '../../metadata.custom.json';
-
-interface IPhoneInputParams { 
+import { useFormContext } from 'react-hook-form';
+import { LIBPHONE_METADATA } from '../common';
+import React from 'react';
+interface IPhoneInputParams {
   name: string;
   country: Country;
   label: React.ReactNode;
@@ -13,18 +11,49 @@ interface IPhoneInputParams {
   [x: string]: any;
 };
 
-export function RHFPhoneInput({ placeholder, label, country, name, ...other } : IPhoneInputParams ) {
+
+export function RHFPhoneInput({ placeholder, label, country, name, ...other }: IPhoneInputParams) {
   const { control } = useFormContext();
-  return "";
-  // return (
-  //   <PhoneInput metadata={metadata as unknown as MetadataJson} country={country} placeholder={placeholder} inputComponent={
-  //     <Controller
-  //     name={name}
-  //     control={control}
-  //     render={({ field, fieldState: { error } }) => (
-  //       <TextField {...field} placeholder={placeholder} fullWidth label={label} error={!!error} helperText={error?.message} {...other} />
-  //     )} />
-  //   } />
-  // );
+  return (
+    <PhoneInput smartCaret control={control} name={name} label={label} metadata={LIBPHONE_METADATA} country={country} placeholder={placeholder}
+      inputComponent={React.forwardRef((props : any, ref) => {
+        const {error } = props;
+      return <TextField 
+        inputRef={ref} 
+        error={!!error}
+        helperText={error?.message} 
+        {...other} 
+        {...props} />})
+      } />
+  );
 }
 
+
+
+/*
+export function RHFPhoneInput({ placeholder, label, country, name, ...other }: IPhoneInputParams) {
+  const { control } = useFormContext();
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState: { error } }) => (
+        <PhoneInput
+          label={label}
+          metadata={LIBPHONE_METADATA}
+          country={country}
+          {...other}
+          placeholder={placeholder}
+          inputComponent={React.forwardRef((props, ref) =>
+            <TextField
+              {...field}
+              inputRef={ref}
+              error={!!error}
+              helperText={error?.message}
+              
+              {...props} />)}
+        />))}
+
+  );
+}
+*/

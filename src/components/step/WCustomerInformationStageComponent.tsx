@@ -7,6 +7,8 @@ import { FormProvider, RHFTextField, RHFPhoneInput } from '../hook-form';
 import { StepNav } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 
+// TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
+
 function useCIForm() {
   const useFormApi = useForm<ICustomerInfo>({
 
@@ -37,7 +39,7 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
   return (
     <>
       <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
-      <Typography>All information is used solely to facilitate the getting of your pizza to you. We don't sell or share customer information, ever.</Typography>
+      <Typography>All information is used solely to facilitate the getting of your pizza to you. We don't sell or share customer information, ever.<br />By filling out this information, you agree to receive text messages relating to your order.</Typography>
       <FormProvider methods={cIForm} >
         <span className="flexbox">
           <span className="flexbox__item one-half">
@@ -45,7 +47,6 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
               name="givenName"
               autoComplete="given-name name"
               label={<label className="customer-name-text">First name:</label>}
-              placeholder={"First Name"}
             />
           </span>
           <span className="flexbox__item one-half soft-half--left">
@@ -53,17 +54,16 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
               name="familyName"
               autoComplete="family-name"
               label={<label className="customer-name-text">Family name:</label>}
-              placeholder={"Family Name"}
             />
           </span>
         </span>
         <RHFPhoneInput
           country='US'
-          name="phoneNumber"
+          name="mobileNum"
           placeholder=''
           label={<label className="phone-number-text">Mobile Phone Number:</label>}
           control={cIForm.control}
-          rules={{ required: true }} />
+        />
         <RHFTextField
           name="email"
           autoComplete="email"
@@ -73,12 +73,11 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
         <div className="user-email-tip"></div>
         <RHFTextField
           name="referral"
-
           label={<label className="referral-info">Referral (optional):</label>}
           placeholder={"Referral"}
         />
       </FormProvider>
-      {navComp(handleSubmit(onSubmitCallback), !isValid, true)}
+      {navComp(handleSubmit(onSubmitCallback), isValid, true)}
     </>
   )
 };

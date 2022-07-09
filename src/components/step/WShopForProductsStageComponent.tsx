@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSnackbar } from 'notistack';
 import { Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
@@ -13,6 +13,7 @@ import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
 import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart } from '../WCartSlice';
 import useMenu from '../../app/useMenu';
+import { SelectServiceDateTime } from '../WFulfillmentSlice';
 
 
 const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date) {
@@ -29,13 +30,14 @@ const ComputeExtrasCategories = (menu: IMenu | null, time: Date): string[] => {
 }
 
 export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
+  const topOfCustomizerRef = useRef();
   const { menu } = useMenu();
   const { enqueueSnackbar } = useSnackbar();
   const selectProductClassById = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   const selectProductInstanceById = useAppSelector(s => (id: string) => IProductInstancesSelectors.selectById(s, id));
   const isComplete = useAppSelector(s => s.customizer.selectedProduct === null && s.cart.ids.length > 0);
   const cart = useAppSelector(s => getCart(s.cart));
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const selectedProduct = useAppSelector(selectSelectedProduct);
   const dispatch = useAppDispatch();
   const [menuStage, setMenuStage] = useState<"MAIN" | "SECONDARY">("MAIN");

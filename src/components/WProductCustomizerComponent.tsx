@@ -5,10 +5,20 @@ import { SettingsTwoTone } from "@mui/icons-material";
 import { WProduct } from './common';
 import { WProductComponent } from './WProductComponent';
 import { IMenu, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
-import { clearCustomizer, selectAllowAdvancedPrompt, selectCartEntryBeingCustomized, selectOptionState, selectSelectedProduct, selectShowAdvanced, setAdvancedModifierOption, setShowAdvanced, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
+import { clearCustomizer, 
+  selectAllowAdvancedPrompt, 
+  selectCartEntryBeingCustomized,
+  selectOptionState, 
+  selectSelectedProduct, 
+  selectShowAdvanced, 
+  setAdvancedModifierOption, 
+  setShowAdvanced, 
+  updateModifierOptionStateCheckbox, 
+  updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from './WCartSlice';
+import { SelectServiceDateTime } from './WFulfillmentSlice';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -18,7 +28,7 @@ interface IModifierOptionToggle {
 
 function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecked }: IModifierOptionToggle) {
   const dispatch = useAppDispatch();
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.mt._id, toggleOptionUnchecked.mo._id);
   const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.mt._id, toggleOptionChecked.mo._id);
   const optionValue = useMemo(() => optionCheckedState?.placement === OptionPlacement.WHOLE, [optionCheckedState?.placement]);
@@ -32,7 +42,7 @@ function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecke
       mtId: toggleOptionChecked.mt._id,
       moId: e.target.checked ? toggleOptionChecked.mo._id : toggleOptionUnchecked.mo._id,
       menu,
-      serviceTime: serviceDateTime
+      serviceTime: serviceDateTime.valueOf()
     }));
   }
   return (
@@ -67,7 +77,7 @@ interface IModifierRadioCustomizerComponent {
 
 export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomizerComponent) {
   const dispatch = useAppDispatch();
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const getObjectStateSelector = useAppSelector(selectOptionState);
   const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers[options[0].mt._id] ?? [])
   const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].mt._id, moId), [options, getObjectStateSelector]);
@@ -81,7 +91,7 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
       mtId: options[0].mt._id,
       moId: e.target.value,
       menu,
-      serviceTime: serviceDateTime
+      serviceTime: serviceDateTime.valueOf()
     }));
   }
   return (<RadioGroup
@@ -115,22 +125,22 @@ function useModifierOptionCheckbox(menu: IMenu, option: WCPOption) {
   const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
   const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
   const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
-  const onUpdateOption = (newState: IOptionState, serviceDateTime: number) => {
+  const onUpdateOption = (newState: IOptionState, serviceDateTime: Date) => {
     dispatch(updateModifierOptionStateCheckbox({
       mt: option.mt,
       mo: option.mo,
       optionState: newState,
       menu,
-      serviceTime: serviceDateTime
+      serviceTime: serviceDateTime.valueOf()
     }));
   };
-  const onClickWhole = (serviceDateTime: number) => {
+  const onClickWhole = (serviceDateTime : Date) => {
     onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier }, serviceDateTime);
   }
-  const onClickLeft = (serviceDateTime: number) => {
+  const onClickLeft = (serviceDateTime : Date) => {
     onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier }, serviceDateTime);
   }
-  const onClickRight = (serviceDateTime: number) => {
+  const onClickRight = (serviceDateTime : Date) => {
     onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier }, serviceDateTime);
   }
   return {
@@ -155,7 +165,8 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
   const { onClickWhole, onClickLeft, onClickRight,
     isWhole, isLeft, isRight,
     optionState } = useModifierOptionCheckbox(menu, option);
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+    
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const canShowAdvanced = useAppSelector(selectShowAdvanced);
   const showAdvanced = useMemo(() => canShowAdvanced && (optionState.enable_left || optionState.enable_right), [canShowAdvanced, optionState]);
   const advancedOptionSelected = useMemo(() => optionState.placement === OptionPlacement.LEFT || optionState.placement === OptionPlacement.RIGHT || optionState.qualifier !== OptionQualifier.REGULAR, [optionState.placement, optionState.qualifier]);
@@ -215,7 +226,7 @@ interface IModifierTypeCustomizerComponent {
   product: WProduct;
 }
 export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModifierTypeCustomizerComponent) {
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const visibleOptions = useMemo(() => {
     const filterUnavailable = menu.modifiers[mtid].modifier_type.display_flags.omit_options_if_not_available;
     const mmEntry = product.m.modifier_map[mtid];
@@ -273,7 +284,7 @@ interface IOptionDetailModal {
 }
 function WOptionDetailModal({ menu, mtid_moid }: IOptionDetailModal) {
   const dispatch = useAppDispatch();
-  const serviceDateTime = useAppSelector(s => s.fulfillment.dateTime);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const option = useMemo(() => menu.modifiers[mtid_moid[0]].options[mtid_moid[1]], [menu.modifiers, mtid_moid]);
   const { onClickWhole, onClickLeft, onClickRight, onUpdateOption,
     isWhole, isLeft, isRight,
@@ -374,7 +385,7 @@ interface IProductCustomizerComponent {
   menu: IMenu;
   suppressGuide: boolean;
 }
-export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCustomizerComponent) {
+export const WProductCustomizerComponent = React.forwardRef(({ menu, suppressGuide }: IProductCustomizerComponent, ref) => {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const categoryId = useAppSelector(s => s.customizer.categoryId);
@@ -424,7 +435,7 @@ export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCus
   }
   return (
     <div className="customizer menu-list__items">
-      { mtid_moid !== null ? <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} /> : "" }
+      { mtid_moid !== null && <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} /> }
       <h3 className="flush--top">
         <strong>Customize {customizerTitle}!</strong>
       </h3>
@@ -457,4 +468,4 @@ export function WProductCustomizerComponent({ menu, suppressGuide }: IProductCus
       </div>
     </div>
   );
-}
+})

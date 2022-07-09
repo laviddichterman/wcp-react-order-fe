@@ -4,6 +4,8 @@ import { getCart, lockCartEntry, updateCartQuantity } from './WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
 import { IMenu } from '@wcp/wcpshared';
+import { IconButton } from '@mui/material';
+import { Clear, Edit } from '@mui/icons-material';
 import { GetSelectableModifiersForCartEntry } from '../app/store';
 import { editCartEntry } from './WCustomizerSlice';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
@@ -53,15 +55,14 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
                 </td>
                 <td>
                   <div className="grid-flex grid-valign-middle">
-                    <CheckedNumericInput inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*' }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onChange={(value) => setEntryQuantity(cartEntry.id, value)} />
+                    <CheckedNumericInput inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*' }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onChange={(value) => setEntryQuantity(cartEntry.id, value)} parseFunction={parseInt} allowEmpty={false} />
                     <span className="cart-item-remove">
-                      <button disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(i)} className="button-remove">X</button>
+                      <IconButton size="small" disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(i)} className="button-remove">
+                        <Clear /></IconButton>
                     </span>
                     {productHasSelectableModifiers(cartEntry.id, menu) ?
                       <span className="cart-item-remove">
-                        <button name="edit" disabled={isProductEditDialogOpen} onClick={() => setProductToEdit(cartEntry)} className="button-sml">
-                          <div className="icon-pencil" />
-                        </button>
+                        <IconButton size="small" disabled={isProductEditDialogOpen || cartEntry.isLocked} onClick={() => setProductToEdit(cartEntry)} className="button-sml"><Edit/></IconButton>
                       </span> : ""}
                   </div>
                 </td>
