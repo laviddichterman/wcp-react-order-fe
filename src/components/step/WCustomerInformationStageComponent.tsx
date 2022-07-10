@@ -6,6 +6,7 @@ import { ICustomerInfo, customerInfoSchema, setCustomerInfo } from '../WCustomer
 import { FormProvider, RHFTextField, RHFPhoneInput } from '../hook-form';
 import { StepNav } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
+import { RHFMailTextField } from '../hook-form/RHFMailTextField';
 
 // TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
 
@@ -21,7 +22,7 @@ function useCIForm() {
       referral: useAppSelector(s => s.ci.referral)
     },
     resolver: yupResolver(customerInfoSchema),
-    mode: "onChange",
+    mode: "onBlur",
 
   });
 
@@ -64,13 +65,12 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
           label={<label className="phone-number-text">Mobile Phone Number:</label>}
           control={cIForm.control}
         />
-        <RHFTextField
+        <RHFMailTextField
           name="email"
           autoComplete="email"
           label={<label className="customer-email-text">E-Mail Address:</label>}
           placeholder={"E-Mail Address"}
         />
-        <div className="user-email-tip"></div>
         <RHFTextField
           name="referral"
           label={<label className="referral-info">Referral (optional):</label>}

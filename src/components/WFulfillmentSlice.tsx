@@ -1,5 +1,5 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DELIVERY_SERVICE, DINEIN_SERVICE } from "../config";
+import { DELIVERY_SERVICE } from "../config";
 import { getTermsForService } from "./common";
 import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
@@ -13,7 +13,7 @@ export const deliveryAddressSchema = yup.object().shape({
     .matches(/^[0-9]+$/, "Please enter a 5 digit zipcode")
     .min(5, "Please enter a 5 digit zipcode")
     .max(5, "Please enter a 5 digit zipcode"),
-  deliveryInstructions: yup.string().ensure().notRequired()
+  //deliveryInstructions: yup.string().ensure().notRequired()
 });
 
 export const dineInSchema = yup.object().shape({
@@ -28,15 +28,7 @@ export const fulfillmentSchemaInstance = yup.object().shape({
     return serviceNum && getTermsForService(parseInt(serviceNum)).length > 0 ?
       s.test('hasAgreedToTerms', "Please accept the terms of service.", (v: boolean | undefined) => v === true) :
       s
-  }),
-  // deliveryInfo: deliveryAddressSchema.when('serviceNum', 
-  // (serviceNum, s) => {
-  //   return serviceNum !== null && parseInt(serviceNum) === DELIVERY_SERVICE ? s.required('Please enter delivery information.') : s
-  // }),
-  // dineInInfo: dineInSchema.when('serviceNum', 
-  // (serviceNum, s) => {
-  //   return serviceNum !== null && parseInt(serviceNum) === DINEIN_SERVICE ? s.required('Please enter dine-in information.') : s
-  // })
+  })
 });
 
 // export interface FulfillmentSchema extends yup.InferType<typeof fulfillmentSchemaInstance> { };
@@ -88,21 +80,22 @@ const WFulfillmentSlice = createSlice({
         state.selectedService = action.payload;
       }
     },
-    setDate(state, action: PayloadAction<number>) {
+    setDate(state, action: PayloadAction<number | null>) {
       state.selectedDate = action.payload;
-      state.hasSelectedDateExpired = false;
+      state.hasSelectedDateExpired = state.hasSelectedDateExpired && action.payload === null;
     },
-    setTime(state, action: PayloadAction<number>) {
+    setTime(state, action: PayloadAction<number | null>) {
       state.selectedTime = action.payload;
-      state.hasSelectedTimeExpired = false;
+      state.hasSelectedTimeExpired = state.hasSelectedTimeExpired && action.payload === null;
     },
     setHasAgreedToTerms(state, action: PayloadAction<boolean>) {
+      state.hasAgreedToTerms = action.payload;
     },
-    setDineInInfo(state, action: PayloadAction<DineInInfoRHFSchema>) {
-
+    setDineInInfo(state, action: PayloadAction<DineInInfoRHFSchema | null>) {
+      state.dineInInfo = action.payload;
     },
-    setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema>) {
-
+    setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema | null>) {
+      state.deliveryInfo = action.payload;
     },
   }
 });
@@ -110,7 +103,7 @@ const WFulfillmentSlice = createSlice({
 export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedDate,
   (s: WFulfillmentState) => s.selectedTime,
-  (selectedDate: number | null, selectedTime : number | null) => selectedDate !== null && selectedTime !== null ? subMinutes(addDays(selectedTime, 1), 1440-selectedTime) : null
+  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? subMinutes(addDays(selectedDate, 1), 1440 - selectedTime) : null
 );
 
 export const SelectServiceTimeDisplayString = createSelector(

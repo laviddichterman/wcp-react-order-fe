@@ -50,7 +50,11 @@ const WCustomerInfoSlice = createSlice({
   initialState: initialState,
   reducers: {
     setCustomerInfo(state, action : PayloadAction<ICustomerInfo>) {
-      state = { ...action.payload };
+      state.email = action.payload.email;
+      state.familyName = action.payload.familyName;
+      state.givenName = action.payload.givenName;
+      state.mobileNum = action.payload.mobileNum;
+      state.referral = action.payload.referral;
     }
   }
 });

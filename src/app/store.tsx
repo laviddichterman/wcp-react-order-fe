@@ -1,13 +1,21 @@
 import { configureStore, createSelector, EntityId } from "@reduxjs/toolkit";
-import WCartReducer, { getCartEntry } from '../components/WCartSlice';
+import WCartReducer, { getCart, getCartEntry } from '../components/WCartSlice';
 import WCustomizerReducer from '../components/WCustomizerSlice';
 import WFulfillmentReducer from '../components/WFulfillmentSlice';
 import WMetricsReducer from '../components/WMetricsSlice';
 import WCustomerInfoReducer from "../components/WCustomerInfoSlice";
-import SocketIoReducer, { ICategoriesAdapter, IOptionTypesAdapter, IOptionsAdapter, IProductInstancesAdapter, IProductsAdapter, ProductInstanceFunctionsAdapter } from './SocketIoSlice';
+import SocketIoReducer, { ICategoriesAdapter, 
+  IOptionTypesAdapter, 
+  IOptionsAdapter, 
+  IProductInstancesAdapter, 
+  IProductsAdapter, 
+  ProductInstanceFunctionsAdapter } from './SocketIoSlice';
 import SocketIoMiddleware from "./SocketIoMiddleware";
 import { CartEntry } from "../components/common";
 import { IMenu, MetadataModifierMap } from "@wcp/wcpshared";
+import WPaymentReducer from "../components/WPaymentSlice";
+import { DELIVERY_FEE, TAX_RATE } from "../config";
+import { RoundToTwoDecimalPlaces } from "../utils/numbers";
 
 export const store = configureStore({
   reducer: {
@@ -16,7 +24,8 @@ export const store = configureStore({
     ci: WCustomerInfoReducer,
     cart: WCartReducer,
     ws: SocketIoReducer,
-    metrics: WMetricsReducer
+    metrics: WMetricsReducer,
+    payment: WPaymentReducer
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware().concat([SocketIoMiddleware])
@@ -45,4 +54,71 @@ export const GetSelectableModifiersForCartEntry = createSelector(
   (_: RootState, __: EntityId, menu: IMenu) => menu,
   (entry: CartEntry | undefined, menu) =>
     entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu): {}
+);
+export const SelectCartSubTotal = createSelector(
+  (s: RootState) => getCart(s.cart),
+  (cart: CartEntry[]) => 
+    cart.reduce((acc, entry)=> acc + (entry.product.m.price * entry.quantity), 0)
+);
+
+export const SelectDeliveryFee = createSelector(
+  (s: RootState) => s.fulfillment.deliveryInfo,
+  (_: RootState) => DELIVERY_FEE,
+  (deliveryInfo, deliveryFee) => deliveryInfo === null ? 0 : deliveryFee
+);
+
+export const SelectSubtotal = createSelector(
+  SelectCartSubTotal,
+  (_: RootState) => DELIVERY_FEE,
+  (cartSubTotal, deliveryFee) => (cartSubTotal + deliveryFee)
+);
+
+export const SelectDiscountApplied = createSelector(
+  SelectSubtotal,
+  (s: RootState) => s.payment.storeCreditValidation,
+  (subtotal, storeCreditValidation) => 
+    storeCreditValidation !== null && storeCreditValidation.type === "DISCOUNT" ? 
+      Math.min(subtotal, storeCreditValidation.amount.amount) : 0
+);
+
+export const SelectTaxAmount = createSelector(
+  SelectSubtotal,
+  (_: RootState) => TAX_RATE,
+  SelectDiscountApplied,
+  (subtotal, taxRate, discount) => RoundToTwoDecimalPlaces((subtotal-discount) * taxRate)
+);
+
+export const SelectTipBasis = createSelector(
+  SelectSubtotal,
+  SelectTaxAmount,
+  (subtotal, taxAmount) => RoundToTwoDecimalPlaces(subtotal + taxAmount)
+);
+
+export const SelectTipValue = createSelector(
+  SelectTipBasis,
+  (s: RootState) => s.payment.selectedTip,
+  (tipBasis, tip) => tip !== null ? (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * tipBasis) : tip.value) : 0
+);
+
+export const SelectTotal = createSelector(
+  SelectSubtotal,
+  SelectDiscountApplied,
+  SelectTaxAmount,
+  SelectTipValue,
+  (subtotal, discount, taxAmount, tipAmount) => 
+    subtotal - discount + taxAmount + tipAmount
+);
+
+export const SelectGiftCardApplied = createSelector(
+  SelectTotal,
+  (s: RootState) => s.payment.storeCreditValidation,
+  (total, storeCreditValidation) => 
+    storeCreditValidation !== null && storeCreditValidation.type === "MONEY" ? 
+      Math.min(total, storeCreditValidation.amount.amount) : 0
+);
+
+export const SelectBalanceAfterCredits = createSelector(
+  SelectTotal,
+  SelectGiftCardApplied,
+  (total, giftCardApplied) => total-giftCardApplied
 );

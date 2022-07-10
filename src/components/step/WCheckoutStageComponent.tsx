@@ -3,18 +3,18 @@ import { Typography, Link, Checkbox, FormControlLabel } from '@mui/material';
 
 import { StoreCreditInputComponent } from '../StoreCreditInputComponent';
 import { WCheckoutCart } from '../WCheckoutCart';
-import { TipSelection, ITOTALS, ICREDIT_RESPONSE, StepNav } from '../common';
+import { StepNav } from '../common';
 
 import { SquarePaymentForm } from '../SquarePaymentForm';
 import { TIP_PREAMBLE } from '../../config';
-import { fCurrency, fPercent } from '../../utils/numbers';
 import { SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
+import { TipSelection } from '../WPaymentSlice';
 import { useAppSelector } from '../../app/useHooks';
 
-const TIP_SUGGESTION_15 = new TipSelection(true, true, 15);
-const TIP_SUGGESTION_20 = new TipSelection(true, true, 20);
+const TIP_SUGGESTION_15 : TipSelection = { value: 15, isSuggestion: true, isPercentage: true };
+const TIP_SUGGESTION_20 : TipSelection = { value: 20, isSuggestion: true, isPercentage: true };
 // const TIP_SUGGESTION_225 = new TipSelection(true, true, 225);
-const TIP_SUGGESTION_25 = new TipSelection(true, true, 25);
+const TIP_SUGGESTION_25 : TipSelection = { value: 25, isSuggestion: true, isPercentage: true };
 // const TIP_SUGGESTION_30 = new TipSelection(true, true, 30);
 
 export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
@@ -25,7 +25,7 @@ export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
   const [tipUiDirty, setTipUiDirty] = useState(false);
   const [autogratEnabled, setAutogratEnabled] = useState(false);
   const tipSuggestionsArray = useMemo(() => [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25], []);
-  const [customTip, setCustomTip] = useState(new TipSelection(false, false, (totals.computed_subtotal + totals.deliveryFee + totals.computed_tax) * TIP_SUGGESTION_20.value));
+  const [customTip, setCustomTip] = useState<TipSelection>({ isPercentage: false, isSuggestion: false, value: (totals.computed_subtotal + totals.deliveryFee + totals.computed_tax) * TIP_SUGGESTION_20.value } );
   const [currentTipSelection, setCurrentTipSelection] = useState<TipSelection | null>(TIP_SUGGESTION_20);
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(false);
   const [storeCreditCode, setStoreCreditCode] = useState("");
@@ -91,7 +91,7 @@ export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
               </button>
             </div>
           </div>
-          <WCheckoutCart totals={totals} creditResponse={creditResponse} />
+          <WCheckoutCart/>
           {selected_time_timeout ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">The previously selected service time has expired. We've updated your service time to {serviceTimeDisplayString}.</div> : ""}
           {creditResponse && creditResponse.validation_fail ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.</div> : ""}
           <div className="flexbox">

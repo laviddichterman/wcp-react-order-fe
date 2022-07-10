@@ -49,8 +49,6 @@ export function RHFDatePicker<TInputDate, TDate>({ name, ...other }: RHFDatePick
         fieldState: { error }
       }) =>
         {
-          // console.log(error);
-          // console.log(value);
           return <StaticDatePicker
           {...other}
           displayStaticWrapperAs="desktop"

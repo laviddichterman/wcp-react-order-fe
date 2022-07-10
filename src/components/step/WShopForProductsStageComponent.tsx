@@ -46,7 +46,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
   const [extrasCategories, setExtrasCategories] = useState<string[]>([]);
   const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => serviceDateTime !== null && menu !== null ? menu.categories[category].menu.filter(FilterProductWrapper(menu, new Date(serviceDateTime))).sort((p) => p.display_flags.order.ordinal) : [], [menu, serviceDateTime]);
 
-  // reinitialize the accordion if the expanded s still in range 
+  // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
     if (serviceDateTime !== null) {
       const extras = ComputeExtrasCategories(menu, new Date(serviceDateTime));

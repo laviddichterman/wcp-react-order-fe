@@ -7,5 +7,9 @@ export function fCurrency(number : number) {
 }
 
 export function fPercent(number : number) {
-  return numeral(number).format('0.0%');
+  return numeral(number).format('0.00%');
+}
+
+export function RoundToTwoDecimalPlaces(number : number ) {
+  return Math.round((number + Number.EPSILON) * 100) / 100;
 }

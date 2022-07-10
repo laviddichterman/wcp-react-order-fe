@@ -1,110 +1,110 @@
-import React, { useState, useMemo } from 'react';
-import { Typography, Checkbox, FormControlLabel } from '@mui/material';
+import React, { useState } from 'react';
+import { Typography, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { ICREDIT_RESPONSE, CustomerInfo, ITOTALS, StepNav, SERVICE_DATE_FORMAT } from '../common';
-
-import { DELIVERY_SERVICE, DINEIN_SERVICE, ENABLE_DINE_IN_PREPAYMENT } from '../../config';
+import { StepNav, SERVICE_DATE_FORMAT } from '../common';
 import { useAppSelector } from '../../app/useHooks';
-import { SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
+import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
 import { format } from 'date-fns';
 
 
-const REQUEST_ANY = "By adding any special instructions, you will only be able to pay in person.";
-const REQUEST_HALF = "While half toppings are not on the menu, we can do them (with the exception of half roasted garlic or half red sauce, half white sauce) but they are charged the same as full toppings. As such, we recommend against them as they're not a good value for the customer and an imbalance of toppings will cause uneven baking of your pizza.";
+const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
+const REQUEST_HALF = "Please use the product customizations earlier in the ordering process to ";
 const REQUEST_SLICING = "In order to ensure the quality of our pizzas, we will not slice them. We'd recommend bringing anything from a bench scraper to a butter knife to slice the pizza. Slicing the whole pizza when it's hot inhibits the crust from properly setting, and can cause the crust to get soggy both during transit and as the pie is eaten. We want your pizza to be the best possible and bringing a tool with which to slice the pie will make a big difference. You will need to remove this request to continue with your order.";
 const REQUEST_VEGAN = "Our pizzas cannot be made vegan or without cheese. If you're looking for a vegan option, our Beets By Schrute salad can be made vegan by omitting the bleu cheese.";;
 const REQUEST_SOONER = "It looks like you're trying to ask us to make your pizza sooner. While we would love to do so, the times you were able to select represents our real-time availability. Please send us a text if you're looking for your pizza earlier and it's not a Friday, Saturday, or Sunday, otherwise, you'll need to remove this request to continue with your order.";
 
-// interface IWReviewOrderStage {
-//   linearCart: CartEntry[];
-//   customerInfo: CustomerInfo;
-//   creditResponse: ICREDIT_RESPONSE;
-//   fulfillmentInfo: OrderFulfillment;
-//   totals: ITOTALS;
-// }
-export function WReviewOrderStage({ navComp } : { navComp : StepNav }) {
+export function WReviewOrderStage({ navComp }: { navComp: StepNav }) {
   const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
-  const { givenName, familyName, mobileNum, email } = useAppSelector(s=> s.ci);
-  const partySize = useAppSelector(s=>s.fulfillment.partySize);
-  const selectedService = useAppSelector(s=>s.fulfillment.selectedService) as number;
-  const serviceTimeDisplayString = useAppSelector(s=>SelectServiceTimeDisplayString(s.fulfillment));
-  const serviceDateTime = useAppSelector(s=>s.fulfillment.dateTime);
+  const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
+  const selectedService = useAppSelector(s => s.fulfillment.selectedService);
+  const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
+  const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
+  const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [acknowledgeInstructionsDialogue, setAcknowledgeInstructionsDialogue] = useState(false);
-  const [disableSubmit, setDisableSubmit] = useState(false);
+  const [disableSubmit, setDisableSubmit] = useState(false); // switch to useMemo
   const [specialInstructionsResponses, setSpecialInstructionsResponses] = useState<{ level: number, text: string }[]>([]);
   const setSpecialInstructionsIntermediate = (ins: string) => {
     const special_instructions_responses = [];
     let disableorder = false;
     const lowered = ins ? ins.toLowerCase() : "";
-    if (REQUEST_ANY && acknowledgeInstructionsDialogue && !(selectedService === DINEIN_SERVICE && !ENABLE_DINE_IN_PREPAYMENT)) {
-      special_instructions_responses.push({level: 0, text: REQUEST_ANY});
+    if (REQUEST_ANY && acknowledgeInstructionsDialogue) {
+      special_instructions_responses.push({ level: 0, text: REQUEST_ANY });
     }
     if (REQUEST_HALF && (lowered.indexOf("split") >= 0 || lowered.indexOf("half") >= 0 || lowered.indexOf("1/2") >= 0)) {
-      special_instructions_responses.push({level: 0, text: REQUEST_HALF});
+      special_instructions_responses.push({ level: 0, text: REQUEST_HALF });
     }
     if (REQUEST_SLICING && (lowered.indexOf("slice") >= 0 || lowered.indexOf("cut") >= 0)) {
       disableorder = true;
-      special_instructions_responses.push({level: 1, text: REQUEST_SLICING});
+      special_instructions_responses.push({ level: 1, text: REQUEST_SLICING });
     }
     if (REQUEST_SOONER && (lowered.indexOf("soon") >= 0 || lowered.indexOf("earl") >= 0 || lowered.indexOf("time") >= 0 || lowered.indexOf("asap") >= 0)) {
       disableorder = true;
-      special_instructions_responses.push({level: 1, text: REQUEST_SOONER});
+      special_instructions_responses.push({ level: 1, text: REQUEST_SOONER });
     }
     if (REQUEST_VEGAN && (lowered.indexOf("no cheese") >= 0 || lowered.indexOf("vegan") >= 0 || lowered.indexOf("without cheese") >= 0)) {
-      special_instructions_responses.push({level: 0, text: REQUEST_VEGAN});
+      special_instructions_responses.push({ level: 0, text: REQUEST_VEGAN });
     }
     setDisableSubmit(disableorder);
     setSpecialInstructionsResponses(special_instructions_responses);
     setSpecialInstructions(ins);
 
   }
+  if (selectedService === null || serviceDateTime === null) {
+    return <div>You found a bug</div>;
+  }
   return (
     <div>
       <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Everything look right?</Typography>
-      <table>
-        <tr>
-          <td>Name</td>
-          <td>{givenName} {familyName}</td>
-        </tr>
-        <tr>
-          <td>Mobile Number</td>
-          <td>{mobileNum}</td>
-        </tr>
-        <tr>
-          <td>E-Mail</td>
-          <td>{email}</td>
-        </tr>
-        <tr>
-          <td>Service</td>
-          <td><>{services[selectedService]} on {format(serviceDateTime as number, SERVICE_DATE_FORMAT)} at {serviceTimeDisplayString}</></td>
-        </tr>
-        {selectedService === DELIVERY_SERVICE ?
-          <tr>
-            <td>Address</td>
-            <td>{(fulfillmentInfo as DeliveryOrderFulfillment).address.formatted_address}{(fulfillmentInfo as DeliveryOrderFulfillment).address.address2 ? `, ${(fulfillmentInfo as DeliveryOrderFulfillment).address.address2}` : ""}</td>
-          </tr> : ""}
-        {selectedService === DINEIN_SERVICE ?
-          <tr>
-            <td>Party Size</td>
-            <td>{partySize as number}</td>
-          </tr> : ""}
-      </table>
-      <WCheckoutCart totals={totals} creditResponse={creditResponse} />
-      {selectedService !== DELIVERY_SERVICE && (!creditResponse || !creditResponse.validation_successful) ?
-        <div>
-          <FormControlLabel
-            control={<Checkbox checked={acknowledgeInstructionsDialogue} onChange={(_, checked) => setAcknowledgeInstructionsDialogue(checked)} />}
-            label="I need to specify some special instructions (which may delay my order or change its cost) and I've already texted or emailed to ensure the request can be handled."
-          />
-          {acknowledgeInstructionsDialogue ? <textarea value={specialInstructions} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} ng-change="orderCtrl.ChangedEscapableInfo()" /> : ""}
-        </div> : ""}
-      { specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>) }
+      <TableContainer component={Paper} >
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>{givenName} {familyName}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Mobile Number</TableCell>
+              <TableCell>{mobileNum}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>E-Mail</TableCell>
+              <TableCell>{email}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Service</TableCell>
+              <TableCell>{services[selectedService]} on {format(serviceDateTime, SERVICE_DATE_FORMAT)} at {serviceTimeDisplayString}</TableCell>
+            </TableRow>
+            {dineInInfo &&
+              <TableRow>
+                <TableCell>Party Size</TableCell>
+                <TableCell>{dineInInfo.partySize}</TableCell>
+              </TableRow>
+            }
+            {deliveryInfo &&
+              <TableRow>
+                <TableCell>Delivery Address</TableCell>
+                <TableCell>{deliveryInfo.address}{deliveryInfo.address2 && ` ${deliveryInfo.address2}`}{`, ${deliveryInfo.zipcode}`}</TableCell>
+              </TableRow>
+            }
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {navComp(() => {return}, !disableSubmit , true)}
-        {/* <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
+      <WCheckoutCart />
+      <div>
+        <FormControlLabel
+          control={<Checkbox checked={acknowledgeInstructionsDialogue} onChange={(_, checked) => setAcknowledgeInstructionsDialogue(checked)} />}
+          label="I need to specify some special instructions (which may delay my order or change its cost) and I've already texted or emailed to ensure the request can be handled."
+        />
+        {acknowledgeInstructionsDialogue ? <textarea value={specialInstructions} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} ng-change="orderCtrl.ChangedEscapableInfo()" /> : ""}
+      </div>
+      {specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>)}
+      {navComp(() => { return }, !disableSubmit, true)}
+      {/* <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
         <button type="submit" className="btn" disabled={disableSubmit} ng-show="orderCtrl.s.acknowledge_instructions_dialogue || (orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT)" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()">Submit Order</button> */}
-    </div>
+    </div >
   )
 }

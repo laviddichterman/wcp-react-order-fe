@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Box, Stepper, Step, StepLabel } from '@mui/material';
+import { Button, Box, Stepper, Step, StepContent, StepLabel } from '@mui/material';
 import { WShopForProductsStage } from './step/WShopForProductsStageComponent';
 import { WFulfillmentStageComponent } from './step/WFulfillmentStageComponent';
 import { useAppDispatch } from '../app/useHooks';
@@ -17,8 +17,12 @@ export function WOrderingComponent() {
   useEffect(() => {
     const checkTiming = () => {
       dispatch(setCurrentTime(new Date().valueOf()));
+      // TODO: need to add a check how fulfillment is impacted by the change of availability from the new "current time"
+      // then we need to check how the cart is impacted by those changes
+      // hopefully we can keep all that logic out of here and just update the current time
     }
     dispatch(setPageLoadTime(new Date().valueOf()));
+    checkTiming();
     const interval = setInterval(checkTiming, TIMING_POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [dispatch]);
@@ -76,6 +80,10 @@ export function WOrderingComponent() {
       stepperTitle: "Check Out",
       content: <WCheckoutStage navComp={NavigationCallback} />
     },
+    {
+      stepperTitle: "Confirmation",
+      content: <WCheckoutStage navComp={NavigationCallback} />
+    },
   ];
   
   return (
@@ -83,15 +91,18 @@ export function WOrderingComponent() {
       <MenuProvider>
         <div className="orderform">
           <span id="ordertop"></span>
-          <Stepper activeStep={stage}>
+          <Stepper activeStep={stage} orientation="vertical">
             {STAGES.map((stg, i) => (
-              <Step key={i} > {/* completed={stg.isComplete}> */}
+              <Step key={i} >
                 <StepLabel>{stg.stepperTitle}</StepLabel>
+                <StepContent>
+                  {stg.content}
+                </StepContent>
               </Step>))}
           </Stepper>
-          <Box>
+          {/* <Box>
             {STAGES[stage].content}
-          </Box>
+          </Box> */}
         </div>
       </MenuProvider>
   );

@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
-import { Autocomplete, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText, MenuItem } from '@mui/material';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Clear } from '@mui/icons-material';
+import { Autocomplete, Button, IconButton, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText, Link} from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
-
-import { isValid as isDateValid, add, startOfDay, differenceInMinutes } from 'date-fns';
+import { isValid as isDateValid, add } from 'date-fns';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { getTermsForService, MAX_PARTY_SIZE, StepNav } from '../common';
@@ -11,8 +11,6 @@ import { FormProvider, RHFTextField } from '../hook-form';
 import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
 import { DeliveryInfoRHFSchema, deliveryAddressSchema, setDate, setDeliveryInfo, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../WFulfillmentSlice';
-import { useEffect } from 'react';
-import { Link } from '@mui/icons-material';
 
 export interface CartInfoToDepricate {
   cart_based_lead_time: number;
@@ -61,21 +59,35 @@ function useDeliveryInfoForm() {
       zipcode: preExisitingDeliveryInfo?.zipcode ?? ""
 
     },
-    resolver: yupResolver(deliveryAddressSchema)
+    resolver: yupResolver(deliveryAddressSchema),
+    mode: 'onBlur'
   });
 
   return useFormApi;
 }
 
 function DeliveryInfoForm() {
+  const dispatch = useAppDispatch();
+  const [isProcessing, setIsProcessing] = useState(false);
   const deliveryForm = useDeliveryInfoForm();
+  const { handleSubmit, reset, formState: { errors, isValid } } = deliveryForm;
   const validationStatus = useAppSelector(s => s.fulfillment.deliveryInfo?.validationStatus ?? 'UNVALIDATED');
   const validatedDeliveryAddress = useAppSelector(s => s.fulfillment.deliveryInfo?.address);
   const validatedDeliveryAddress2 = useAppSelector(s => s.fulfillment.deliveryInfo?.address2 ?? "");
   const validatedZipcode = useAppSelector(s => s.fulfillment.deliveryInfo?.zipcode);
   const resetValidatedAddress = () => {
-
+    reset();
+    dispatch(setDeliveryInfo(null));
   };
+  const validateAddress = () => {
+    if (!isProcessing) {
+      setIsProcessing(true);
+
+      //dispatch(setDeliveryInfo())
+    }
+  }
+
+  console.log(errors)
   return (
 
     <>
@@ -87,7 +99,7 @@ function DeliveryInfoForm() {
           Found an address in our delivery area: <br />
           <span className="title cart">
             {`${validatedDeliveryAddress}${validatedDeliveryAddress2 ? ` ${validatedDeliveryAddress2}` : ''}, ${validatedZipcode}`}
-            <button name="remove" onClick={resetValidatedAddress} className="button-remove">X</button>
+            <IconButton name="remove" onClick={resetValidatedAddress} className="button-remove"><Clear /></IconButton>
           </span>
         </div>
         :
@@ -131,7 +143,6 @@ function DeliveryInfoForm() {
         </div>
       }
 
-
       <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">
         <span className="flexbox__item one-whole">
           <label htmlFor="delivery-instructions-text">
@@ -140,7 +151,7 @@ function DeliveryInfoForm() {
           <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} ng-model="orderCtrl.s.delivery_instructions" ng-change="orderCtrl.ChangedEscapableInfo()" />
         </span>
       </span>
-      <button type="submit" className="btn" ng-click="orderCtrl.ValidateDeliveryAddress()">Validate Delivery Address</button>
+      <Button type="submit" disabled={!isValid || isProcessing} className="btn" onClick={() => handleSubmit(() => validateAddress())}>Validate Delivery Address</Button>
     </>
   )
 }
@@ -158,34 +169,16 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
   }, [selectedService]);
   const hasAgreedToTerms = useAppSelector(s => s.fulfillment.hasAgreedToTerms);
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
+  const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
   const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired); // this needs to watch whatever we have selected but not submitted
   const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired); // this needs to watch whatever we have selected but not submitted
   const valid = useMemo(() => {
     return selectedService !== null && serviceDate !== null && serviceTime !== null &&
-      ((serviceTerms.length > 0 && hasAgreedToTerms) || serviceTerms.length === 0) &&
-      !hasSelectedTimeExpired && !hasSelectedDateExpired;
-  }, [selectedService, serviceDate, serviceTime, hasSelectedTimeExpired, hasSelectedDateExpired, hasAgreedToTerms, serviceTerms])
-  const onChangeServiceSelection = (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
-    const serviceNum = parseInt(value, 10);
-    if (Number.isInteger(serviceNum)) {
-      dispatch(setService(serviceNum));
-    }
-  }
-  const onSetHasAgreedToTerms = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
-    dispatch(setHasAgreedToTerms(checked));
-  }
-  const onSetServiceDate = (v: Date | null) => {
-    if (v !== null) {
-      dispatch(setDate(v.valueOf()));
-    }
-  }
-  const onSetServiceTime = (v: number) => {
-    dispatch(setTime(v));
-  }
-
-  const onSetDineInInfo = (v: number) => {
-    dispatch(setDineInInfo({ partySize: v }));
-  }
+      (serviceTerms.length === 0 || hasAgreedToTerms) &&
+      !hasSelectedTimeExpired && !hasSelectedDateExpired &&
+      (selectedService !== DINEIN_SERVICE || dineInInfo !== null) &&
+      (selectedService !== DELIVERY_SERVICE || deliveryInfo !== null);
+  }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, hasSelectedTimeExpired, hasSelectedDateExpired, dineInInfo, deliveryInfo]);
 
   const OptionsForDate = useCallback((d: number | null) => {
     if (selectedService === null || d === null || !isDateValid(d)) {
@@ -197,6 +190,9 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
   }, [OptionsForServicesAndDate, selectedService]);
 
   const canSelectService = useCallback((service: number) => true, []);
+
+  const TimeOptions = useMemo(() => serviceDate !== null ? OptionsForDate(serviceDate).reduce((acc: { [index: number]: { value: number, disabled: boolean } }, v) => ({ ...acc, [v.value]: v }), {}) : {}, [OptionsForDate, serviceDate]);
+
   const ServiceOptions = useMemo(() => {
     return Object.entries(services).filter(([serviceNum, _]) =>
       HasOperatingHoursForService(parseInt(serviceNum, 10))).map(([serviceNum, serviceName]) => {
@@ -207,6 +203,38 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
   if (services === null || ServiceOptions.length === 0) {
     return null;
   }
+
+  const onChangeServiceSelection = (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
+    const serviceNum = parseInt(value, 10);
+    if (Number.isInteger(serviceNum)) {
+      dispatch(setService(serviceNum));
+    }
+  }
+  const onSetHasAgreedToTerms = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setHasAgreedToTerms(e.target.checked));
+  }
+  const onSetServiceDate = (v: Date | null) => {
+    if (v !== null) {
+      const serviceDateNumber = v.valueOf();
+      // check if the selected servicetime is valid in the new service date
+      if (serviceTime !== null) {
+        const newDateOptions = OptionsForDate(serviceDateNumber);
+        const foundServiceTimeOption = newDateOptions.findIndex(x=>x.value === serviceTime);
+        if (foundServiceTimeOption === -1) {
+          onSetServiceTime(null)
+        }
+      }
+      dispatch(setDate(serviceDateNumber));
+    }
+  }
+  const onSetServiceTime = (v: number | null) => {
+    dispatch(setTime(v));
+  }
+
+  const onSetDineInInfo = (v: number) => {
+    dispatch(setDineInInfo({ partySize: v }));
+  }
+
   return (<>
     <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
     <span id="service-selection-radio-buttons-label">Requested Service:</span>
@@ -224,7 +252,8 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
     {serviceTerms.length > 0 ?
       <span>
         <FormControlLabel control={
-          <><Checkbox value={hasAgreedToTerms} onChange={onSetHasAgreedToTerms} />
+          // @ts-ignore
+          <><Checkbox value={hasAgreedToTerms} onClick={(e) => onSetHasAgreedToTerms(e)} />
           </>} label={<>
             REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
             <ul>
@@ -260,13 +289,14 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
       disableClearable
       noOptionsText="Select a valid service date first"
       id="service-time"
-      options={OptionsForDate(serviceDate)}
-      isOptionEqualToValue={(o, v) => o.value === v.value}
-      getOptionDisabled={o => o.disabled}
-      getOptionLabel={o => WDateUtils.MinutesToPrintTime(o.value)}
-      value={serviceTime !== null ? { disabled: false, value: serviceTime } : null}
+      options={Object.values(TimeOptions).map(x => x.value)}
+      getOptionDisabled={o => TimeOptions[o].disabled}
+      isOptionEqualToValue={(o, v) => o === v}
+      getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
+      // @ts-ignore
+      value={serviceTime || null}
       sx={{ width: 300 }}
-      onChange={(e, v) => onSetServiceTime(v.value)}
+      onChange={(_, v) => onSetServiceTime(v)}
       renderInput={(params) => <TextField {...params} label="Time" />}
     />
     {hasSelectedTimeExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service time has expired.</FormHelperText> : ""}
@@ -280,7 +310,8 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
           options={[...Array(MAX_PARTY_SIZE - 1)].map((_, i) => i + 1)}
           getOptionDisabled={o => !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
           getOptionLabel={o => String(o)}
-          value={dineInInfo?.partySize}
+          // @ts-ignore
+          value={dineInInfo?.partySize ?? null}
           sx={{ width: 300 }}
           onChange={(_, v) => onSetDineInInfo(v)}
           renderInput={(params) => <TextField {...params} label="Party Size" />}

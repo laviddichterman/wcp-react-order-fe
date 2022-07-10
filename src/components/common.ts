@@ -25,20 +25,6 @@ export interface CartEntry extends CoreCartEntry {
   id: string;
   isLocked: boolean;
 };
-export class TipSelection {
-  isSuggestion: boolean;
-  isPercentage: boolean;
-  value: number;
-  constructor(isSuggestion: boolean, isPercentage: boolean, value: number) {
-    this.isSuggestion = isSuggestion;
-    this.isPercentage = isPercentage;
-    this.value = value;
-  }
-  computeCashValue(basis: number) {
-    return this.isPercentage ? basis * this.value : this.value;
-  }
-};
-
 const SERVICE_TERMS_LIST = [[], ["All of our party members 5 years of age and up will provide proof (either digital or physical) of full COVID-19 vaccination AND BOOSTER (if eligible) along with matching ID to Windy City Pie upon arrival.",
   "All members of our party consent to an IR temperature check.",
   "All members of our party who have recently had a COVID-19 infection have tested negative on a rapid test since their last infection.",
@@ -92,17 +78,6 @@ export const getTermsForService = (service: number) => SERVICE_TERMS_LIST[servic
 
 
 export type ILINEAR_CART = CartEntry[];
-
-export interface ICREDIT_RESPONSE {
-  type: string;
-  validation_successful: boolean;
-  validation_fail: boolean;
-  validation_processing: boolean;
-  code: string;
-  amount_used: number;
-  amount: number;
-}
-
 export interface ITOTALS {
   deliveryFee: number;
   balance: number;
