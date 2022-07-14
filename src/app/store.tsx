@@ -13,7 +13,7 @@ import SocketIoReducer, { ICategoriesAdapter,
 import SocketIoMiddleware from "./SocketIoMiddleware";
 import { CartEntry } from "../components/common";
 import { IMenu, MetadataModifierMap } from "@wcp/wcpshared";
-import WPaymentReducer from "../components/WPaymentSlice";
+import WPaymentReducer, { ComputeTipValue } from "../components/WPaymentSlice";
 import { DELIVERY_FEE, TAX_RATE } from "../config";
 import { RoundToTwoDecimalPlaces } from "../utils/numbers";
 
@@ -77,8 +77,8 @@ export const SelectDiscountApplied = createSelector(
   SelectSubtotal,
   (s: RootState) => s.payment.storeCreditValidation,
   (subtotal, storeCreditValidation) => 
-    storeCreditValidation !== null && storeCreditValidation.type === "DISCOUNT" ? 
-      Math.min(subtotal, storeCreditValidation.amount.amount) : 0
+    storeCreditValidation !== null && storeCreditValidation.credit_type === "DISCOUNT" ? 
+      Math.min(subtotal, storeCreditValidation.amount) : 0
 );
 
 export const SelectTaxAmount = createSelector(
@@ -97,7 +97,7 @@ export const SelectTipBasis = createSelector(
 export const SelectTipValue = createSelector(
   SelectTipBasis,
   (s: RootState) => s.payment.selectedTip,
-  (tipBasis, tip) => tip !== null ? (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * tipBasis) : tip.value) : 0
+  (tipBasis, tip) => tip !== null ? ComputeTipValue(tip, tipBasis) : 0
 );
 
 export const SelectTotal = createSelector(
@@ -113,8 +113,8 @@ export const SelectGiftCardApplied = createSelector(
   SelectTotal,
   (s: RootState) => s.payment.storeCreditValidation,
   (total, storeCreditValidation) => 
-    storeCreditValidation !== null && storeCreditValidation.type === "MONEY" ? 
-      Math.min(total, storeCreditValidation.amount.amount) : 0
+    storeCreditValidation !== null && storeCreditValidation.credit_type === "MONEY" ? 
+      Math.min(total, storeCreditValidation.amount) : 0
 );
 
 export const SelectBalanceAfterCredits = createSelector(
@@ -122,3 +122,9 @@ export const SelectBalanceAfterCredits = createSelector(
   SelectGiftCardApplied,
   (total, giftCardApplied) => total-giftCardApplied
 );
+
+export const SelectAutoGratutityEnabled = createSelector(
+  SelectSubtotal,
+  (s: RootState) => s.fulfillment.deliveryInfo,
+  (subtotal, deliveryInfo) => deliveryInfo !== null || subtotal > 80
+)

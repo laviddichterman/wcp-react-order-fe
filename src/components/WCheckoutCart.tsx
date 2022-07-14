@@ -18,7 +18,7 @@ export function WCheckoutCart() {
   const taxValue = useAppSelector(SelectTaxAmount);
   const giftCardApplied = useAppSelector(SelectGiftCardApplied);
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
-  const storeCreditCode = useAppSelector(s => s.payment.storeCreditValidation?.code);
+  const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
 
   const selectedService = useAppSelector(s => s.fulfillment.selectedService) as number;
   if (menu === null || selectedService === null) {
@@ -108,6 +108,7 @@ export function WCheckoutCart() {
                     <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
                       <div className="cart-item-title-subtitle column menu-list__item">
                         <h4 className="menu-list__item-title"><span className="item_title">Gratuity*</span></h4>
+                        <div>Gratuity is distributed in its entirety to non-owner staff working on the day of your order.</div>
                       </div>
                     </div>
                   </TableCell>

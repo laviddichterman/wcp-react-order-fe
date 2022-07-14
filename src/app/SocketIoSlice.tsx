@@ -1,13 +1,12 @@
 import { createEntityAdapter, createSlice, EntityState, PayloadAction } from "@reduxjs/toolkit";
 import { ICatalog, ICategory, IOption, IOptionType, IProduct, IProductInstance, IProductInstanceFunction, IWSettings, JSFEBlockedOff } from "@wcp/wcpshared";
-import { RootState } from "./store";
 
-export const ProductInstanceFunctionsAdapter = createEntityAdapter<IProductInstanceFunction>({selectId: entry => entry._id});
-export const IProductsAdapter = createEntityAdapter<IProduct>({selectId: entry => entry._id});
-export const IProductInstancesAdapter = createEntityAdapter<IProductInstance>({selectId: entry => entry._id});
-export const IOptionTypesAdapter = createEntityAdapter<IOptionType>({selectId: entry => entry._id});
-export const IOptionsAdapter = createEntityAdapter<IOption>({selectId: entry => entry._id});
-export const ICategoriesAdapter = createEntityAdapter<ICategory>({selectId: entry => entry._id});
+export const ProductInstanceFunctionsAdapter = createEntityAdapter<IProductInstanceFunction>({selectId: entry => entry.id});
+export const IProductsAdapter = createEntityAdapter<IProduct>({selectId: entry => entry.id});
+export const IProductInstancesAdapter = createEntityAdapter<IProductInstance>({selectId: entry => entry.id});
+export const IOptionTypesAdapter = createEntityAdapter<IOptionType>({selectId: entry => entry.id});
+export const IOptionsAdapter = createEntityAdapter<IOption>({selectId: entry => entry.id});
+export const ICategoriesAdapter = createEntityAdapter<ICategory>({selectId: entry => entry.id});
 
 export interface SocketIoState { 
   catalog: ICatalog | null;
@@ -17,7 +16,7 @@ export interface SocketIoState {
   productInstances: EntityState<IProductInstance>;
   categories: EntityState<ICategory>;
   productInstanceFunctions: EntityState<IProductInstanceFunction>;
-  services: { [index:string] : string } | null;
+  services: Record<string, string> | null;
   blockedOff: JSFEBlockedOff | null;
   leadtime: number[] | null;
   settings: IWSettings | null;

@@ -1,46 +1,50 @@
 import React, { useState, useMemo } from 'react';
-import { Typography, Link, Checkbox, FormControlLabel } from '@mui/material';
+import { Typography, Input, Button } from '@mui/material';
 
-import { StoreCreditInputComponent } from '../StoreCreditInputComponent';
 import { WCheckoutCart } from '../WCheckoutCart';
 import { StepNav } from '../common';
 
-import { SquarePaymentForm } from '../SquarePaymentForm';
+
 import { TIP_PREAMBLE } from '../../config';
 import { SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
-import { TipSelection } from '../WPaymentSlice';
-import { useAppSelector } from '../../app/useHooks';
+import { TipSelection, ComputeTipValue, setTip } from '../WPaymentSlice';
+import { useAppDispatch, useAppSelector } from '../../app/useHooks';
+import { fCurrency, fPercent } from '../../utils/numbers';
+import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
+import { StoreCreditSection } from '../StoreCreditSection';
+import { CreditCard } from 'react-square-web-payments-sdk';
+import { useEffect } from 'react';
 
-const TIP_SUGGESTION_15 : TipSelection = { value: 15, isSuggestion: true, isPercentage: true };
-const TIP_SUGGESTION_20 : TipSelection = { value: 20, isSuggestion: true, isPercentage: true };
+const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
+const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
 // const TIP_SUGGESTION_225 = new TipSelection(true, true, 225);
-const TIP_SUGGESTION_25 : TipSelection = { value: 25, isSuggestion: true, isPercentage: true };
-// const TIP_SUGGESTION_30 = new TipSelection(true, true, 30);
+const TIP_SUGGESTION_25: TipSelection = { value: .25, isSuggestion: true, isPercentage: true };
+const TIP_SUGGESTION_30: TipSelection = { value: .3, isSuggestion: true, isPercentage: true };
 
-export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
+const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25, TIP_SUGGESTION_30];
+
+export function WCheckoutStage({ navComp }: { navComp: StepNav }) {
+  const dispatch = useAppDispatch();
   const [isProcessing, setIsProcessing] = useState(false);
-  const serviceTimeDisplayString = useAppSelector(s=>SelectServiceTimeDisplayString(s.fulfillment));
-  const [selected_time_timeout, setSelectedTimeTimeout] = useState(false);
-  const tipBasis = 0; //useMemo(() => totals.computed_subtotal + totals.deliveryFee + totals.computed_tax, [totals.computed_subtotal, totals.deliveryFee, totals.computed_tax]);
-  const [tipUiDirty, setTipUiDirty] = useState(false);
-  const [autogratEnabled, setAutogratEnabled] = useState(false);
-  const tipSuggestionsArray = useMemo(() => [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25], []);
-  const [customTip, setCustomTip] = useState<TipSelection>({ isPercentage: false, isSuggestion: false, value: (totals.computed_subtotal + totals.deliveryFee + totals.computed_tax) * TIP_SUGGESTION_20.value } );
-  const [currentTipSelection, setCurrentTipSelection] = useState<TipSelection | null>(TIP_SUGGESTION_20);
-  const [isCustomTipSelected, setIsCustomTipSelected] = useState(false);
-  const [storeCreditCode, setStoreCreditCode] = useState("");
-  const [orderSubmissionResponse, setOrderSubmissionResponse] = useState({ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
-  const creditResponse = undefined;
-  const setAndSubmitStoreCreditIfAble = (value: string) => {
-    if (creditResponse && !creditResponse.validation_processing) {
-      // if complete credit code format
+  const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
+  const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
+  const tipBasis = useAppSelector(SelectTipBasis);
+  const balance = useAppSelector(SelectBalanceAfterCredits);
+  const squarePayment = useAppSelector(s => s.payment.squarePayment);
+  const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
+  const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length-1), [autogratEnabled]);
+  const currentTipSelection = useAppSelector(s=>s.payment.selectedTip);
+  const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
+  const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis).toFixed(2));
+  const [orderSubmissionResponse, setOrderSubmissionResponse] = useState(null);//{ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
+  useEffect(() => {
+    if (currentTipSelection === null) {
+      dispatch(setTip(TIP_SUGGESTION_20));
     }
-    else {
-      setStoreCreditCode(value);
-    }
-  }
-  const setCreditResponse = (response: any) => {
+  }, [currentTipSelection, dispatch])
 
+  const onChangeSelectedTip = (tip : TipSelection) => { 
+    dispatch(setTip(tip));
   }
   const submitNoBalanceDue = () => {
 
@@ -49,22 +53,41 @@ export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
     setIsProcessing(true);
     // setOrderSubmissionResponse({});
   }
-  const [useCreditCheckbox, setUseCreditCheckbox] = useState(false);
-  
-  
-  const setSuggestedTipHandler = (tip: TipSelection) => {
-    setTipUiDirty(true);
-    setCurrentTipSelection(tip);
-    const newTipCashValue = tip.computeCashValue(tipBasis);
-    if (customTip.computeCashValue(tipBasis) < newTipCashValue) {
-      setCustomTip(new TipSelection(false, false, newTipCashValue));
+
+  const resetCustomTip = () => {
+    const resetValue = ComputeTipValue(TIP_SUGGESTION_20, tipBasis);
+    setCustomTipAmount(resetValue.toFixed(2));
+    dispatch(setTip({value: resetValue, isPercentage: false, isSuggestion: false}));
+  }
+
+  const setCustomTipAmountIntercept = (value : string) => {
+    setIsCustomTipSelected(true);
+    // setTipUiDirty(true);
+    const parsedValue = parseFloat(value);
+    if (!isFinite(parsedValue) || !isNaN(parsedValue) || parsedValue < 0) {
+      resetCustomTip()
+    }
+    setCustomTipAmount(value);
+    dispatch(setTip({value: parsedValue, isPercentage: false, isSuggestion: false}));
+  }
+
+  const onSelectSuggestedTip = (tip : TipSelection) => { 
+    // setTipUiDirty(true);
+    setIsCustomTipSelected(false);
+    onChangeSelectedTip(tip);
+    const newTipCashValue = ComputeTipValue(tip, tipBasis);
+    if (parseFloat(customTipAmount) < newTipCashValue) {
+      setCustomTipAmount(newTipCashValue.toFixed(2));
     }
   }
-  const setCustomTipHandler = (value: string, correctInvalid: boolean) => {
-    if (autogratEnabled) {
 
+  const setCustomTipHandler = (value: string) => {
+    const numericValue = parseFloat(value);
+    if (autogratEnabled || numericValue < 0) {
+      resetCustomTip();
     } else {
-
+      setCustomTipAmount(numericValue.toFixed(2));
+      dispatch(setTip({value: numericValue, isPercentage: false, isSuggestion: false}));
     }
   }
   if (!isProcessing) {
@@ -76,82 +99,37 @@ export function WCheckoutStage({ navComp } : { navComp : StepNav }) {
           <div className="flexbox">
             {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
               <div className="flexbox__item one-third soft-quarter">
-                <button onClick={() => { setTipUiDirty(true); setCurrentTipSelection(tip) }} className={`btn tipbtn flexbox__item one-whole${currentTipSelection === tip ? ' selected' : ''}`} >
+                <Button onClick={() => onSelectSuggestedTip(tip)} className={`btn tipbtn flexbox__item one-whole${currentTipSelection === tip ? ' selected' : ''}`} >
                   <h3 className="flush--bottom">{fPercent(tip.value)}</h3>
-                  <h5 className="flush--top">{fCurrency(tip.computeCashValue(tipBasis))}</h5>
-                </button>
+                  <h5 className="flush--top">{fCurrency(ComputeTipValue(tip, tipBasis))}</h5>
+                </Button>
               </div>
             )}
           </div>
           <div className="flexbox">
             <div className="flexbox__item one-third soft-quarter" >
-              <button onClick={() => setIsCustomTipSelected(true)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
+              <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
                 <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <input value={customTip.value} onChange={(e) => setCustomTipHandler(e.target.value, false)} onBlur={(e) => setCustomTipHandler(e.target.value, true)} type="number" className="quantity" min={0} /> : ""}
+                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
               </button>
             </div>
           </div>
-          <WCheckoutCart/>
-          {selected_time_timeout ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">The previously selected service time has expired. We've updated your service time to {serviceTimeDisplayString}.</div> : ""}
-          {creditResponse && creditResponse.validation_fail ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.</div> : ""}
+          <WCheckoutCart />
+          {hasSelectedTimeExpired ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">The previously selected service time has expired. We've updated your service time to {serviceTimeDisplayString}.</div> : ""}
           <div className="flexbox">
             <h4 className="flexbox__item one-whole">Payment Information:</h4>
           </div>
-          <div className="soft-half">
-            <div className="flexbox">
-              <FormControlLabel
-                className='flexbox__item'
-                control={<Checkbox checked={useCreditCheckbox} onChange={(e) => setUseCreditCheckbox(e.target.checked)} />}
-                label="Use Digital Gift Card / Store Credit"
-              />
-            </div>
-            {useCreditCheckbox ?
-              <div className="flexbox">
-                <div className="flexbox__item one-tenth"><label htmlFor="store_credit_code">Code:</label></div>
-                <div className="flexbox__item soft-half--left three-quarters">
-                  <span className="float--right">
-                    <StoreCreditInputComponent disabled={creditResponse && (creditResponse.validation_successful || creditResponse.validation_processing)} size="20" value={storeCreditCode} onChange={(e) => setAndSubmitStoreCreditIfAble(e.target.value)} />
-                  </span>
-                </div>
-                <div className="flexbox__item soft-half--left">
-                  <span className={creditResponse?.validation_successful ? "icon-check-circle" : (creditResponse?.validation_fail ? "icon-exclamation-circle" : "")} />
-                </div>
-              </div> : ""}
-          </div>
+          <StoreCreditSection />
           <div>
-            {totals.balance === 0 ? "" : <SquarePaymentForm />}
+            {balance > 0 && <>
+              <CreditCard />
+              {/* <GooglePay />
+              <ApplePay /> */}
+            </>}
             <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
-            {navComp(() => {return}, isProcessing , true)}
-            <div className="order-nav" ng-show="orderCtrl.s.stage === 6">
-              <button type="submit" className="btn" disabled={isProcessing} ng-show="orderCtrl.HasPreviousStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.PreviousStage()">Previous</button>
-              <button ng-show="orderCtrl.s.balance > 0" id="sq-creditcard" className="btn" ng-click="orderCtrl.ScrollTop(); submitForm()" ng-disabled="orderCtrl.s.isProcessing">Pay and submit order!</button>
-              <button ng-show="orderCtrl.s.balance == 0" className="btn" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()" ng-disabled="orderCtrl.s.isProcessing">Pay and submit order!</button>
-            </div>
-            <div ng-hide="orderCtrl.s.tip_value === 0">* Gratuity is distributed in its entirety to front and back of house.</div>
+            {navComp(() => { return }, isProcessing, true)}
           </div>
         </div>);
-    }
-    else {
-      // case: we've got an orderSubmissionResponse and it's done processing, show the results
-      if (orderSubmissionResponse.successful) {
-        return <div>
-          <div className="submitsuccess wpcf7-response-output wpcf7-mail-sent-ok">Order submitted successfully! Please check your email.</div>
-          {orderSubmissionResponse.squarePayment ? <div>
-            Payment of ${fCurrency(orderSubmissionResponse.squarePayment.money_charged / 100)} received from card ending in: {orderSubmissionResponse.squarePayment.last4}!
-            Here's your <Link href={orderSubmissionResponse.squarePayment.receipt_url} target="_blank" rel="noopener">receipt</Link>.
-          </div> : ""}
-          {creditResponse?.validation_successful && creditResponse.amount_used > 0 ? (<div>
-            Digital Gift Card number {creditResponse.code} debited ${fCurrency(creditResponse.amount_used)}.
-            <span>{creditResponse.amount_used === creditResponse.amount ? "No balance remains." : `Balance of ${fCurrency(creditResponse.amount - creditResponse.amount_used)} remains.`}</span>
-          </div>) : ""}
-        </div>
-      }
-      else {
-        return (
-          <div>
-            <div className="wpcf7-response-output wpcf7-validation-errors" >We had some issues processing your order. Please send us a text message or email so we can look into it.</div>
-          </div>);
-      }
     }
   }
   // case: it's processing... show that we're waiting on the results

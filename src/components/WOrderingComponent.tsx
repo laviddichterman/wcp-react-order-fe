@@ -9,6 +9,8 @@ import { MenuProvider } from '../app/MenuContext';
 import { WCustomerInformationStage } from './step/WCustomerInformationStageComponent';
 import { WReviewOrderStage } from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
+import { PaymentForm } from 'react-square-web-payments-sdk';
+import { WConfirmationStageComponent } from './step/WConfirmationStageComponent';
 
 export function WOrderingComponent() {
   const dispatch = useAppDispatch();
@@ -82,13 +84,17 @@ export function WOrderingComponent() {
     },
     {
       stepperTitle: "Confirmation",
-      content: <WCheckoutStage navComp={NavigationCallback} />
+      content: <WConfirmationStageComponent navComp={NavigationCallback} />
     },
   ];
   
   return (
 
       <MenuProvider>
+        <PaymentForm applicationId='sq0idp-5Sc3Su9vHj_1Xf4t6-9CZg' locationId='EGPJ5YTX6F2TP' cardTokenizeResponseReceived={(token, verifiedBuyer) => {
+        console.info('Token:', token);
+        console.info('Verified Buyer:', verifiedBuyer);
+      }}>
         <div className="orderform">
           <span id="ordertop"></span>
           <Stepper activeStep={stage} orientation="vertical">
@@ -104,6 +110,7 @@ export function WOrderingComponent() {
             {STAGES[stage].content}
           </Box> */}
         </div>
+        </PaymentForm>
       </MenuProvider>
   );
 

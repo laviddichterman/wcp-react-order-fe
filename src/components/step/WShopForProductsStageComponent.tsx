@@ -3,10 +3,10 @@ import { useSnackbar } from 'notistack';
 import { Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { PIZZAS_CATID, EXTRAS_CATID } from '../../config';
-import { StepNav, WProduct } from '../common';
+import { StepNav } from '../common';
 import { WProductComponent } from '../WProductComponent';
 import { WOrderCart } from '../WOrderCartComponent';
-import { CreateWCPProductFromPI, FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
+import { CreateWCPProductFromPI, WProduct, FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
 import { customizeProduct, selectSelectedProduct } from '../WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
@@ -40,7 +40,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const selectedProduct = useAppSelector(selectSelectedProduct);
   const dispatch = useAppDispatch();
-  const [menuStage, setMenuStage] = useState<"MAIN" | "SECONDARY">("MAIN");
+  const [menuStage, setMenuStage] = useState<"MAIN" | "SECONDARY">("SECONDARY");
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
   const [extrasCategories, setExtrasCategories] = useState<string[]>([]);
@@ -112,8 +112,8 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
           <ul className="flexitems menu-list__items">
             {ProductsForCategoryFilteredAndSorted(PIZZAS_CATID).map((p: IProductInstance, i: number) =>
               <li key={i} className="flexitem menu-list__item">
-                <div className="offer-link" onClick={(e) => onProductSelection(e, PIZZAS_CATID, p._id)}>
-                  <WProductComponent productMetadata={menu.product_instance_metadata[p._id]} allowAdornment description dots price menuModifiers={menu.modifiers} displayContext="order" />
+                <div className="offer-link" onClick={(e) => onProductSelection(e, PIZZAS_CATID, p.id)}>
+                  <WProductComponent productMetadata={menu.product_instance_metadata[p.id]} allowAdornment description dots price menuModifiers={menu.modifiers} displayContext="order" />
                 </div>
               </li>)}
           </ul>
@@ -131,8 +131,8 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
                   {menu.categories[subcatid].subtitle ? <li className="menu-list__item"><strong><span dangerouslySetInnerHTML={{ __html: menu.categories[subcatid].subtitle || "" }}></span></strong></li> : ""}
                   {ProductsForCategoryFilteredAndSorted(subcatid).map((p: IProductInstance, j: number) =>
                     <li key={j} className="menu-list__item">
-                      <div className="offer-link" onClick={(e) => onProductSelection(e, subcatid, p._id)}>
-                        <WProductComponent productMetadata={menu.product_instance_metadata[p._id]} allowAdornment description dots price menuModifiers={menu.modifiers} displayContext="order" />
+                      <div className="offer-link" onClick={(e) => onProductSelection(e, subcatid, p.id)}>
+                        <WProductComponent productMetadata={menu.product_instance_metadata[p.id]} allowAdornment description dots price menuModifiers={menu.modifiers} displayContext="order" />
                       </div>
                     </li>)}
                 </ul>

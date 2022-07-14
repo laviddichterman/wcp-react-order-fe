@@ -31,7 +31,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
     dispatch(lockCartEntry(entry.id));
     dispatch(editCartEntry(entry));
   };
-  return cart.length === 0 ? <>Empty</> :
+  return cart.length === 0 ? null :
     <div className="cart">
       <hr className="separator" />
       <h3 className="flush">Current Order</h3>

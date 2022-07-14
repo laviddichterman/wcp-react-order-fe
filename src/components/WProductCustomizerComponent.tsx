@@ -2,9 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import { FormControl, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone } from "@mui/icons-material";
-import { WProduct } from './common';
 import { WProductComponent } from './WProductComponent';
-import { IMenu, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
+import { IMenu, WProduct, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
 import { clearCustomizer, 
   selectAllowAdvancedPrompt, 
   selectCartEntryBeingCustomized,
@@ -29,8 +28,8 @@ interface IModifierOptionToggle {
 function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecked }: IModifierOptionToggle) {
   const dispatch = useAppDispatch();
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
-  const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.mt._id, toggleOptionUnchecked.mo._id);
-  const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.mt._id, toggleOptionChecked.mo._id);
+  const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.mt.id, toggleOptionUnchecked.mo.id);
+  const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.mt.id, toggleOptionChecked.mo.id);
   const optionValue = useMemo(() => optionCheckedState?.placement === OptionPlacement.WHOLE, [optionCheckedState?.placement]);
   if (!optionUncheckedState || !optionCheckedState || !serviceDateTime) {
     return null;
@@ -39,8 +38,8 @@ function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecke
     e.preventDefault();
     //dispatch(set appropriate option value)
     dispatch(updateModifierOptionStateToggleOrRadio({
-      mtId: toggleOptionChecked.mt._id,
-      moId: e.target.checked ? toggleOptionChecked.mo._id : toggleOptionUnchecked.mo._id,
+      mtId: toggleOptionChecked.mt.id,
+      moId: e.target.checked ? toggleOptionChecked.mo.id : toggleOptionUnchecked.mo.id,
       menu,
       serviceTime: serviceDateTime.valueOf()
     }));
@@ -79,8 +78,8 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
   const dispatch = useAppDispatch();
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const getObjectStateSelector = useAppSelector(selectOptionState);
-  const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers[options[0].mt._id] ?? [])
-  const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].mt._id, moId), [options, getObjectStateSelector]);
+  const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers[options[0].mt.id] ?? [])
+  const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].mt.id, moId), [options, getObjectStateSelector]);
   if (!serviceDateTime) {
     return null;
   }
@@ -88,7 +87,7 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     dispatch(updateModifierOptionStateToggleOrRadio({
-      mtId: options[0].mt._id,
+      mtId: options[0].mt.id,
       moId: e.target.value,
       menu,
       serviceTime: serviceDateTime.valueOf()
@@ -97,15 +96,15 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
   return (<RadioGroup
     onChange={onChange}
     value={modifierOptionState.length === 1 ? modifierOptionState[0].option_id : null}
-    aria-labelledby={`modifier_control_${options[0].mt._id}`}>{
+    aria-labelledby={`modifier_control_${options[0].mt.id}`}>{
       options.map((opt, i) => <span className="option-circle-container" key={i}>
         <FormControlLabel
           disableTypography
           className="option-whole option-circle"
-          value={opt.mo._id}
+          value={opt.mo.id}
           control={<Radio
             className="input-whole"
-            disabled={!getOptionState(opt.mo._id)?.enable_whole}
+            disabled={!getOptionState(opt.mo.id)?.enable_whole}
           />}
           label={<span className='topping_text'>{opt.mo.item.display_name}</span>} />
       </span>)}
@@ -121,7 +120,7 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
 
 function useModifierOptionCheckbox(menu: IMenu, option: WCPOption) {
   const dispatch = useAppDispatch();
-  const optionState = useAppSelector(selectOptionState)(option.mt._id, option.mo._id);
+  const optionState = useAppSelector(selectOptionState)(option.mt.id, option.mo.id);
   const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
   const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
   const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
@@ -174,7 +173,7 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
     return null;
   }
   const onClickAdvanced = () => {
-    dispatch(setAdvancedModifierOption([option.mt._id, option.mo._id]));
+    dispatch(setAdvancedModifierOption([option.mt.id, option.mo.id]));
   }
 
   return (
@@ -209,7 +208,7 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
           }
         }}
         label={<span className='topping_text'>{option.mo.item.display_name}</span>} />
-      {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo._id}_advanced`} aria-label={`${option.mo._id}_advanced`} size="small">
+      {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo.id}_advanced`} aria-label={`${option.mo.id}_advanced`} size="small">
         <SettingsTwoTone fontSize="inherit" />
       </IconButton> : null}
     </>);
@@ -230,7 +229,7 @@ export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModif
   const visibleOptions = useMemo(() => {
     const filterUnavailable = menu.modifiers[mtid].modifier_type.display_flags.omit_options_if_not_available;
     const mmEntry = product.m.modifier_map[mtid];
-    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.item.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo._id))) : [];
+    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.item.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo.id))) : [];
   }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
   const modifierOptionsHtml = useMemo(() => {
     const mEntry = menu.modifiers[mtid];
@@ -238,12 +237,12 @@ export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModif
     if (mt.max_selected === 1) {
       if (mt.min_selected === 1) {
         if (mt.display_flags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
-          const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS._id];
+          const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS.id];
           const basePI = pcEntry.instances[pcEntry.base_id];
           const mtIdX = basePI.modifiers.findIndex(x => x.modifier_type_id === mtid);
           // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
           if (mtIdX !== -1 && basePI.modifiers[mtIdX].options.length === 1) {
-            const baseOptionIndex = visibleOptions.findIndex(x => x.mo._id === basePI.modifiers[mtIdX].options[0].option_id);
+            const baseOptionIndex = visibleOptions.findIndex(x => x.mo.id === basePI.modifiers[mtIdX].options[0].option_id);
             if (baseOptionIndex !== -1) {
               // we togglin'!
               // since there are only two visible options, the base option is either at index 1 or 0
@@ -263,7 +262,7 @@ export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModif
       visibleOptions.map((option, i: number) =>
         <WModifierOptionCheckboxComponent key={i} option={option} menu={menu} />
       )}</FormGroup>
-  }, [menu, mtid, product.p.PRODUCT_CLASS._id, visibleOptions]);
+  }, [menu, mtid, product.p.PRODUCT_CLASS.id, visibleOptions]);
   return (
 
     // <div>{{ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.display_name ? ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.display_name : ctrl.config.MENU.modifiers[ctrl.mtid].modifier_type.name}}:</div> \

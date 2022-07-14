@@ -1,4 +1,4 @@
-import { WCPProduct, WProductMetadata } from '@wcp/wcpshared';
+import { WProduct } from '@wcp/wcpshared';
 import React from 'react';
 import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
 import { MetadataJson } from 'libphonenumber-js/core';
@@ -11,10 +11,6 @@ export const TIMING_POLLING_INTERVAL = 30000;
 export const MAX_PARTY_SIZE = 10;
 
 export const SERVICE_DATE_FORMAT = 'EEEE, MMMM dd, yyyy';
-export interface WProduct { 
-  p: WCPProduct;
-  m: WProductMetadata;
-}
 
 export interface CoreCartEntry { 
   categoryId: string;
@@ -76,16 +72,6 @@ export const getTermsForService = (service: number) => SERVICE_TERMS_LIST[servic
 //   return pizza_portion.concat(extras_portion);
 // }
 
-
-export type ILINEAR_CART = CartEntry[];
-export interface ITOTALS {
-  deliveryFee: number;
-  balance: number;
-  tip_value: number;
-  computed_tax: number;
-  computed_subtotal: number;
-}
-
 export type CustomerInfo = {
   givenName: string,
   familyName: string,
@@ -93,12 +79,6 @@ export type CustomerInfo = {
   email: string,
   referral: string
 };
-
-export interface FulfillmentDT { 
-  time: number;
-  day: Date;
-}
-
 
 export type StepNav = (onSubmitCallback: () => void, canNext: boolean, canBack: boolean) => React.ReactNode;
 

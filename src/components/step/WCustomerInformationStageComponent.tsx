@@ -32,9 +32,8 @@ function useCIForm() {
 export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
   const cIForm = useCIForm();
   const dispatch = useAppDispatch();
-  const { getValues, formState: { isValid }, handleSubmit } = cIForm;
+  const { getValues, formState: { isValid, errors }, handleSubmit } = cIForm;
   const onSubmitCallback = useCallback(() => {
-    console.log("submit")
     dispatch(setCustomerInfo(getValues()))
   }, [dispatch, getValues]);
   return (
@@ -61,6 +60,7 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
         <RHFPhoneInput
           country='US'
           name="mobileNum"
+          error={errors.mobileNum}
           placeholder=''
           label={<label className="phone-number-text">Mobile Phone Number:</label>}
           control={cIForm.control}

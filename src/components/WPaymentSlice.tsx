@@ -1,5 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { IMoney } from "@wcp/wcpshared";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+// import { IMoney } from "@wcp/wcpshared";
+import axiosInstance from "../utils/axios";
+import { RoundToTwoDecimalPlaces } from "../utils/numbers";
 
 export interface TipSelection { 
   value: number;
@@ -7,28 +9,30 @@ export interface TipSelection {
   isPercentage: boolean;
 };
 
-// export class TipSelection {
-//   isSuggestion: boolean;
-//   isPercentage: boolean;
-//   value: number;
-//   constructor(isSuggestion: boolean, isPercentage: boolean, value: number) {
-//     this.isSuggestion = isSuggestion;
-//     this.isPercentage = isPercentage;
-//     this.value = value;
-//   }
-//   computeCashValue(basis: number) {
-//     return this.isPercentage ? basis * this.value : this.value;
-//   }
-// };
+export const ComputeTipValue = (tip : TipSelection, basis : number) =>
+ (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * basis) : tip.value);
 
+ export interface ValidateResponse {
+  enc: string;
+  iv: string;
+  auth: string;
+  validated: boolean;
+  amount: number;
+  credit_type: "MONEY" | "DISCOUNT"
+ }
+
+ export const validateStoreCredit = createAsyncThunk<ValidateResponse, string>(
+  'credit/validate',
+  async (code) => {
+    const response = await axiosInstance.get('/v1/payments/storecredit/validate', {
+      params: { code }
+    });
+    return response.data;
+  }
+);
 
 export interface WPaymentState {
-  storeCreditValidation: {
-    type: 'MONEY' | 'DISCOUNT';
-    lock: { enc: string, iv: string, auth: string }
-    amount: IMoney,
-    code: string
-  } | null;
+  storeCreditValidation: ValidateResponse | null;
   storeCreditRedemption: {
 
   } | null;
@@ -36,26 +40,46 @@ export interface WPaymentState {
 
   } | null;
   selectedTip: TipSelection | null;
+  storeCreditInput: string;
+  creditValidationLoading: 'IDLE' | 'PENDING' | 'SUCCEEDED' | 'FAILED';
 }
 
 const initialState: WPaymentState = {
   storeCreditValidation: null,
   storeCreditRedemption: null,
   squarePayment: null,
-  selectedTip: null
+  selectedTip: null,
+  storeCreditInput: "",
+  creditValidationLoading: 'IDLE'
 }
 
 const WPaymentSlice = createSlice({
   name: 'payment',
   initialState: initialState,
   reducers: {
-    setService(state, action: PayloadAction<number>) {
-      
+    setTip(state, action: PayloadAction<TipSelection>) {
+      state.selectedTip = action.payload;
     }
-  }
+  },
+  extraReducers: (builder) => {
+    // Add reducers for additional action types here, and handle loading state as needed
+    builder
+    .addCase(validateStoreCredit.fulfilled, (state, action) => {
+      state.storeCreditValidation = action.payload;
+      state.creditValidationLoading = 'SUCCEEDED';
+    })
+    .addCase(validateStoreCredit.pending, (state, action) => {
+      state.storeCreditValidation = null;
+      state.storeCreditInput = action.meta.arg;
+      state.creditValidationLoading = 'PENDING';
+    })
+    .addCase(validateStoreCredit.rejected, (state) => {
+      state.creditValidationLoading = 'FAILED';
+    })
+  },
 });
 
-export const { setService } = WPaymentSlice.actions;
+export const { setTip } = WPaymentSlice.actions;
 
 
 export default WPaymentSlice.reducer;

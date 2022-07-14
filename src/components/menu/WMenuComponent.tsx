@@ -13,7 +13,7 @@ function WMenuSection({ menu, section } : { menu: IMenu; section: CategoryEntry;
     const productClass = productClassSelector(product.product_id);
     return productClass ? <>
     <li className="menu-list__item">
-      <WProductComponent description allowAdornment dots menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product._id]} />
+      <WProductComponent description allowAdornment dots menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product.id]} />
     </li>
     {product.display_flags.menu.show_modifier_options && productClass.modifiers.length ? <WModifiersComponent product={productClass} menuModifiers={menu.modifiers} /> : ""}
   </> : "";
