@@ -1,13 +1,13 @@
 import { WProductComponent } from './WProductComponent';
 import { CartEntry } from './common';
-import { getCart, lockCartEntry, updateCartQuantity } from './WCartSlice';
+import { getCart, lockCartEntry, updateCartQuantity } from '../app/slices/WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
 import { IMenu } from '@wcp/wcpshared';
 import { IconButton } from '@mui/material';
 import { Clear, Edit } from '@mui/icons-material';
 import { GetSelectableModifiersForCartEntry } from '../app/store';
-import { editCartEntry } from './WCustomizerSlice';
+import { editCartEntry } from '../app/slices/WCustomizerSlice';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
 
 interface IOrderCart {

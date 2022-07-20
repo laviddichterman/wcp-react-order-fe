@@ -6,8 +6,8 @@ import { StepNav } from '../common';
 
 
 import { TIP_PREAMBLE } from '../../config';
-import { SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
-import { TipSelection, ComputeTipValue, setTip } from '../WPaymentSlice';
+import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
+import { TipSelection, ComputeTipValue, setTip } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency, fPercent } from '../../utils/numbers';
 import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';

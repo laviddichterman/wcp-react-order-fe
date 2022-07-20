@@ -2,45 +2,31 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Box, Stepper, Step, StepContent, StepLabel } from '@mui/material';
 import { WShopForProductsStage } from './step/WShopForProductsStageComponent';
 import { WFulfillmentStageComponent } from './step/WFulfillmentStageComponent';
-import { useAppDispatch } from '../app/useHooks';
-import { TIMING_POLLING_INTERVAL } from './common';
-import { setCurrentTime, setPageLoadTime } from './WMetricsSlice';
+import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { MenuProvider } from '../app/MenuContext';
 import { WCustomerInformationStage } from './step/WCustomerInformationStageComponent';
 import { WReviewOrderStage } from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
-import { PaymentForm } from 'react-square-web-payments-sdk';
 import { WConfirmationStageComponent } from './step/WConfirmationStageComponent';
+import { SquarePaymentFormProvider } from './SquarePaymentForm';
+import { setStage } from '../app/slices/StepperSlice';
 
 export function WOrderingComponent() {
   const dispatch = useAppDispatch();
-  const [stage, setStage] = useState(0);
-
-  useEffect(() => {
-    const checkTiming = () => {
-      dispatch(setCurrentTime(new Date().valueOf()));
-      // TODO: need to add a check how fulfillment is impacted by the change of availability from the new "current time"
-      // then we need to check how the cart is impacted by those changes
-      // hopefully we can keep all that logic out of here and just update the current time
-    }
-    dispatch(setPageLoadTime(new Date().valueOf()));
-    checkTiming();
-    const interval = setInterval(checkTiming, TIMING_POLLING_INTERVAL);
-    return () => clearInterval(interval);
-  }, [dispatch]);
-
+  const stage = useAppSelector(s=>s.stepper.stage);
+  const squareApplicationId = useAppSelector(s=>s.ws.settings!.config.SQUARE_APPLICATION_ID as string);
+  const squareLocationId = useAppSelector(s=>s.ws.settings!.config.SQUARE_LOCATION as string);
   const NavigationCallback = useCallback((onSubmitCallback: () => void, canNext: boolean, canBack: boolean) => {
     const handleBack = function () {
       if (canBack) {
-        setStage(stage - 1);
+        dispatch(setStage(stage - 1));
       }
     }
 
     const handleNext = function (cb: () => void) {
-      console.log("trying to handle next");
       if (canNext) {
         cb();
-        setStage(stage + 1);
+        dispatch(setStage(stage + 1));
       }
     }
     return (<Box className="order-nav" sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
@@ -59,7 +45,7 @@ export function WOrderingComponent() {
       {/* <button type="submit" className="btn" ng-disabled="!orderCtrl.s.date_valid || (orderCtrl.CONFIG.TERMS_LIST[orderCtrl.s.service_type].length > 0 && !orderCtrl.s.acknowledge_terms) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && (!orderCtrl.s.is_address_validated)) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN && (Number.isNaN(orderCtrl.s.number_guests) || orderCtrl.s.number_guests < 1 || orderCtrl.s.number_guests > orderCtrl.CONFIG.MAX_PARTY_SIZE))" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage(); orderCtrl.ClearTimeoutFlag();">Next</button> */}
     </Box>
     )
-  }, [stage]);
+  }, [stage, dispatch]);
 
   const STAGES = [
     {
@@ -91,10 +77,7 @@ export function WOrderingComponent() {
   return (
 
       <MenuProvider>
-        <PaymentForm applicationId='sq0idp-5Sc3Su9vHj_1Xf4t6-9CZg' locationId='EGPJ5YTX6F2TP' cardTokenizeResponseReceived={(token, verifiedBuyer) => {
-        console.info('Token:', token);
-        console.info('Verified Buyer:', verifiedBuyer);
-      }}>
+        <SquarePaymentFormProvider applicationId={squareApplicationId} locationId={squareLocationId} >
         <div className="orderform">
           <span id="ordertop"></span>
           <Stepper activeStep={stage} orientation="vertical">
@@ -110,7 +93,7 @@ export function WOrderingComponent() {
             {STAGES[stage].content}
           </Box> */}
         </div>
-        </PaymentForm>
+        </SquarePaymentFormProvider>
       </MenuProvider>
   );
 

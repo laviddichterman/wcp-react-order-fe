@@ -7,16 +7,16 @@ import { StepNav } from '../common';
 import { WProductComponent } from '../WProductComponent';
 import { WOrderCart } from '../WOrderCartComponent';
 import { CreateWCPProductFromPI, WProduct, FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
-import { customizeProduct, selectSelectedProduct } from '../WCustomizerSlice';
+import { customizeProduct, selectSelectedProduct } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
 import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors } from '../../app/store';
-import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart } from '../WCartSlice';
+import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart } from '../../app/slices/WCartSlice';
 import useMenu from '../../app/useMenu';
-import { SelectServiceDateTime } from '../WFulfillmentSlice';
+import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 
 
-const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date) {
+const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
   return FilterEmptyCategories(menu, function (x: any) { return x.order.hide; }, order_time);
 };
 
@@ -25,7 +25,7 @@ const FilterProductWrapper = function (menu: IMenu, order_time: Date) {
   return (item: IProductInstance) => FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time)
 };
 
-const ComputeExtrasCategories = (menu: IMenu | null, time: Date): string[] => {
+const ComputeExtrasCategories = (menu: IMenu | null, time: Date | number): string[] => {
   return menu !== null && menu.categories[EXTRAS_CATID].children.length ? menu.categories[EXTRAS_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, time)) : []
 }
 
@@ -40,7 +40,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const selectedProduct = useAppSelector(selectSelectedProduct);
   const dispatch = useAppDispatch();
-  const [menuStage, setMenuStage] = useState<"MAIN" | "SECONDARY">("SECONDARY");
+  const [menuStage, setMenuStage] = useState<"MAIN" | "SECONDARY">("MAIN");
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
   const [extrasCategories, setExtrasCategories] = useState<string[]>([]);
@@ -49,7 +49,7 @@ export function WShopForProductsStage({ navComp } : { navComp : StepNav }) {
   // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
     if (serviceDateTime !== null) {
-      const extras = ComputeExtrasCategories(menu, new Date(serviceDateTime));
+      const extras = ComputeExtrasCategories(menu, serviceDateTime  );
       if (extras.length !== extrasCategories.length) {
         setActivePanel(0);
         setExtrasCategories(extras);

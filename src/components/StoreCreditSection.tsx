@@ -4,7 +4,7 @@ import { StoreCreditInputComponent } from './StoreCreditInputComponent';
 import { useState } from 'react';
 import { Done, Error } from '@mui/icons-material';
 import {CREDIT_REGEX} from '@wcp/wcpshared';
-import { validateStoreCredit } from './WPaymentSlice';
+import { validateStoreCredit, clearCreditCode } from '../app/slices/WPaymentSlice';
 
 
 
@@ -14,22 +14,27 @@ export function StoreCreditSection() {
   const creditValidationLoading = useAppSelector(s => s.payment.creditValidationLoading);
   const storeCreditInput = useAppSelector(s => s.payment.storeCreditInput);
   const [ localCreditCode, setLocalCreditCode ] = useState(storeCreditInput);
-  console.log(localCreditCode);
   const setLocalCreditCodeAndAttemptToValidate = function(code : string) {
     setLocalCreditCode(code);
     if (creditValidationLoading !== 'PENDING' && code.length === 19 && CREDIT_REGEX.test(code)) {
       dispatch(validateStoreCredit(code))
     }
   }
+  const handleSetUseCreditCheckbox = (checked : boolean) => {
+    if (!checked) { 
+      dispatch(clearCreditCode());
+      setLocalCreditCode("");
+    }
+    setUseCreditCheckbox(checked);
+  }
   return (
 
 
     <div className="soft-half">
-      {localCreditCode}
       <div className="flexbox">
         <FormControlLabel
           className='flexbox__item'
-          control={<Checkbox checked={useCreditCheckbox} onChange={(e) => setUseCreditCheckbox(e.target.checked)} />}
+          control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
           label="Use Digital Gift Card / Store Credit"
         />
       </div>

@@ -1,6 +1,6 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DELIVERY_SERVICE } from "../config";
-import { getTermsForService } from "./common";
+import { DELIVERY_SERVICE } from "../../config";
+import { getTermsForService } from "../../components/common";
 import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
 import { WDateUtils } from "@wcp/wcpshared";

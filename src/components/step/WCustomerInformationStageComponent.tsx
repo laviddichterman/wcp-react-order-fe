@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Typography } from '@mui/material';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { ICustomerInfo, customerInfoSchema, setCustomerInfo } from '../WCustomerInfoSlice';
+import { ICustomerInfo, customerInfoSchema, setCustomerInfo } from '../../app/slices/WCustomerInfoSlice';
 import { FormProvider, RHFTextField, RHFPhoneInput } from '../hook-form';
 import { StepNav } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';

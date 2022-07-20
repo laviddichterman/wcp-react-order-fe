@@ -3,7 +3,7 @@ import * as yup from "yup";
 import {
   parsePhoneNumber,
 } from 'libphonenumber-js/core';
-import { LIBPHONE_METADATA } from "./common";
+import { LIBPHONE_METADATA } from "../../components/common";
 
 export interface ICustomerInfo { 
   givenName: string;

@@ -1,7 +1,7 @@
 import { ICatalog, IWSettings, JSFEBlockedOff } from '@wcp/wcpshared';
 import { Middleware } from 'redux'
 import { io, Socket } from "socket.io-client";
-import { SOCKETIO, HOST_API } from '../config';
+import { SOCKETIO, HOST_API } from '../../config';
 import { SocketIoActions } from './SocketIoSlice';
 
 const SocketIoMiddleware: Middleware = store => {
@@ -24,7 +24,9 @@ const SocketIoMiddleware: Middleware = store => {
         console.log(data);
         store.dispatch(SocketIoActions.receiveServices(data));
       });
-
+      socket.on("WCP_SERVER_TIME", (data: number) => {
+        store.dispatch(SocketIoActions.receiveServerTime(data));
+      });
       socket.on("WCP_BLOCKED_OFF", (data: JSFEBlockedOff) => {
         console.log(data);
         store.dispatch(SocketIoActions.receiveBlockedOff(data));

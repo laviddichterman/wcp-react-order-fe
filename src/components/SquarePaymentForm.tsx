@@ -1,22 +1,14 @@
-import { CreditCard, GooglePay, ApplePay, PaymentForm } from 'react-square-web-payments-sdk';
+import { PaymentForm } from 'react-square-web-payments-sdk';
 
-export function SquarePaymentForm() {
-  //   <div ng-hide="orderCtrl.s.balance == 0" id="form-container">
-  //   <div className="flexbox">
-  //     Credit Card Information
-  //   </div>
-  //   <div className="flexbox soft-half--top">
-  //     <div id="sq-card" ></div>
-  //   </div>
-  //   <div ng-repeat="e in orderCtrl.s.card_errors" className="wpcf7-response-output wpcf7-mail-sent-ng">{{ e.message }}</div>
-  // </div>
+interface SquarePaymentFormProps { applicationId: string; locationId: string; children: React.ReactNode; };
+export function SquarePaymentFormProvider({ applicationId, locationId, children } : SquarePaymentFormProps) {
   return (
     <PaymentForm
       /**
        * Identifies the calling form with a verified application ID generated from
        * the Square Application Dashboard.
        */
-      applicationId="sq0idp-Y0QZQ-Xx-Xx-Xx-Xx"
+      applicationId={applicationId}
       /**
        * Invoked when payment form receives the result of a tokenize generation
        * request. The result will be a valid credit card or wallet token, or an error.
@@ -47,9 +39,9 @@ export function SquarePaymentForm() {
        * Identifies the location of the merchant that is taking the payment.
        * Obtained from the Square Application Dashboard - Locations tab.
        */
-      locationId="LID"
+      locationId={locationId}
     >
-  
+  {children}
     </PaymentForm>
   );
 };

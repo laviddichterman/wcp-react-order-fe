@@ -4,7 +4,7 @@ import { Typography, Checkbox, FormControlLabel, Table, TableBody, TableContaine
 import { WCheckoutCart } from '../WCheckoutCart';
 import { StepNav, SERVICE_DATE_FORMAT } from '../common';
 import { useAppSelector } from '../../app/useHooks';
-import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../WFulfillmentSlice';
+import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { format } from 'date-fns';
 
 

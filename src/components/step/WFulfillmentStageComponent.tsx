@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Clear } from '@mui/icons-material';
 import { Autocomplete, Button, IconButton, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText, Link} from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
-import { isValid as isDateValid, add } from 'date-fns';
+import { isValid as isDateValid, add, getTime } from 'date-fns';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { getTermsForService, MAX_PARTY_SIZE, StepNav } from '../common';
@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { FormProvider, RHFTextField } from '../hook-form';
 import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { DeliveryInfoRHFSchema, deliveryAddressSchema, setDate, setDeliveryInfo, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../WFulfillmentSlice';
+import { DeliveryInfoRHFSchema, deliveryAddressSchema, setDate, setDeliveryInfo, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
 
 export interface CartInfoToDepricate {
   cart_based_lead_time: number;
@@ -18,12 +18,12 @@ export interface CartInfoToDepricate {
 };
 
 function useAvailabilityHook() {
-  const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
-  const settings = useAppSelector(s => s.ws.settings) as IWSettings;
-  const currentDateTime = useAppSelector(s => s.metrics.currentTime) as number;
+  const services = useAppSelector(s => s.ws.services!);
+  const settings = useAppSelector(s => s.ws.settings!);
+  const currentDateTime = useAppSelector(s => s.metrics.currentTime!);
   const operatingHours = useMemo(() => settings.operating_hours, [settings]);
-  const blockedOff = useAppSelector(s => s.ws.blockedOff) as JSFEBlockedOff;
-  const leadtimes = useAppSelector(s => s.ws.leadtime) as number[];
+  const blockedOff = useAppSelector(s => s.ws.blockedOff!);
+  const leadtimes = useAppSelector(s => s.ws.leadtime!);
   const HasOperatingHoursForService = useCallback((serviceNumber: number) =>
     Object.hasOwn(services, String(serviceNumber)) && serviceNumber < operatingHours.length && operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false),
     [services, operatingHours]);
@@ -215,7 +215,7 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
   }
   const onSetServiceDate = (v: Date | null) => {
     if (v !== null) {
-      const serviceDateNumber = v.valueOf();
+      const serviceDateNumber = getTime(v);
       // check if the selected servicetime is valid in the new service date
       if (serviceTime !== null) {
         const newDateOptions = OptionsForDate(serviceDateNumber);
@@ -269,7 +269,7 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
         disablePast
         label={selectedService === null ? "Select a requested service first" : "Service Date"}
         maxDate={add(new Date(), { days: 60 })}
-        shouldDisableDate={(e: Date) => OptionsForDate(e.valueOf()).length === 0}
+        shouldDisableDate={(e: Date) => OptionsForDate(getTime(e)).length === 0}
         disableMaskedInput
         value={serviceDate}
         onChange={(v) => onSetServiceDate(v)}

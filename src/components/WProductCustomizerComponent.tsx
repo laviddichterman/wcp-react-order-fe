@@ -13,11 +13,11 @@ import { clearCustomizer,
   setAdvancedModifierOption, 
   setShowAdvanced, 
   updateModifierOptionStateCheckbox, 
-  updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
+  updateModifierOptionStateToggleOrRadio } from '../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
-import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from './WCartSlice';
-import { SelectServiceDateTime } from './WFulfillmentSlice';
+import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
+import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -95,6 +95,7 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
   }
   return (<RadioGroup
     onChange={onChange}
+    row
     value={modifierOptionState.length === 1 ? modifierOptionState[0].option_id : null}
     aria-labelledby={`modifier_control_${options[0].mt.id}`}>{
       options.map((opt, i) => <span className="option-circle-container" key={i}>
@@ -258,7 +259,7 @@ export function WModifierTypeCustomizerComponent({ menu, mtid, product }: IModif
         return <WModifierRadioComponent options={visibleOptions} menu={menu} />;
       }
     }
-    return <FormGroup className="modifier flexitems" aria-labelledby={`modifier_control_${mtid}`}>{
+    return <FormGroup row className="modifier flexitems" aria-labelledby={`modifier_control_${mtid}`}>{
       visibleOptions.map((option, i: number) =>
         <WModifierOptionCheckboxComponent key={i} option={option} menu={menu} />
       )}</FormGroup>

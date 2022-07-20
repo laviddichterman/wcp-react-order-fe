@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { TIMING_POLLING_INTERVAL } from "./common";
+import { TIMING_POLLING_INTERVAL } from "../../components/common";
 
 export interface WMetricsState {
   pageLoadTime: number | null;
@@ -40,7 +40,9 @@ const WMetricsSlice = createSlice({
   initialState: initialState,
   reducers: {
     setPageLoadTime(state, action: PayloadAction<number>) {
-      state.pageLoadTime = action.payload;
+      if (state.pageLoadTime === null) {
+        state.pageLoadTime = action.payload;
+      }
     },
     setCurrentTime(state, action: PayloadAction<number>) {
       let ticks = state.roughTicksSinceLoad + TIMING_POLLING_INTERVAL;

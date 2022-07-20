@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 // import { IMoney } from "@wcp/wcpshared";
-import axiosInstance from "../utils/axios";
-import { RoundToTwoDecimalPlaces } from "../utils/numbers";
+import axiosInstance from "../../utils/axios";
+import { RoundToTwoDecimalPlaces } from "../../utils/numbers";
 
 export interface TipSelection { 
   value: number;
@@ -24,8 +24,8 @@ export const ComputeTipValue = (tip : TipSelection, basis : number) =>
  export const validateStoreCredit = createAsyncThunk<ValidateResponse, string>(
   'credit/validate',
   async (code) => {
-    const response = await axiosInstance.get('/v1/payments/storecredit/validate', {
-      params: { code }
+    const response = await axiosInstance.get('/api/v1/payments/storecredit/validate', {
+      params: { code },
     });
     return response.data;
   }
@@ -59,6 +59,11 @@ const WPaymentSlice = createSlice({
   reducers: {
     setTip(state, action: PayloadAction<TipSelection>) {
       state.selectedTip = action.payload;
+    },
+    clearCreditCode(state) { 
+      state.creditValidationLoading = 'IDLE';
+      state.storeCreditInput = "";
+      state.storeCreditValidation = null;
     }
   },
   extraReducers: (builder) => {
@@ -79,7 +84,7 @@ const WPaymentSlice = createSlice({
   },
 });
 
-export const { setTip } = WPaymentSlice.actions;
+export const { setTip, clearCreditCode } = WPaymentSlice.actions;
 
 
 export default WPaymentSlice.reducer;

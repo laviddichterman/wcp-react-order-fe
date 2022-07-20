@@ -1,6 +1,6 @@
 import { SnackbarProvider } from 'notistack';
 import React, { useEffect } from 'react';
-import { SocketIoActions, IsSocketDataLoaded } from './app/SocketIoSlice';
+import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import { WOrderingComponent } from './components/WOrderingComponent';
 

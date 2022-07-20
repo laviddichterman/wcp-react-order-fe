@@ -5,7 +5,7 @@ import { fCurrency, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE, TAX_RATE } from '../config';
 import useMenu from '../app/useMenu';
 import { useAppSelector } from '../app/useHooks';
-import { getCart } from './WCartSlice';
+import { getCart } from '../app/slices/WCartSlice';
 import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTipValue } from '../app/store';
 
 

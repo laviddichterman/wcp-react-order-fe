@@ -1,19 +1,21 @@
 import { configureStore, createSelector, EntityId } from "@reduxjs/toolkit";
-import WCartReducer, { getCart, getCartEntry } from '../components/WCartSlice';
-import WCustomizerReducer from '../components/WCustomizerSlice';
-import WFulfillmentReducer from '../components/WFulfillmentSlice';
-import WMetricsReducer from '../components/WMetricsSlice';
-import WCustomerInfoReducer from "../components/WCustomerInfoSlice";
+import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
+import WCustomizerReducer from './slices/WCustomizerSlice';
+import WFulfillmentReducer from './slices/WFulfillmentSlice';
+import WMetricsReducer from './slices/WMetricsSlice';
+import WCustomerInfoReducer from "./slices/WCustomerInfoSlice";
+import StepperReducer from "./slices/StepperSlice";
 import SocketIoReducer, { ICategoriesAdapter, 
   IOptionTypesAdapter, 
   IOptionsAdapter, 
   IProductInstancesAdapter, 
   IProductsAdapter, 
-  ProductInstanceFunctionsAdapter } from './SocketIoSlice';
-import SocketIoMiddleware from "./SocketIoMiddleware";
+  ProductInstanceFunctionsAdapter } from './slices/SocketIoSlice';
+import SocketIoMiddleware from "./slices/SocketIoMiddleware";
+import ListeningMiddleware from "./slices/ListeningMiddleware";
 import { CartEntry } from "../components/common";
 import { IMenu, MetadataModifierMap } from "@wcp/wcpshared";
-import WPaymentReducer, { ComputeTipValue } from "../components/WPaymentSlice";
+import WPaymentReducer, { ComputeTipValue } from "./slices/WPaymentSlice";
 import { DELIVERY_FEE, TAX_RATE } from "../config";
 import { RoundToTwoDecimalPlaces } from "../utils/numbers";
 
@@ -25,10 +27,11 @@ export const store = configureStore({
     cart: WCartReducer,
     ws: SocketIoReducer,
     metrics: WMetricsReducer,
-    payment: WPaymentReducer
+    payment: WPaymentReducer,
+    stepper: StepperReducer
   },
   middleware: (getDefaultMiddleware) => {
-    return getDefaultMiddleware().concat([SocketIoMiddleware])
+    return getDefaultMiddleware().concat([SocketIoMiddleware, ListeningMiddleware.middleware])
   },
 });
 

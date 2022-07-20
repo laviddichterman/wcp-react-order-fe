@@ -1,7 +1,7 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata } from "@wcp/wcpshared";
-import { RootState } from "../app/store";
-import { CartEntry } from "./common";
+import { RootState } from "../store";
+import { CartEntry } from "../../components/common";
 import { getCartEntry } from "./WCartSlice";
 
 function GenerateMetadata(menu: IMenu, product: WCPProduct, serviceTime: number) {
@@ -111,8 +111,9 @@ export const WCustomizerSlice = createSlice({
 
 
 export const selectAllowAdvancedPrompt = createSelector(
-  ((s: RootState) => s.customizer.selectedProduct),
-  (prod: WProduct | null) => prod !== null && prod.m.advanced_option_eligible
+  (s: RootState) => s.customizer.selectedProduct,
+  (s: RootState) => s.ws.settings!.config.ALLOW_ADVANCED,
+  (prod: WProduct | null, allowAdvanced: boolean) => allowAdvanced && prod !== null && prod.m.advanced_option_eligible
 )
 
 export const selectCartEntryBeingCustomized = createSelector(
