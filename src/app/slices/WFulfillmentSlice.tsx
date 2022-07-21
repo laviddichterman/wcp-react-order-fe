@@ -1,10 +1,30 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DELIVERY_SERVICE } from "../../config";
 import { getTermsForService } from "../../components/common";
 import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
 import { WDateUtils } from "@wcp/wcpshared";
+import axiosInstance from "../../utils/axios";
 
+interface AddressComponent {
+  types: Array<string>;
+  long_name: string;
+  short_name: string;
+}
+
+interface DeliveryAddressValidateResponse {
+    validated_address: string;
+    in_area: boolean;
+    found: boolean;
+    address_components: Array<AddressComponent>;
+}
+
+interface DeliveryAddressValidateRequest { 
+  address: string; 
+  zipcode: string;
+  city: string;
+  state: string;
+}
 
 export const deliveryAddressSchema = yup.object().shape({
   address: yup.string().ensure().required("Please enter your street address"),
@@ -37,13 +57,11 @@ export interface DeliveryInfoRHFSchema {
   address2: string;
   zipcode: string;
   deliveryInstructions: string;
-  validationStatus: 'UNVALIDATED' | 'VALID' | 'INVALID' | 'OUTSIDE_RANGE';
 };
 
 export interface DineInInfoRHFSchema {
   partySize: number;
 };
-
 
 export interface WFulfillmentState {
   hasSelectedTimeExpired: boolean;
@@ -54,7 +72,18 @@ export interface WFulfillmentState {
   selectedTime: number | null;
   dineInInfo: DineInInfoRHFSchema | null;
   deliveryInfo: DeliveryInfoRHFSchema | null;
+  deliveryValidationStatus: 'IDLE' | 'PENDING' | 'VALID' | 'INVALID' | 'OUTSIDE_RANGE';
 }
+
+export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoRHFSchema>(
+  'addressRequest/validate',
+  async (req) => {
+    const response = await axiosInstance.get('/api/v1/addresses', {
+      params: { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode },
+    });
+    return response.data;
+  }
+);
 
 const initialState: WFulfillmentState = {
   hasSelectedTimeExpired: false,
@@ -64,7 +93,8 @@ const initialState: WFulfillmentState = {
   selectedTime: null,
   dineInInfo: null,
   deliveryInfo: null,
-  hasAgreedToTerms: false
+  hasAgreedToTerms: false,
+  deliveryValidationStatus: 'IDLE'
 }
 
 const WFulfillmentSlice = createSlice({
@@ -74,6 +104,7 @@ const WFulfillmentSlice = createSlice({
     setService(state, action: PayloadAction<number>) {
       if (state.selectedService !== action.payload) {
         state.hasSelectedDateExpired = false;
+        state.hasSelectedTimeExpired = false;
         state.hasAgreedToTerms = false;
         state.deliveryInfo = null;
         state.dineInInfo = null;
@@ -97,7 +128,33 @@ const WFulfillmentSlice = createSlice({
     setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema | null>) {
       state.deliveryInfo = action.payload;
     },
-  }
+    setSelectedDateExpired(state) {
+      state.hasSelectedDateExpired = true;
+    },
+    setSelectedTimeExpired(state) {
+      state.hasSelectedTimeExpired = true;
+    },
+  },
+  extraReducers: (builder) => {
+    // Add reducers for additional action types here, and handle loading state as needed
+    builder
+    .addCase(validateDeliveryAddress.fulfilled, (state, action) => {
+      if (action.payload.found) {
+        state.deliveryInfo!.address = action.payload.validated_address;
+        state.deliveryValidationStatus = action.payload.in_area ? 'VALID' : 'OUTSIDE_RANGE';
+      }
+      else {
+        state.deliveryValidationStatus = 'INVALID';
+      }
+    })
+    .addCase(validateDeliveryAddress.pending, (state, action) => {
+      state.deliveryInfo = action.meta.arg;
+      state.deliveryValidationStatus = 'PENDING';
+    })
+    .addCase(validateDeliveryAddress.rejected, (state) => {
+      state.deliveryValidationStatus = 'INVALID';
+    })
+  },  
 });
 
 export const SelectServiceDateTime = createSelector(
@@ -112,7 +169,7 @@ export const SelectServiceTimeDisplayString = createSelector(
   (service: number | null, selectedTime: number | null) => service !== null && selectedTime !== null ?
     (service === DELIVERY_SERVICE ? `${WDateUtils.MinutesToPrintTime(selectedTime)} to later` : WDateUtils.MinutesToPrintTime(selectedTime)) : "");
 
-export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms } = WFulfillmentSlice.actions;
+export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms, setSelectedDateExpired, setSelectedTimeExpired } = WFulfillmentSlice.actions;
 
 
 export default WFulfillmentSlice.reducer;

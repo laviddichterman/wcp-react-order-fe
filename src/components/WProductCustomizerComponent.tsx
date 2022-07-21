@@ -49,7 +49,9 @@ function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecke
       <FormControlLabel className="option-whole option-circle"
         disableTypography
         control={<Checkbox
-
+          disableRipple
+          disableFocusRipple
+          disableTouchRipple
           className="input-whole"
           disabled={optionValue ? !optionUncheckedState.enable_whole : !optionUncheckedState.enable_whole}
           value={optionValue}
@@ -104,6 +106,9 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
           className="option-whole option-circle"
           value={opt.mo.id}
           control={<Radio
+            disableRipple
+            disableFocusRipple
+            disableTouchRipple
             className="input-whole"
             disabled={!getOptionState(opt.mo.id)?.enable_whole}
           />}
@@ -184,29 +189,33 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
         control={
           <span className="option-circle-container">
             {!advancedOptionSelected ? <Checkbox
+            disableRipple
+            disableFocusRipple
+            disableTouchRipple
               className={`input-whole`}
               disabled={!optionState.enable_whole}
               checked={isWhole}
               onClick={() => onClickWhole(serviceDateTime)} /> : null}
             {isLeft || (!optionState.enable_whole && optionState.enable_left) ? <Checkbox
+            disableRipple
+            disableFocusRipple
+            disableTouchRipple
               className={`input-left`}
               disabled={!optionState.enable_left}
               checked={isLeft}
               onClick={() => onClickLeft(serviceDateTime)} /> : null}
             {isRight || (!optionState.enable_whole && optionState.enable_right) ? <Checkbox
+            disableRipple
+            disableFocusRipple
+            disableTouchRipple
               className={`input-right`}
               disabled={!optionState.enable_right}
               checked={isRight}
               onClick={() => onClickRight(serviceDateTime)} /> : null}
           </span>}
         onClick={() => {
-          if (optionState.enable_whole) {
-            onClickWhole(serviceDateTime);
-          } else if (optionState.enable_left) {
-            onClickLeft(serviceDateTime);
-          } else if (optionState.enable_right) {
-            onClickRight(serviceDateTime);
-          }
+          console.log(optionState)
+
         }}
         label={<span className='topping_text'>{option.mo.item.display_name}</span>} />
       {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo.id}_advanced`} aria-label={`${option.mo.id}_advanced`} size="small">
@@ -416,20 +425,26 @@ export const WProductCustomizerComponent = React.forwardRef(({ menu, suppressGui
     const matchingCartEntry = FindDuplicateInCart(cart, menu.modifiers, categoryId, selectedProduct, cartEntry?.id);
     if (matchingCartEntry) {
       const amountToAdd = cartEntry?.quantity ?? 1;
-      dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity: matchingCartEntry.quantity + amountToAdd }));
-      enqueueSnackbar(`Merged duplicate ${selectedProduct.m.name} in your order.`, { variant: 'success' });
+      const newQuantity = matchingCartEntry.quantity + amountToAdd;
+      dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity }));
+      enqueueSnackbar( cartEntry ? `Merged duplicate ${selectedProduct.m.name} in your order.` : `Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success' });
     }
     else {
       // cartEntry being undefined means it's an addition 
       if (cartEntry === undefined) {
         dispatch(addToCart({ categoryId, product: selectedProduct }))
+        enqueueSnackbar(`Added ${selectedProduct.m.name} to your order.`, { variant: 'success' });
       }
       else {
         dispatch(updateCartProduct({ id: cartEntry.id, product: selectedProduct }))
         dispatch(unlockCartEntry(cartEntry.id));
+        enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success' });
       }
-      enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success' });
     }
+    // if (ref) {
+    //   // @ts-ignore
+    //   ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // }
     // TODO: scroll to top
     unselectProduct();
   }

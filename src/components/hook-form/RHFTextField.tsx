@@ -7,11 +7,12 @@ import { StaticDatePicker, StaticDatePickerProps } from '@mui/x-date-pickers';
 // ----------------------------------------------------------------------
 type IProps = {
   name: string;
+  readOnly?: boolean;
 };
 
 type Props = IProps & TextFieldProps;
 
-export function RHFTextField({ name, ...other }: Props) {
+export function RHFTextField({ name, readOnly, inputProps, ...other }: Props) {
   const { control } = useFormContext();
 
   return (
@@ -26,6 +27,7 @@ export function RHFTextField({ name, ...other }: Props) {
           error={!!error}
           helperText={error?.message}
           {...other}
+          inputProps={ {readOnly: readOnly, ...inputProps }}
         />
       )}
     />

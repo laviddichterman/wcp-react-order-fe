@@ -1,193 +1,41 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Clear } from '@mui/icons-material';
-import { Autocomplete, Button, IconButton, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText, Link} from '@mui/material';
+import React, { useCallback, useMemo } from 'react';
+import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
+import { Autocomplete, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText} from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
-import { isValid as isDateValid, add, getTime } from 'date-fns';
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { getTermsForService, MAX_PARTY_SIZE, StepNav } from '../common';
+import { isValid, add, getTime } from 'date-fns';
+import { getTermsForService, MAX_PARTY_SIZE } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { FormProvider, RHFTextField } from '../hook-form';
-import { DELIVERY_LINK, DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
-import { IWSettings, JSFEBlockedOff, ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { DeliveryInfoRHFSchema, deliveryAddressSchema, setDate, setDeliveryInfo, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
+import { DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
+import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
+import { SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
+import { Navigation } from '../Navigation';
+import { nextStage } from '../../app/slices/StepperSlice';
+import DeliveryInfoForm from '../DeliveryValidationForm';
 
-export interface CartInfoToDepricate {
-  cart_based_lead_time: number;
-  size: number;
-};
-
-function useAvailabilityHook() {
+export default function WFulfillmentStageComponent() {
+  const dispatch = useAppDispatch();
   const services = useAppSelector(s => s.ws.services!);
-  const settings = useAppSelector(s => s.ws.settings!);
-  const currentDateTime = useAppSelector(s => s.metrics.currentTime!);
-  const operatingHours = useMemo(() => settings.operating_hours, [settings]);
-  const blockedOff = useAppSelector(s => s.ws.blockedOff!);
-  const leadtimes = useAppSelector(s => s.ws.leadtime!);
-  const HasOperatingHoursForService = useCallback((serviceNumber: number) =>
-    Object.hasOwn(services, String(serviceNumber)) && serviceNumber < operatingHours.length && operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false),
-    [services, operatingHours]);
-  const AvailabilityInfoMapForServicesAndDate = useCallback((selectedDate: number, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) =>
-    WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtimes, selectedDate, serviceSelection, cartInfo), [settings, leadtimes, blockedOff]);
-  const OptionsForServicesAndDate = useCallback((selectedDate: number, serviceSelection: ServicesEnableMap, cartInfo: CartInfoToDepricate) => {
-    const INFO = AvailabilityInfoMapForServicesAndDate(selectedDate, serviceSelection, cartInfo);
-    const opts = WDateUtils.GetOptionsForDate(INFO, selectedDate, currentDateTime);
-    return opts;
-  }, [AvailabilityInfoMapForServicesAndDate, currentDateTime])
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: Date | number, orderTime: number) => true, []);
-  return {
-    currentDateTime,
-    operatingHours,
-    blockedOff,
-    leadtimes,
-    services,
-    HasOperatingHoursForService,
-    AvailabilityInfoMapForServicesAndDate,
-    OptionsForServicesAndDate,
-    HasSpaceForPartyOf
-  };
-}
-
-function useDeliveryInfoForm() {
-  const preExisitingDeliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
-  const useFormApi = useForm<DeliveryInfoRHFSchema>({
-    defaultValues: {
-      address: preExisitingDeliveryInfo?.address ?? "",
-      address2: preExisitingDeliveryInfo?.address2 ?? "",
-      deliveryInstructions: preExisitingDeliveryInfo?.deliveryInstructions ?? "",
-      validationStatus: preExisitingDeliveryInfo?.validationStatus ?? "UNVALIDATED",
-      zipcode: preExisitingDeliveryInfo?.zipcode ?? ""
-
-    },
-    resolver: yupResolver(deliveryAddressSchema),
-    mode: 'onBlur'
-  });
-
-  return useFormApi;
-}
-
-function DeliveryInfoForm() {
-  const dispatch = useAppDispatch();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const deliveryForm = useDeliveryInfoForm();
-  const { handleSubmit, reset, formState: { errors, isValid } } = deliveryForm;
-  const validationStatus = useAppSelector(s => s.fulfillment.deliveryInfo?.validationStatus ?? 'UNVALIDATED');
-  const validatedDeliveryAddress = useAppSelector(s => s.fulfillment.deliveryInfo?.address);
-  const validatedDeliveryAddress2 = useAppSelector(s => s.fulfillment.deliveryInfo?.address2 ?? "");
-  const validatedZipcode = useAppSelector(s => s.fulfillment.deliveryInfo?.zipcode);
-  const resetValidatedAddress = () => {
-    reset();
-    dispatch(setDeliveryInfo(null));
-  };
-  const validateAddress = () => {
-    if (!isProcessing) {
-      setIsProcessing(true);
-
-      //dispatch(setDeliveryInfo())
-    }
-  }
-
-  console.log(errors)
-  return (
-
-    <>
-      <span className="flexbox">
-        <span className="flexbox__item one-whole">Delivery Information:</span>
-      </span>
-      {validationStatus === 'VALID' ?
-        <div className="wpcf7-response-output wpcf7-mail-sent-ok">
-          Found an address in our delivery area: <br />
-          <span className="title cart">
-            {`${validatedDeliveryAddress}${validatedDeliveryAddress2 ? ` ${validatedDeliveryAddress2}` : ''}, ${validatedZipcode}`}
-            <IconButton name="remove" onClick={resetValidatedAddress} className="button-remove"><Clear /></IconButton>
-          </span>
-        </div>
-        :
-        <FormProvider methods={deliveryForm}>
-          <span className="flexbox">
-            <span className="flexbox__item one-half">
-              <RHFTextField
-                name="address"
-                autoComplete="shipping address-line1"
-                label={<label className="delivery-address-text">Address:</label>}
-                placeholder={"Address"}
-              />
-            </span>
-            <span className="flexbox__item one-quarter soft-half--sides">
-              <RHFTextField
-                name="address2"
-                autoComplete="shipping address-line2"
-                label={<label className="delivery-address-text">Apt/Unit:</label>}
-                placeholder={"Apt/Unit"}
-              />
-            </span>
-            <span className="flexbox__item one-quarter">
-              <RHFTextField
-                name="zipcode"
-                autoComplete="shipping postal-code"
-                label={<label className="delivery-address-text">ZIP Code:</label>}
-                placeholder={"ZIP Code"}
-              />
-            </span>
-          </span>
-        </FormProvider>
-      }
-      {validationStatus === 'OUTSIDE_RANGE' &&
-        <div className="wpcf7-response-output wpcf7-mail-sent-ng">
-          The address {validatedDeliveryAddress} isn't in our <Link target="_blank" href={DELIVERY_LINK}>delivery area</Link>
-        </div>
-      }
-      {validationStatus === 'INVALID' &&
-        <div className="wpcf7-response-output wpcf7-mail-sent-ng">
-          Unable to determine the specified address. Send us a text or email if you continue having issues.
-        </div>
-      }
-
-      <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">
-        <span className="flexbox__item one-whole">
-          <label htmlFor="delivery-instructions-text">
-            <span className="delivery-instructions-text">Delivery Instructions (optional):</span>
-          </label>
-          <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} ng-model="orderCtrl.s.delivery_instructions" ng-change="orderCtrl.ChangedEscapableInfo()" />
-        </span>
-      </span>
-      <Button type="submit" disabled={!isValid || isProcessing} className="btn" onClick={() => handleSubmit(() => validateAddress())}>Validate Delivery Address</Button>
-    </>
-  )
-}
-
-
-export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
-  const dispatch = useAppDispatch();
-  const availability = useAvailabilityHook();
-  const { services, HasOperatingHoursForService, OptionsForServicesAndDate, HasSpaceForPartyOf } = availability;
+  const HasOperatingHoursForService = useAppSelector(s => (serviceNumber: number) => SelectHasOperatingHoursForService(s, serviceNumber));
+  const OptionsForServicesAndDate = useAppSelector(s=> (selectedDate : Date | number, selectedServices : ServicesEnableMap) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDate = useAppSelector(s => s.fulfillment.selectedDate);
   const serviceTime = useAppSelector(s => s.fulfillment.selectedTime);
-  const serviceTerms = useMemo(() => {
-    return selectedService !== null ? getTermsForService(selectedService) : [];
-  }, [selectedService]);
+  const serviceTerms = useMemo(() => selectedService !== null ? getTermsForService(selectedService) : [], [selectedService]);
   const hasAgreedToTerms = useAppSelector(s => s.fulfillment.hasAgreedToTerms);
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
-  const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired); // this needs to watch whatever we have selected but not submitted
-  const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired); // this needs to watch whatever we have selected but not submitted
+  const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired);
+  const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
   const valid = useMemo(() => {
     return selectedService !== null && serviceDate !== null && serviceTime !== null &&
       (serviceTerms.length === 0 || hasAgreedToTerms) &&
-      !hasSelectedTimeExpired && !hasSelectedDateExpired &&
       (selectedService !== DINEIN_SERVICE || dineInInfo !== null) &&
       (selectedService !== DELIVERY_SERVICE || deliveryInfo !== null);
-  }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, hasSelectedTimeExpired, hasSelectedDateExpired, dineInInfo, deliveryInfo]);
+  }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
 
-  const OptionsForDate = useCallback((d: number | null) => {
-    if (selectedService === null || d === null || !isDateValid(d)) {
-      return [];
-    }
-    const serviceSelectionMap: { [index: string]: boolean } = {};
-    serviceSelectionMap[String(selectedService)] = true;
-    return OptionsForServicesAndDate(d, serviceSelectionMap, { size: 0, cart_based_lead_time: 0 });
-  }, [OptionsForServicesAndDate, selectedService]);
+  const OptionsForDate = useCallback((d: number | null) => (selectedService === null || d === null || !isValid(d)) ? 
+    [] : OptionsForServicesAndDate(d, {[String(selectedService)]: true}), [OptionsForServicesAndDate, selectedService]);
 
   const canSelectService = useCallback((service: number) => true, []);
 
@@ -284,7 +132,6 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
       {hasSelectedDateExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service date has expired.</FormHelperText> : ""}
     </span>
     <Autocomplete
-      disablePortal
       openOnFocus
       disableClearable
       noOptionsText="Select a valid service date first"
@@ -319,6 +166,6 @@ export function WFulfillmentStageComponent({ navComp }: { navComp: StepNav }) {
       </span>) : ""
     }
     {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <DeliveryInfoForm /> : ""}
-    {navComp(() => { return; }, valid, false)}
+    <Navigation canBack={false} canNext={valid} handleBack={()=>{return;}} handleNext={() => dispatch(nextStage())} />
   </>);
 }

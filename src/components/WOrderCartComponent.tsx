@@ -1,6 +1,6 @@
 import { WProductComponent } from './WProductComponent';
 import { CartEntry } from './common';
-import { getCart, lockCartEntry, updateCartQuantity } from '../app/slices/WCartSlice';
+import { getCart, lockCartEntry, removeFromCart, updateCartQuantity } from '../app/slices/WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
 import { IMenu } from '@wcp/wcpshared';
@@ -20,7 +20,8 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
   const cart = useAppSelector(s => getCart(s.cart));
   const selectSelectableModifiersForEntry = useAppSelector(s => (id: string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
   const productHasSelectableModifiers = useCallback((id: string, menu: IMenu) => Object.values(selectSelectableModifiersForEntry(id, menu)).length > 0, [selectSelectableModifiersForEntry]);
-  const setRemoveEntry = (i: number) => {
+  const setRemoveEntry = (id: string) => {
+    dispatch(removeFromCart(id));
   };
   const setEntryQuantity = (id: string, quantity: number | null) => {
     if (quantity !== null) {
@@ -55,9 +56,9 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
                 </td>
                 <td>
                   <div className="grid-flex grid-valign-middle">
-                    <CheckedNumericInput inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*' }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onChange={(value) => setEntryQuantity(cartEntry.id, value)} parseFunction={parseInt} allowEmpty={false} />
+                    <CheckedNumericInput type="number" inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*', step: 1 }} value={cartEntry.quantity} className="quantity" disabled={cartEntry.isLocked} onChange={(value) => setEntryQuantity(cartEntry.id, value)} parseFunction={parseInt} allowEmpty={false} />
                     <span className="cart-item-remove">
-                      <IconButton size="small" disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(i)} className="button-remove">
+                      <IconButton size="small" disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(cartEntry.id)} className="button-remove">
                         <Clear /></IconButton>
                     </span>
                     {productHasSelectableModifiers(cartEntry.id, menu) ?

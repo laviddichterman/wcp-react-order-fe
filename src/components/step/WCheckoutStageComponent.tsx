@@ -2,9 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { Typography, Input, Button } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { StepNav } from '../common';
-
-
 import { TIP_PREAMBLE } from '../../config';
 import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { TipSelection, ComputeTipValue, setTip } from '../../app/slices/WPaymentSlice';
@@ -14,6 +11,8 @@ import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis }
 import { StoreCreditSection } from '../StoreCreditSection';
 import { CreditCard } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
+import { backStage, nextStage } from '../../app/slices/StepperSlice';
+import { Navigation } from '../Navigation';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
@@ -23,7 +22,7 @@ const TIP_SUGGESTION_30: TipSelection = { value: .3, isSuggestion: true, isPerce
 
 const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25, TIP_SUGGESTION_30];
 
-export function WCheckoutStage({ navComp }: { navComp: StepNav }) {
+export function WCheckoutStage() {
   const dispatch = useAppDispatch();
   const [isProcessing, setIsProcessing] = useState(false);
   const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
@@ -127,7 +126,7 @@ export function WCheckoutStage({ navComp }: { navComp: StepNav }) {
               <ApplePay /> */}
             </>}
             <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
-            {navComp(() => { return }, isProcessing, true)}
+            <Navigation canBack canNext={!isProcessing} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />
           </div>
         </div>);
     }

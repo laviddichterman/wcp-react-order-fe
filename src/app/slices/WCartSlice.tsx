@@ -27,9 +27,9 @@ const WCartSlice = createSlice({
       const newEntry = { categoryId: action.payload.categoryId, product: action.payload.product, id, isLocked: false, quantity: 1 };
       WCartAdapter.addOne(state, newEntry);
     },
-    removeFromCart(state, action: PayloadAction<CartEntry>) {
+    removeFromCart(state, action: PayloadAction<string>) {
       // async dispatch toast.create({message: `Removed ${action.payload.product.m.name} from order.`} );
-      WCartAdapter.removeOne(state, action.payload.id);
+      WCartAdapter.removeOne(state, action.payload);
     },
     updateCartQuantity(state, action: PayloadAction<{ id: string; newQuantity: number }>) {
       // async dispatch of toast.create({message: `Changed ${pi.processed_name} quantity to ${this.s.cart[cid][i].quantity}.`} );

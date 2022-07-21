@@ -2,9 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { Typography, Link, Checkbox, FormControlLabel, Input, Button } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { StepNav } from '../common';
-
-
 import { TIP_PREAMBLE } from '../../config';
 import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { TipSelection, ComputeTipValue, setTip } from '../../app/slices/WPaymentSlice';
@@ -23,7 +20,7 @@ const TIP_SUGGESTION_30: TipSelection = { value: .3, isSuggestion: true, isPerce
 
 const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25, TIP_SUGGESTION_30];
 
-export function WConfirmationStageComponent({ navComp }: { navComp: StepNav }) {
+export function WConfirmationStageComponent() {
 
       // // case: we've got an orderSubmissionResponse and it's done processing, show the results
       

@@ -1,6 +1,4 @@
 import { WProduct } from '@wcp/wcpshared';
-import React from 'react';
-import { DELIVERY_SERVICE, PIZZAS_CATID } from '../config';
 import { MetadataJson } from 'libphonenumber-js/core';
 import metadata_custom from '../metadata.custom.json';
 
@@ -33,45 +31,6 @@ const SERVICE_TERMS_LIST = [[], ["All of our party members 5 years of age and up
 
 export const getTermsForService = (service: number) => SERVICE_TERMS_LIST[service]; 
 
-// var FilterModifiersCurry = function (menu) {
-//   return function (mods) {
-//     var result = {};
-//     angular.forEach(mods, function(value, mtid) {
-//       var modifier_entry = menu.modifiers[mtid];
-//       var disp_flags = modifier_entry.modifier_type.display_flags;
-//       var omit_section_if_no_available_options = disp_flags.omit_section_if_no_available_options;
-//       var hidden = disp_flags.hidden;
-//       // cases to not show:
-//       // modifier.display_flags.omit_section_if_no_available_options && (has selected item, all other options cannot be selected, currently selected items cannot be deselected)
-//       // modifier.display_flags.hidden is true
-//       if (!hidden && (!omit_section_if_no_available_options || value.has_selectable)) {
-//         result[mtid] = value;
-//       }
-//     });
-//     return result;
-//   };
-// }
-
-// var ProductHasSelectableModifiers = function(pi, menu) {
-//   return Object.keys(FilterModifiersCurry(menu)(pi.modifier_map)).length > 0;
-// }
-
-// export const GenerateLinearCart = (cart: Cart) => {
-//   const pizza_portion: CartEntry[] = [];
-//   const extras_portion: CartEntry[] = [];
-//   Object.entries(cart).forEach(([key, values]: [string, CartEntry[]]) => {
-//     values.forEach((entry: CartEntry) => {
-//       if (key === PIZZAS_CATID) {
-//         pizza_portion.push(entry);
-//       }
-//       else {
-//         extras_portion.push(entry);
-//       }
-//     })
-//   })
-//   return pizza_portion.concat(extras_portion);
-// }
-
 export type CustomerInfo = {
   givenName: string,
   familyName: string,
@@ -79,12 +38,3 @@ export type CustomerInfo = {
   email: string,
   referral: string
 };
-
-export type StepNav = (onSubmitCallback: () => void, canNext: boolean, canBack: boolean) => React.ReactNode;
-
-export interface StepData {
-  stepperTitle: string;
-  content: ({navComp} : {navComp : StepNav}) => React.ReactNode;
-}
-
-

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Typography, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { StepNav, SERVICE_DATE_FORMAT } from '../common';
-import { useAppSelector } from '../../app/useHooks';
+import { SERVICE_DATE_FORMAT } from '../common';
+import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { format } from 'date-fns';
+import { backStage, nextStage } from '../../app/slices/StepperSlice';
+import { Navigation } from '../Navigation';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
@@ -14,7 +16,8 @@ const REQUEST_SLICING = "In order to ensure the quality of our pizzas, we will n
 const REQUEST_VEGAN = "Our pizzas cannot be made vegan or without cheese. If you're looking for a vegan option, our Beets By Schrute salad can be made vegan by omitting the bleu cheese.";;
 const REQUEST_SOONER = "It looks like you're trying to ask us to make your pizza sooner. While we would love to do so, the times you were able to select represents our real-time availability. Please send us a text if you're looking for your pizza earlier and it's not a Friday, Saturday, or Sunday, otherwise, you'll need to remove this request to continue with your order.";
 
-export function WReviewOrderStage({ navComp }: { navComp: StepNav }) {
+export default function WReviewOrderStage() {
+  const dispatch = useAppDispatch();
   const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
   const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
@@ -102,7 +105,7 @@ export function WReviewOrderStage({ navComp }: { navComp: StepNav }) {
         {acknowledgeInstructionsDialogue ? <textarea value={specialInstructions} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} ng-change="orderCtrl.ChangedEscapableInfo()" /> : ""}
       </div>
       {specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>)}
-      {navComp(() => { return }, !disableSubmit, true)}
+      <Navigation canBack canNext={!disableSubmit} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />
       {/* <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
         <button type="submit" className="btn" disabled={disableSubmit} ng-show="orderCtrl.s.acknowledge_instructions_dialogue || (orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT)" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()">Submit Order</button> */}
     </div >

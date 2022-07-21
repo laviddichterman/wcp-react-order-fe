@@ -4,9 +4,10 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { ICustomerInfo, customerInfoSchema, setCustomerInfo } from '../../app/slices/WCustomerInfoSlice';
 import { FormProvider, RHFTextField, RHFPhoneInput } from '../hook-form';
-import { StepNav } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { RHFMailTextField } from '../hook-form/RHFMailTextField';
+import { Navigation } from '../Navigation';
+import { backStage, nextStage } from '../../app/slices/StepperSlice';
 
 // TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
 
@@ -29,13 +30,14 @@ function useCIForm() {
   return useFormApi;
 }
 
-export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
+export function WCustomerInformationStage() {
   const cIForm = useCIForm();
   const dispatch = useAppDispatch();
   const { getValues, formState: { isValid, errors }, handleSubmit } = cIForm;
-  const onSubmitCallback = useCallback(() => {
-    dispatch(setCustomerInfo(getValues()))
-  }, [dispatch, getValues]);
+  const handleNext = () => {
+    dispatch(setCustomerInfo(getValues()));
+    dispatch(nextStage());
+  }
   return (
     <>
       <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
@@ -77,7 +79,7 @@ export function WCustomerInformationStage({ navComp }: { navComp: StepNav }) {
           placeholder={"Referral"}
         />
       </FormProvider>
-      {navComp(handleSubmit(onSubmitCallback), isValid, true)}
+      <Navigation canBack canNext={isValid} handleBack={()=>dispatch(backStage())} handleNext={handleSubmit(handleNext)} />
     </>
   )
 };

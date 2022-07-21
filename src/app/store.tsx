@@ -14,7 +14,7 @@ import SocketIoReducer, { ICategoriesAdapter,
 import SocketIoMiddleware from "./slices/SocketIoMiddleware";
 import ListeningMiddleware from "./slices/ListeningMiddleware";
 import { CartEntry } from "../components/common";
-import { IMenu, MetadataModifierMap } from "@wcp/wcpshared";
+import { IMenu, MetadataModifierMap, ServicesEnableMap, WDateUtils } from "@wcp/wcpshared";
 import WPaymentReducer, { ComputeTipValue } from "./slices/WPaymentSlice";
 import { DELIVERY_FEE, TAX_RATE } from "../config";
 import { RoundToTwoDecimalPlaces } from "../utils/numbers";
@@ -130,4 +130,56 @@ export const SelectAutoGratutityEnabled = createSelector(
   SelectSubtotal,
   (s: RootState) => s.fulfillment.deliveryInfo,
   (subtotal, deliveryInfo) => deliveryInfo !== null || subtotal > 80
+);
+
+export const SelectHasOperatingHoursForService = createSelector(
+  (s: RootState, _ : number) => s.ws.services!,
+  (s: RootState, _ : number) => s.ws.settings!.operating_hours,
+  (_: RootState, serviceNumber: number) => serviceNumber,
+  (services, operatingHours, serviceNumber) => Object.hasOwn(services, String(serviceNumber)) && 
+    serviceNumber < operatingHours.length && 
+    operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false)
+);
+
+export const SelectMainCategoryId = (s: RootState) => s.ws.settings!.config.MAIN_CATID as string;
+export const SelectSupplementalCategoryId = (s: RootState) => s.ws.settings!.config.SUPP_CATID as string;
+
+export const SelectMainProductCategoryCount = createSelector(
+  SelectMainCategoryId,
+  (s: RootState) => getCart(s.cart),
+  (MAIN_CATID, cart) => cart.reduce((acc, e) => acc + (e.categoryId === MAIN_CATID ? e.quantity : 0), 0)
 )
+
+export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
+  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.leadtime!,
+  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.blockedOff!,
+  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.settings!,
+  (s: RootState, _: Date | number, __: ServicesEnableMap, mainProductCount: number) => mainProductCount,
+  (_: RootState, selectedDate: Date | number, __: ServicesEnableMap) => selectedDate,
+  (_: RootState, __: Date | number, serviceSelection: ServicesEnableMap) => serviceSelection,
+  (leadtime, blockedOff, settings, mainProductCount, selectedDate, serviceSelection) => 
+    WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtime, selectedDate, serviceSelection, {cart_based_lead_time: 0, size: Math.max(mainProductCount, 1)})
+);
+
+export const SelectAvailabilityForServicesAndDate = createSelector(
+  (s: RootState, selectedDate: Date | number, serviceSelection: ServicesEnableMap) => 
+    (mainProductCount : number) => 
+      SelectAvailabilityForServicesDateAndProductCount(s, selectedDate, serviceSelection, mainProductCount),
+  (s: RootState, _: Date | number, __: ServicesEnableMap) => SelectMainProductCategoryCount(s),
+  (selector, mainProductCount) => selector(mainProductCount)
+);
+
+export const SelectOptionsForServicesAndDate = createSelector(
+  (s: RootState, selectedDate: Date | number, serviceSelection: ServicesEnableMap) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
+  (s: RootState, _: Date | number, __: ServicesEnableMap) => s.metrics.currentTime!,
+  (_: RootState, selectedDate: Date | number, __: ServicesEnableMap) => selectedDate,
+  (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, currentTime)
+
+)
+
+export const SelectHasSpaceForPartyOf = createSelector(
+  (_: RootState) => true,
+  (hasSpace)=> hasSpace
+)
+
+// const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: Date | number, orderTime: number) => true, []);
