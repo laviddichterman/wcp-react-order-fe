@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 import { Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { WProductComponent } from '../WProductComponent';
-import { WOrderCart } from '../WOrderCartComponent';
 import { CreateWCPProductFromPI, WProduct, FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
-import { customizeProduct, selectSelectedProduct } from '../../app/slices/WCustomizerSlice';
+import { customizeProduct, editCartEntry, selectSelectedProduct } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
 import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors, SelectMainCategoryId, SelectMainProductCategoryCount, SelectSupplementalCategoryId } from '../../app/store';
-import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart } from '../../app/slices/WCartSlice';
+import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEntry } from '../../app/slices/WCartSlice';
 import useMenu from '../../app/useMenu';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
+import { scrollToElementAfterDelay, scrollToIdAfterDelay } from '../../utils/shared';
+import { CartEntry } from '../common';
+import { WOrderCart } from '../WOrderCartComponent';
 
 
 const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
@@ -21,14 +23,12 @@ const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | n
 };
 
 // NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
-const FilterProductWrapper = function (menu: IMenu, order_time: Date) {
+const FilterProductWrapper = function (menu: IMenu, order_time: Date | number) {
   return (item: IProductInstance) => FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time)
 };
 
-
-
 export function WShopForProductsStage() {
-  const topOfCustomizerRef = useRef();
+  const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('topOfShop');
   const MAIN_CATID = useAppSelector(SelectMainCategoryId);
   const SUPP_CATID = useAppSelector(SelectSupplementalCategoryId);
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
@@ -44,11 +44,11 @@ export function WShopForProductsStage() {
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
   const [extrasCategories, setExtrasCategories] = useState<string[]>([]);
-  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => serviceDateTime !== null && menu !== null ? menu.categories[category].menu.filter(FilterProductWrapper(menu, new Date(serviceDateTime))).sort((p) => p.display_flags.order.ordinal) : [], [menu, serviceDateTime]);
-
+  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => serviceDateTime !== null && menu !== null ? menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime)).sort((p) => p.display_flags.order.ordinal) : [], [menu, serviceDateTime]);
   const HandleNext = () => {
     if (menuStage === 'MAIN') {
       setMenuStage('SECONDARY');
+      scrollToIdAfterDelay('topOfShop', 100);
     }
     else {
       dispatch(nextStage())
@@ -57,6 +57,7 @@ export function WShopForProductsStage() {
   const HandleBack = () => {
     if (menuStage === 'SECONDARY') {
       setMenuStage('MAIN');
+      scrollToIdAfterDelay('topOfShop', 100);
     }
     else {
       dispatch(backStage())
@@ -69,7 +70,7 @@ export function WShopForProductsStage() {
       return menu !== null && menu.categories[SUPP_CATID].children.length ? menu.categories[SUPP_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, time)) : []
     }
     if (serviceDateTime !== null) {
-      const extras = ComputeExtrasCategories(menu, serviceDateTime  );
+      const extras = ComputeExtrasCategories(menu, serviceDateTime);
       if (extras.length !== extrasCategories.length) {
         setActivePanel(0);
         setExtrasCategories(extras);
@@ -77,8 +78,7 @@ export function WShopForProductsStage() {
     }
   }, [SUPP_CATID, extrasCategories.length, serviceDateTime, menu]);
 
-  const onProductSelection = (e: React.MouseEvent, cid: string, pid: string) => {
-    e.preventDefault();
+  const onProductSelection = useCallback((returnToId: string, cid: string, pid: string) => {
     // either dispatch to the customizer or to the cart
 
     const productInstance = selectProductInstanceById(pid);
@@ -103,32 +103,46 @@ export function WShopForProductsStage() {
         else {
           // add to the customizer
           dispatch(customizeProduct({ product: productCopy, categoryId: cid }));
-          // TODO: scroll to top of product customizer
+          scrollToIdAfterDelay('topOfShop', 0);
         }
       }
+      setScrollToOnReturn(returnToId);
     }
-  }
-  //console.log(topOfCustomizerRef);
+  }, [cart, dispatch, enqueueSnackbar, menu, selectProductClassById, selectProductInstanceById])
 
-  const toggleAccordion = (i: number) => {
+
+  const setProductToEdit = (entry: CartEntry) => {
+    dispatch(lockCartEntry(entry.id));
+    dispatch(editCartEntry(entry));
+    scrollToIdAfterDelay('topOfShop', 100);  
+    setScrollToOnReturn('orderCart');  
+  };
+
+  const toggleAccordion = (event: React.SyntheticEvent<Element, Event>, i: number) => {
+    event.preventDefault();
+    const ref = event.currentTarget;
     if (activePanel === i) {
-      setIsExpanded(!isExpanded);
+      if (isExpanded) {
+        setIsExpanded(false);
+        scrollToElementAfterDelay(ref, 200, 'center');
+        return;
+      }
     }
-    else {
-      setActivePanel(i);
-      setIsExpanded(true);
-    }
+    setActivePanel(i);
+    setIsExpanded(true);
+    scrollToElementAfterDelay(ref, 450);
   }
 
   return (
     <div>
+      <div id="topOfShop" />
       {selectedProduct === null && <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>{numMainCategoryProducts > 0 ? "Click a pizza below or next to continue." : "Click a pizza below to get started"}</Typography>}
       {menuStage === "MAIN" && selectedProduct === null ? (
         <div className="ordering-menu menu-list menu-list__dotted">
           <ul className="flexitems menu-list__items">
             {ProductsForCategoryFilteredAndSorted(MAIN_CATID).map((p: IProductInstance, i: number) =>
               <li key={i} className="flexitem menu-list__item">
-                <div className="offer-link" onClick={(e) => onProductSelection(e, MAIN_CATID, p.id)}>
+                <div className="offer-link" onClick={(e) => onProductSelection('topOfShop', MAIN_CATID, p.id)}>
                   <WProductComponent productMetadata={menu!.product_instance_metadata[p.id]} allowAdornment description dots price menuModifiers={menu!.modifiers} displayContext="order" />
                 </div>
               </li>)}
@@ -137,17 +151,17 @@ export function WShopForProductsStage() {
       {menuStage === "SECONDARY" && selectedProduct === null ? (
         <div>
           <h3 className="flush--top"><strong>Add small plates or beverages to your order.</strong></h3>
-          {extrasCategories.map((subcatid: string, i: number) =>
-            <Accordion key={i} expanded={activePanel === i && isExpanded} onChange={() => toggleAccordion(i)} className="ordering-menu menu-list menu-list__dotted" >
+          {extrasCategories.map((catId, i) =>
+            <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} className="ordering-menu menu-list menu-list__dotted" >
               <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[subcatid].menu_name }} /></Typography>
+                <Typography sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].menu_name }} /></Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <ul className="menu-list__items">
-                  {menu!.categories[subcatid].subtitle ? <li className="menu-list__item"><strong><span dangerouslySetInnerHTML={{ __html: menu!.categories[subcatid].subtitle || "" }}></span></strong></li> : ""}
-                  {ProductsForCategoryFilteredAndSorted(subcatid).map((p: IProductInstance, j: number) =>
+                  {menu!.categories[catId].subtitle ? <li className="menu-list__item"><strong><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></span></strong></li> : ""}
+                  {ProductsForCategoryFilteredAndSorted(catId).map((p: IProductInstance, j: number) =>
                     <li key={j} className="menu-list__item">
-                      <div className="offer-link" onClick={(e) => onProductSelection(e, subcatid, p.id)}>
+                      <div className="offer-link" onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}>
                         <WProductComponent productMetadata={menu!.product_instance_metadata[p.id]} allowAdornment description dots price menuModifiers={menu!.modifiers} displayContext="order" />
                       </div>
                     </li>)}
@@ -155,17 +169,9 @@ export function WShopForProductsStage() {
               </AccordionDetails>
             </Accordion>)}
         </div>) : null}
-      {selectedProduct !== null ? (<WProductCustomizerComponent ref={topOfCustomizerRef} menu={menu!} suppressGuide={false} />) : null}
-      <WOrderCart isProductEditDialogOpen menu={menu!} />
-      {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={HandleBack} handleNext={HandleNext} />}
+      {selectedProduct !== null ? (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />) : null}
+      <WOrderCart isProductEditDialogOpen={selectedProduct === null} menu={menu!} setProductToEdit={setProductToEdit} />
+      <Navigation canBack={selectedProduct === null} canNext={selectedProduct === null && numMainCategoryProducts > 0} handleBack={HandleBack} handleNext={HandleNext} />
     </div>
   );
 }
-
-// WShopForProductsStage.Stage = {
-//   stepperTitle: "Add items",
-//   isComplete: (s: RootState) => s.customizer.selectedProduct === null && s.cart.ids.length > 0,
-//   content: WShopForProductsStage
-// }
-
-

@@ -19,11 +19,9 @@ export function RHFMailTextField({ name, ...other }: Props) {
   const getSuggestion = useCallback((value: string) => {
     let sug = ""
     const cb = (suggestion: MailcheckModule.ISuggestion) => {
-      console.log(suggestion);
       sug = suggestion.full;
     };
     Mailcheck.run({ email: value, suggested: cb });
-    console.log(sug)
     return sug;
   }, []);
   return (

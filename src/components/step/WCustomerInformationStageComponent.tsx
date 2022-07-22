@@ -63,7 +63,6 @@ export function WCustomerInformationStage() {
           country='US'
           name="mobileNum"
           error={errors.mobileNum}
-          placeholder=''
           label={<label className="phone-number-text">Mobile Phone Number:</label>}
           control={cIForm.control}
         />
@@ -71,12 +70,10 @@ export function WCustomerInformationStage() {
           name="email"
           autoComplete="email"
           label={<label className="customer-email-text">E-Mail Address:</label>}
-          placeholder={"E-Mail Address"}
         />
         <RHFTextField
           name="referral"
           label={<label className="referral-info">Referral (optional):</label>}
-          placeholder={"Referral"}
         />
       </FormProvider>
       <Navigation canBack canNext={isValid} handleBack={()=>dispatch(backStage())} handleNext={handleSubmit(handleNext)} />

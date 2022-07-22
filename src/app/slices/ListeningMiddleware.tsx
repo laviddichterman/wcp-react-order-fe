@@ -10,7 +10,8 @@ import { TIMING_POLLING_INTERVAL } from '../../components/common';
 import { addToCart, removeFromCart, updateCartQuantity } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired } from './WFulfillmentSlice';
 import { WDateUtils } from '@wcp/wcpshared';
-import { setStage, STEPPER_STAGE_ENUM } from './StepperSlice';
+import { backStage, nextStage, setStage, STEPPER_STAGE_ENUM } from './StepperSlice';
+import { scrollToIdAfterDelay } from '../../utils/shared';
 
 export const ListeningMiddleware = createListenerMiddleware()
 
@@ -77,6 +78,14 @@ ListeningMiddleware.startListening({
         }
       }
     }
+  }
+});
+
+ListeningMiddleware.startListening({
+  matcher: isAnyOf(nextStage, backStage, setStage),
+  effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
+    const toId = `WARIO_step_${api.getState().stepper.stage}`;
+    scrollToIdAfterDelay(toId, 400);
   }
 });
 

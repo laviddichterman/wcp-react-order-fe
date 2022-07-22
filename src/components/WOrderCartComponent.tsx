@@ -7,15 +7,15 @@ import { IMenu } from '@wcp/wcpshared';
 import { IconButton } from '@mui/material';
 import { Clear, Edit } from '@mui/icons-material';
 import { GetSelectableModifiersForCartEntry } from '../app/store';
-import { editCartEntry } from '../app/slices/WCustomizerSlice';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
 
 interface IOrderCart {
   menu: IMenu;
   isProductEditDialogOpen: boolean;
+  setProductToEdit: (entry: CartEntry) => void;
 }
 
-export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
+export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: IOrderCart) {
   const dispatch = useAppDispatch();
   const cart = useAppSelector(s => getCart(s.cart));
   const selectSelectableModifiersForEntry = useAppSelector(s => (id: string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
@@ -28,12 +28,8 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
       dispatch(updateCartQuantity({ id, newQuantity: quantity }));
     }
   };
-  const setProductToEdit = (entry: CartEntry) => {
-    dispatch(lockCartEntry(entry.id));
-    dispatch(editCartEntry(entry));
-  };
-  return cart.length === 0 ? null :
-    <div className="cart">
+  return cart.length === 0 ? <></> :  
+    <div id="orderCart" className="cart">
       <hr className="separator" />
       <h3 className="flush">Current Order</h3>
       <div className="content">
@@ -63,7 +59,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen }: IOrderCart) {
                     </span>
                     {productHasSelectableModifiers(cartEntry.id, menu) ?
                       <span className="cart-item-remove">
-                        <IconButton size="small" disabled={isProductEditDialogOpen || cartEntry.isLocked} onClick={() => setProductToEdit(cartEntry)} className="button-sml"><Edit/></IconButton>
+                        <IconButton size="small" disabled={isProductEditDialogOpen || cartEntry.isLocked} onClick={() => setProductToEdit(cartEntry)} className="button-sml"><Edit /></IconButton>
                       </span> : ""}
                   </div>
                 </td>

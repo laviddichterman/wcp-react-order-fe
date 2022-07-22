@@ -9,14 +9,12 @@ import WReviewOrderStage from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
 import { WConfirmationStageComponent } from './step/WConfirmationStageComponent';
 import { SquarePaymentFormProvider } from './SquarePaymentForm';
-import { setStage } from '../app/slices/StepperSlice';
 
 export function WOrderingComponent() {
   const dispatch = useAppDispatch();
   const stage = useAppSelector(s=>s.stepper.stage);
   const squareApplicationId = useAppSelector(s=>s.ws.settings!.config.SQUARE_APPLICATION_ID as string);
   const squareLocationId = useAppSelector(s=>s.ws.settings!.config.SQUARE_LOCATION as string);
-
   const STAGES = [
     {
       stepperTitle: "Timing",
@@ -52,7 +50,7 @@ export function WOrderingComponent() {
           <span id="ordertop"></span>
           <Stepper activeStep={stage} orientation="vertical">
             {STAGES.map((stg, i) => (
-              <Step key={i} >
+              <Step id={`WARIO_step_${i}`} key={i} >
                 <StepLabel>{stg.stepperTitle}</StepLabel>
                 <StepContent>
                   {stg.content}

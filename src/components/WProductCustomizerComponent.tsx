@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import { FormControl, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone } from "@mui/icons-material";
@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
+import { scrollToIdAfterDelay } from '../utils/shared';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -390,11 +391,12 @@ const FilterModifiersCurry = function (menuModifiers: MenuModifiers) {
   };
 }
 
-interface IProductCustomizerComponent {
+interface IProductCustomizerComponentProps {
   menu: IMenu;
-  suppressGuide: boolean;
+  suppressGuide?: boolean;
+  scrollToWhenDone: string;
 }
-export const WProductCustomizerComponent = React.forwardRef(({ menu, suppressGuide }: IProductCustomizerComponent, ref) => {
+export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCustomizerComponentProps>(({ menu, suppressGuide, scrollToWhenDone }, ref) => {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const categoryId = useAppSelector(s => s.customizer.categoryId);
@@ -414,11 +416,14 @@ export const WProductCustomizerComponent = React.forwardRef(({ menu, suppressGui
   if (categoryId === null || selectedProduct === null) {
     return null;
   }
-
   const toggleAllowAdvancedOption = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setShowAdvanced(e.target.checked));
   }
   const unselectProduct = () => {
+    scrollToIdAfterDelay(scrollToWhenDone, 200);
+    if (cartEntry) {
+      dispatch(unlockCartEntry(cartEntry.id));
+    }
     dispatch(clearCustomizer());
   }
   const confirmCustomization = () => {
@@ -441,15 +446,10 @@ export const WProductCustomizerComponent = React.forwardRef(({ menu, suppressGui
         enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success' });
       }
     }
-    // if (ref) {
-    //   // @ts-ignore
-    //   ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // }
-    // TODO: scroll to top
     unselectProduct();
   }
   return (
-    <div className="customizer menu-list__items">
+    <div ref={ref} className="customizer menu-list__items">
       { mtid_moid !== null && <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} /> }
       <h3 className="flush--top">
         <strong>Customize {customizerTitle}!</strong>

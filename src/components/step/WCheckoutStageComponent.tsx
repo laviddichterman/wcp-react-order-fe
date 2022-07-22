@@ -109,7 +109,7 @@ export function WCheckoutStage() {
             <div className="flexbox__item one-third soft-quarter" >
               <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
                 <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
+                {isCustomTipSelected ? <Input autoFocus value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
               </button>
             </div>
           </div>

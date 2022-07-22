@@ -21,34 +21,24 @@ const SocketIoMiddleware: Middleware = store => {
         });
       });
       socket.on("WCP_SERVICES", (data: { [index:string] : string }) => {
-        console.log(data);
         store.dispatch(SocketIoActions.receiveServices(data));
       });
       socket.on("WCP_SERVER_TIME", (data: number) => {
         store.dispatch(SocketIoActions.receiveServerTime(data));
       });
       socket.on("WCP_BLOCKED_OFF", (data: JSFEBlockedOff) => {
-        console.log(data);
         store.dispatch(SocketIoActions.receiveBlockedOff(data));
       });
-
       socket.on("WCP_LEAD_TIMES", (data: number[]) => {
-        console.log(data);
         store.dispatch(SocketIoActions.receiveLeadTime(data));
       });
-
       socket.on("WCP_SETTINGS", (data: IWSettings ) => {
-        console.log(data);
         store.dispatch(SocketIoActions.receiveSettings(data));
       });
-
       socket.on("WCP_CATALOG", (data: ICatalog ) => {
-        console.log(data);
         store.dispatch(SocketIoActions.receiveCatalog(data));
       });
-
     }
-
     next(action);
   }
 }
