@@ -8,8 +8,6 @@ export const TIMING_POLLING_INTERVAL = 30000;
 
 export const MAX_PARTY_SIZE = 10;
 
-export const SERVICE_DATE_FORMAT = 'EEEE, MMMM dd, yyyy';
-
 export interface CoreCartEntry { 
   categoryId: string;
   quantity: number;
@@ -30,11 +28,3 @@ const SERVICE_TERMS_LIST = [[], ["All of our party members 5 years of age and up
 []];
 
 export const getTermsForService = (service: number) => SERVICE_TERMS_LIST[service]; 
-
-export type CustomerInfo = {
-  givenName: string,
-  familyName: string,
-  mobileNum: string,
-  email: string,
-  referral: string
-};

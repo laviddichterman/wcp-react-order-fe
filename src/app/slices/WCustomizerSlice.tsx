@@ -118,7 +118,7 @@ export const selectAllowAdvancedPrompt = createSelector(
 
 export const selectCartEntryBeingCustomized = createSelector(
   (s: RootState) => s.customizer.cartId,
-  (s: RootState) => (cid: string) => getCartEntry(s.cart, cid),
+  (s: RootState) => (cid: string) => getCartEntry(s.cart.cart, cid),
   (cartId: string | null, cartEntryGetter) => cartId !== null ? cartEntryGetter(cartId) : undefined
 );
 

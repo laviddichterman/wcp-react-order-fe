@@ -1,5 +1,5 @@
 import { createEntityAdapter, createSlice, EntityState, PayloadAction } from "@reduxjs/toolkit";
-import { ICatalog, ICategory, IOption, IOptionType, IProduct, IProductInstance, IProductInstanceFunction, IWSettings, JSFEBlockedOff } from "@wcp/wcpshared";
+import { ICatalog, ICategory, IMenu, IOption, IOptionType, IProduct, IProductInstance, IProductInstanceFunction, IWSettings, JSFEBlockedOff } from "@wcp/wcpshared";
 
 export const ProductInstanceFunctionsAdapter = createEntityAdapter<IProductInstanceFunction>({selectId: entry => entry.id});
 export const IProductsAdapter = createEntityAdapter<IProduct>({selectId: entry => entry.id});
@@ -21,6 +21,7 @@ export interface SocketIoState {
   blockedOff: JSFEBlockedOff | null;
   leadtime: number[] | null;
   settings: IWSettings | null;
+  menu: IMenu | null;
   status: 'NONE' | 'START' | 'CONNECTED' | 'FAILED'; 
 }
 
@@ -37,6 +38,7 @@ const initialState: SocketIoState = {
   blockedOff: null,
   leadtime: null,
   settings: null,
+  menu: null,
   status: "NONE"
 }
 
@@ -77,10 +79,12 @@ const SocketIoSlice = createSlice({
     },
     receiveSettings(state, action : PayloadAction<IWSettings>) {
       state.settings = action.payload;
+    },
+    setMenu(state, action : PayloadAction<IMenu>) {
+      state.menu = action.payload;
     }
   }
 });
-
 
 export const SocketIoActions = SocketIoSlice.actions;
 

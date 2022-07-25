@@ -1,9 +1,9 @@
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
-import { FormControlLabel, Checkbox } from '@mui/material';
+import { FormControlLabel, Checkbox, Grid } from '@mui/material';
 import { StoreCreditInputComponent } from './StoreCreditInputComponent';
 import { useState } from 'react';
 import { Done, Error } from '@mui/icons-material';
-import {CREDIT_REGEX} from '@wcp/wcpshared';
+import { CREDIT_REGEX } from '@wcp/wcpshared';
 import { validateStoreCredit, clearCreditCode } from '../app/slices/WPaymentSlice';
 
 
@@ -13,42 +13,47 @@ export function StoreCreditSection() {
   const [useCreditCheckbox, setUseCreditCheckbox] = useState(false);
   const creditValidationLoading = useAppSelector(s => s.payment.creditValidationLoading);
   const storeCreditInput = useAppSelector(s => s.payment.storeCreditInput);
-  const [ localCreditCode, setLocalCreditCode ] = useState(storeCreditInput);
-  const setLocalCreditCodeAndAttemptToValidate = function(code : string) {
+  const [localCreditCode, setLocalCreditCode] = useState(storeCreditInput);
+  const setLocalCreditCodeAndAttemptToValidate = function (code: string) {
     setLocalCreditCode(code);
     if (creditValidationLoading !== 'PENDING' && code.length === 19 && CREDIT_REGEX.test(code)) {
       dispatch(validateStoreCredit(code))
     }
   }
-  const handleSetUseCreditCheckbox = (checked : boolean) => {
-    if (!checked) { 
+  const handleSetUseCreditCheckbox = (checked: boolean) => {
+    if (!checked) {
       dispatch(clearCreditCode());
       setLocalCreditCode("");
     }
     setUseCreditCheckbox(checked);
   }
   return (
-
-
-    <div className="soft-half">
-      <div className="flexbox">
+    <Grid container>
+      <Grid item md={useCreditCheckbox ? 6 : 12} xs={12}>
         <FormControlLabel
           className='flexbox__item'
           control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
           label="Use Digital Gift Card / Store Credit"
         />
-      </div>
+      </Grid>
       {useCreditCheckbox &&
-        <div className="flexbox">
-            <span className="float--right">
-              <StoreCreditInputComponent name="Credit Code" label="Code:" id="store_credit_code" disabled={creditValidationLoading === 'SUCCEEDED' || creditValidationLoading === 'PENDING'} value={localCreditCode} onChange={(e) => setLocalCreditCodeAndAttemptToValidate(e.target.value)} />
-            </span>
-          <div className="flexbox__item soft-half--left">
-          { creditValidationLoading === "FAILED" && <Error />}
-          { creditValidationLoading === "SUCCEEDED" && <Done />}
-          </div>
-        </div>}
-        { creditValidationLoading === "FAILED" && <div className="wpcf7-response-output wpcf7-mail-sent-ng">Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.</div>}
-    </div>
+        <Grid item xs={12} md={6} >
+          <StoreCreditInputComponent
+            autoFocus
+            name="Credit Code"
+            label="Code:"
+            id="store_credit_code"
+            disabled={creditValidationLoading === 'SUCCEEDED' || creditValidationLoading === 'PENDING'}
+            value={localCreditCode}
+            onChange={(e) => setLocalCreditCodeAndAttemptToValidate(e.target.value)}
+          />
+          {creditValidationLoading === "FAILED" && <Error />}
+          {creditValidationLoading === "SUCCEEDED" && <Done />}
+        </Grid>}
+      {creditValidationLoading === "FAILED" && 
+        <Grid item xs={12} className="wpcf7-response-output wpcf7-mail-sent-ng">
+          Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.
+        </Grid>}
+    </Grid>
   )
 }

@@ -5,11 +5,12 @@ import { Checkbox, FormControlLabel, FormGroup, FormHelperText, FormControlLabel
 import { ErrorMessage } from '@hookform/error-message';
 
 // ----------------------------------------------------------------------
-interface RHFCheckboxProps extends Omit<FormControlLabelProps, 'control'> {
+interface RHFCheckboxProps extends Omit<FormControlLabelProps, 'disabled' | 'name' | 'control'> {
   name: string;
+  readOnly?: boolean;
 }
 
-export function RHFCheckbox({ name, ...other }: RHFCheckboxProps) {
+export function RHFCheckbox({ name, readOnly, ...other }: RHFCheckboxProps) {
   const { control } = useFormContext();
 
   return (
@@ -19,7 +20,7 @@ export function RHFCheckbox({ name, ...other }: RHFCheckboxProps) {
           name={name}
           control={control}
           render={({ field, formState: {errors} }) => <>
-          <Checkbox {...field} checked={field.value === true} />
+          <Checkbox {...field} readOnly checked={field.value === true} />
           <ErrorMessage errors={errors} name={name} render={({message}) => <FormHelperText error>{message}</FormHelperText>} />
           </>
           }
@@ -31,15 +32,16 @@ export function RHFCheckbox({ name, ...other }: RHFCheckboxProps) {
 }
 
 // ----------------------------------------------------------------------
-interface RHFMultiCheckboxProps extends Omit<FormControlLabelProps, 'control' | 'label'> {
+interface RHFMultiCheckboxProps extends Omit<FormControlLabelProps, 'disabled' | 'name' | 'control' | 'label'> {
   name: string;
   options: {
     label: React.ReactNode;
     value: string;
   }[];
+  readOnly?: boolean;
 }
 
-export function RHFMultiCheckbox({ name, options, ...other }: RHFMultiCheckboxProps) {
+export function RHFMultiCheckbox({ name, options, readOnly, ...other }: RHFMultiCheckboxProps) {
   const { control } = useFormContext();
 
   return (
@@ -56,8 +58,10 @@ export function RHFMultiCheckbox({ name, options, ...other }: RHFMultiCheckboxPr
             {options.map((option) => (
               <FormControlLabel
                 key={option.value}
+                disabled={readOnly}
                 control={
                   <Checkbox
+                    readOnly
                     checked={field.value.includes(option.value)}
                     onChange={() => field.onChange(onSelected(option.value))}
                   />

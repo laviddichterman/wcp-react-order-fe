@@ -3,28 +3,8 @@ import { DELIVERY_SERVICE } from "../../config";
 import { getTermsForService } from "../../components/common";
 import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
-import { WDateUtils } from "@wcp/wcpshared";
+import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
-
-interface AddressComponent {
-  types: Array<string>;
-  long_name: string;
-  short_name: string;
-}
-
-interface DeliveryAddressValidateResponse {
-    validated_address: string;
-    in_area: boolean;
-    found: boolean;
-    address_components: Array<AddressComponent>;
-}
-
-interface DeliveryAddressValidateRequest { 
-  address: string; 
-  zipcode: string;
-  city: string;
-  state: string;
-}
 
 export const deliveryAddressSchema = yup.object().shape({
   address: yup.string().ensure().required("Please enter your street address"),
@@ -41,7 +21,7 @@ export const dineInSchema = yup.object().shape({
 });
 
 export const fulfillmentSchemaInstance = yup.object().shape({
-  serviceNum: yup.string().ensure().required("Please select a service."), // TODO was working on maybe validating the delivery info or dine in schema as part of this since the errors aren't checked again when we've done things like select dine-in, select and then unselect the checkbox, then switch to pickup. the validation errors still exist
+  serviceNum: yup.string().ensure().required("Please select a service."),
   serviceDate: yup.date().required("Please select a service date."),
   serviceTime: yup.number().integer().min(0).max(1439).required(),
   hasAgreedToTerms: yup.bool().when('serviceNum', (serviceNum, s) => {
@@ -51,35 +31,20 @@ export const fulfillmentSchemaInstance = yup.object().shape({
   })
 });
 
-// export interface FulfillmentSchema extends yup.InferType<typeof fulfillmentSchemaInstance> { };
-export interface DeliveryInfoRHFSchema {
-  address: string;
-  address2: string;
-  zipcode: string;
-  deliveryInstructions: string;
-};
+export type DeliveryInfoFormData = Omit<DeliveryInfoDto, "validation">;
 
-export interface DineInInfoRHFSchema {
-  partySize: number;
-};
-
-export interface WFulfillmentState {
+export type WFulfillmentState = {
   hasSelectedTimeExpired: boolean;
   hasSelectedDateExpired: boolean;
   hasAgreedToTerms: boolean;
-  selectedService: number | null;
-  selectedDate: number | null;
-  selectedTime: number | null;
-  dineInInfo: DineInInfoRHFSchema | null;
-  deliveryInfo: DeliveryInfoRHFSchema | null;
   deliveryValidationStatus: 'IDLE' | 'PENDING' | 'VALID' | 'INVALID' | 'OUTSIDE_RANGE';
-}
+} & NullablePartial<FulfillmentDto>;
 
-export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoRHFSchema>(
+export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoFormData>(
   'addressRequest/validate',
   async (req) => {
     const response = await axiosInstance.get('/api/v1/addresses', {
-      params: { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode },
+      params: { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode } as DeliveryAddressValidateRequest,
     });
     return response.data;
   }
@@ -122,10 +87,10 @@ const WFulfillmentSlice = createSlice({
     setHasAgreedToTerms(state, action: PayloadAction<boolean>) {
       state.hasAgreedToTerms = action.payload;
     },
-    setDineInInfo(state, action: PayloadAction<DineInInfoRHFSchema | null>) {
+    setDineInInfo(state, action: PayloadAction<DineInInfoDto | null>) {
       state.dineInInfo = action.payload;
     },
-    setDeliveryInfo(state, action: PayloadAction<DeliveryInfoRHFSchema | null>) {
+    setDeliveryInfo(state, action: PayloadAction<DeliveryInfoDto | null>) {
       state.deliveryInfo = action.payload;
     },
     setSelectedDateExpired(state) {
@@ -138,23 +103,24 @@ const WFulfillmentSlice = createSlice({
   extraReducers: (builder) => {
     // Add reducers for additional action types here, and handle loading state as needed
     builder
-    .addCase(validateDeliveryAddress.fulfilled, (state, action) => {
-      if (action.payload.found) {
-        state.deliveryInfo!.address = action.payload.validated_address;
+      .addCase(validateDeliveryAddress.fulfilled, (state, action) => {
+        state.deliveryInfo!.validation = action.payload;
         state.deliveryValidationStatus = action.payload.in_area ? 'VALID' : 'OUTSIDE_RANGE';
-      }
-      else {
+      })
+      .addCase(validateDeliveryAddress.pending, (state, action) => {
+        state.deliveryInfo = {
+          address: action.meta.arg.address,
+          address2: action.meta.arg.address2,
+          zipcode: action.meta.arg.zipcode,
+          deliveryInstructions: action.meta.arg.deliveryInstructions,
+          validation: null
+        }
+        state.deliveryValidationStatus = 'PENDING';
+      })
+      .addCase(validateDeliveryAddress.rejected, (state) => {
         state.deliveryValidationStatus = 'INVALID';
-      }
-    })
-    .addCase(validateDeliveryAddress.pending, (state, action) => {
-      state.deliveryInfo = action.meta.arg;
-      state.deliveryValidationStatus = 'PENDING';
-    })
-    .addCase(validateDeliveryAddress.rejected, (state) => {
-      state.deliveryValidationStatus = 'INVALID';
-    })
-  },  
+      })
+  },
 });
 
 export const SelectServiceDateTime = createSelector(

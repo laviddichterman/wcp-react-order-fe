@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuModifiers, PriceDisplay } from '@wcp/wcpshared';
 import { IProductInstancesSelectors } from '../app/store';
 import { useAppSelector } from '../app/useHooks';
+import { Box, BoxProps } from '@mui/material';
 interface WProductComponentProps { 
   productMetadata: WProductMetadata;
   description: boolean;
@@ -12,7 +13,7 @@ interface WProductComponentProps {
   price: boolean;
 };
 
-export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price }: WProductComponentProps) {
+export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, ...other }: WProductComponentProps & BoxProps) {
   const productInstance = useAppSelector(s => IProductInstancesSelectors.selectById(s, productMetadata.pi[0]));
   const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.display_flags[displayContext].adornment ? productInstance.display_flags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
   const descriptionHTML = useMemo(() => description && productMetadata.description ? productMetadata.description : "", [description, productMetadata.description]);
@@ -39,7 +40,7 @@ export function WProductComponent({ productMetadata, description, allowAdornment
     return `${productMetadata.price}`;
   }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
-    <div className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
+    <Box {...other} className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
       {adornmentHTML ? <span className="menu-list__item-highlight-title" dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
       <h4 className="menu-list__item-title">
         <span className="item_title">{productMetadata.name}</span>
@@ -59,7 +60,7 @@ export function WProductComponent({ productMetadata, description, allowAdornment
         </p>) : ""}
       {dots ? <span className="dots" /> : ""}
       {price ? <span className="menu-list__item-price">{priceText}</span> : ""}
-    </div>)
+    </Box>)
 };
 
 

@@ -2,9 +2,10 @@ import { ICatalog, IWSettings, JSFEBlockedOff } from '@wcp/wcpshared';
 import { Middleware } from 'redux'
 import { io, Socket } from "socket.io-client";
 import { SOCKETIO, HOST_API } from '../../config';
+import { RootState } from '../store';
 import { SocketIoActions } from './SocketIoSlice';
 
-const SocketIoMiddleware: Middleware = store => {
+const SocketIoMiddleware: Middleware<{}, RootState> = store => {
   let socket: Socket;
   
   return next => action => {

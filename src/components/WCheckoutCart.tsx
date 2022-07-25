@@ -3,15 +3,14 @@ import { WProductComponent } from './WProductComponent';
 import { CartEntry } from './common';
 import { fCurrency, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE, TAX_RATE } from '../config';
-import useMenu from '../app/useMenu';
 import { useAppSelector } from '../app/useHooks';
 import { getCart } from '../app/slices/WCartSlice';
 import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTipValue } from '../app/store';
 
 
 export function WCheckoutCart() {
-  const { menu } = useMenu();
-  const cart = useAppSelector(s => getCart(s.cart));
+  const menu = useAppSelector(s=>s.ws.menu);
+  const cart = useAppSelector(s => getCart(s.cart.cart));
   const discountApplied = useAppSelector(SelectDiscountApplied);
   const deliveryFee = useAppSelector(SelectDeliveryFee);
   const tipValue = useAppSelector(SelectTipValue);

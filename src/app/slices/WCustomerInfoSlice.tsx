@@ -4,15 +4,9 @@ import {
   parsePhoneNumber,
 } from 'libphonenumber-js/core';
 import { LIBPHONE_METADATA } from "../../components/common";
+import { YupValidateEmail } from "../../components/hook-form/RHFMailTextField";
+import { CustomerInfoDto } from "@wcp/wcpshared";
 
-export interface ICustomerInfo { 
-  givenName: string;
-  familyName: string;
-  mobileNum: string;
-  email: string;
-  referral: string;
-
-}
 export const customerInfoSchema = yup.object().shape({
   givenName: yup.string().ensure().required("Please enter your given name.").min(2, "Please enter the full name."),
   familyName: yup.string().ensure().required("Please enter your family name.").min(2, "Please enter the full name."),
@@ -27,17 +21,11 @@ export const customerInfoSchema = yup.object().shape({
         return false;
       }
     }),
-  email: yup.string().ensure()
-    .email("Please enter a valid e-mail address.")
-    .required("Please enter a valid e-mail address.")
-    .min(5, "Valid e-mail addresses are longer.")
-    .test('DotCon',
-    ".con is not a valid TLD. Did you mean .com?",
-    (v) => v.substring(v.length - 3) === 'con' ? false : true),
+  email: YupValidateEmail(yup.string()),
   referral: yup.string().ensure().notRequired()
 });
 
-const initialState: ICustomerInfo = {
+const initialState: CustomerInfoDto = {
   givenName: "",
   familyName: "",
   mobileNum: "",
@@ -49,7 +37,7 @@ const WCustomerInfoSlice = createSlice({
   name: 'ci',
   initialState: initialState,
   reducers: {
-    setCustomerInfo(state, action : PayloadAction<ICustomerInfo>) {
+    setCustomerInfo(state, action : PayloadAction<CustomerInfoDto>) {
       state.email = action.payload.email;
       state.familyName = action.payload.familyName;
       state.givenName = action.payload.givenName;

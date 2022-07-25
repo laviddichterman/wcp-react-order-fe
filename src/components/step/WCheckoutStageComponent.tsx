@@ -29,13 +29,14 @@ export function WCheckoutStage() {
   const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
   const tipBasis = useAppSelector(SelectTipBasis);
   const balance = useAppSelector(SelectBalanceAfterCredits);
-  const squarePayment = useAppSelector(s => s.payment.squarePayment);
+  const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length-1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s=>s.payment.selectedTip);
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
   const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis).toFixed(2));
   const [orderSubmissionResponse, setOrderSubmissionResponse] = useState(null);//{ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
+  const squareTokenErrors = useAppSelector(s=>s.payment.squareTokenErrors);
   useEffect(() => {
     if (currentTipSelection === null) {
       dispatch(setTip(TIP_SUGGESTION_20));
@@ -109,7 +110,7 @@ export function WCheckoutStage() {
             <div className="flexbox__item one-third soft-quarter" >
               <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
                 <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <Input autoFocus value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
+                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
               </button>
             </div>
           </div>
@@ -121,10 +122,12 @@ export function WCheckoutStage() {
           <StoreCreditSection />
           <div>
             {balance > 0 && <>
-              <CreditCard />
+              <CreditCard buttonProps={{ isLoading: submitToWarioStatus === 'PENDING' }} />
               {/* <GooglePay />
               <ApplePay /> */}
             </>}
+            {squareTokenErrors.length > 0 &&
+                  squareTokenErrors.map((e, i) => <div key={i} className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div>)}
             <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
             <Navigation canBack canNext={!isProcessing} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />
           </div>

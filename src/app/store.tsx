@@ -1,4 +1,4 @@
-import { configureStore, createSelector, EntityId } from "@reduxjs/toolkit";
+import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
 import WFulfillmentReducer from './slices/WFulfillmentSlice';
@@ -14,28 +14,29 @@ import SocketIoReducer, { ICategoriesAdapter,
 import SocketIoMiddleware from "./slices/SocketIoMiddleware";
 import ListeningMiddleware from "./slices/ListeningMiddleware";
 import { CartEntry } from "../components/common";
-import { IMenu, MetadataModifierMap, ServicesEnableMap, WDateUtils } from "@wcp/wcpshared";
+import { IMenu, MetadataModifierMap, ServicesEnableMap, WDateUtils, RoundToTwoDecimalPlaces, CreateOrderRequestV2, CartDtoV2 } from "@wcp/wcpshared";
 import WPaymentReducer, { ComputeTipValue } from "./slices/WPaymentSlice";
 import { DELIVERY_FEE, TAX_RATE } from "../config";
-import { RoundToTwoDecimalPlaces } from "../utils/numbers";
+
+export const RootReducer = combineReducers({
+  fulfillment: WFulfillmentReducer,
+  customizer: WCustomizerReducer,
+  ci: WCustomerInfoReducer,
+  cart: WCartReducer,
+  ws: SocketIoReducer,
+  metrics: WMetricsReducer,
+  payment: WPaymentReducer,
+  stepper: StepperReducer
+});
 
 export const store = configureStore({
-  reducer: {
-    fulfillment: WFulfillmentReducer,
-    customizer: WCustomizerReducer,
-    ci: WCustomerInfoReducer,
-    cart: WCartReducer,
-    ws: SocketIoReducer,
-    metrics: WMetricsReducer,
-    payment: WPaymentReducer,
-    stepper: StepperReducer
-  },
+  reducer: RootReducer,
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware().concat([SocketIoMiddleware, ListeningMiddleware.middleware])
   },
 });
 
-export type RootState = ReturnType<typeof store.getState>;
+export type RootState = ReturnType<typeof RootReducer>;
 export type AppDispatch = typeof store.dispatch;
 
 export const ICategoriesSelectors = ICategoriesAdapter.getSelectors((state: RootState) => state.ws.categories);
@@ -53,13 +54,13 @@ export const GetSelectableModifiers = (mMap : MetadataModifierMap, menu: IMenu) 
 }, {} as MetadataModifierMap);
 // todo: decouple this from the cart entry and just take in the modifier map
 export const GetSelectableModifiersForCartEntry = createSelector(
-  (s: RootState, cartEntryId: EntityId, _: IMenu) => getCartEntry(s.cart, cartEntryId),
+  (s: RootState, cartEntryId: EntityId, _: IMenu) => getCartEntry(s.cart.cart, cartEntryId),
   (_: RootState, __: EntityId, menu: IMenu) => menu,
   (entry: CartEntry | undefined, menu) =>
     entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu): {}
 );
 export const SelectCartSubTotal = createSelector(
-  (s: RootState) => getCart(s.cart),
+  (s: RootState) => getCart(s.cart.cart),
   (cart: CartEntry[]) => 
     cart.reduce((acc, entry)=> acc + (entry.product.m.price * entry.quantity), 0)
 );
@@ -146,7 +147,7 @@ export const SelectSupplementalCategoryId = (s: RootState) => s.ws.settings!.con
 
 export const SelectMainProductCategoryCount = createSelector(
   SelectMainCategoryId,
-  (s: RootState) => getCart(s.cart),
+  (s: RootState) => getCart(s.cart.cart),
   (MAIN_CATID, cart) => cart.reduce((acc, e) => acc + (e.categoryId === MAIN_CATID ? e.quantity : 0), 0)
 )
 
@@ -180,6 +181,86 @@ export const SelectOptionsForServicesAndDate = createSelector(
 export const SelectHasSpaceForPartyOf = createSelector(
   (_: RootState) => true,
   (hasSpace)=> hasSpace
-)
+);
+
+
+/**
+ *         data: {
+          nonce: nonce, //
+          service_option: state.service_type,
+          service_date: state.selected_date.format(DATE_STRING_INTERNAL_FORMAT),
+          service_time: state.service_time,
+          customer_name: SanitizeIfExists(`${state.customer_name_first} ${state.customer_name_last}`),
+          phonenum: state.phone_number,
+          delivery_info: {
+            address1: state.delivery_address,
+            address2: state.delivery_address_2,
+            instructions: SanitizeIfExists(state.delivery_instructions),
+            validated_delivery_address: state.validated_delivery_address,
+            validation_result: state.address_validation_result
+          },
+          user_email: state.email_address,
+          sliced: state.slice_pizzas,
+          number_guests: state.number_guests || 1,
+          products: state.CartToDTO(),
+          short_cart_list: state.short_cart_list,
+          special_instructions: SanitizeIfExists(state.special_instructions),
+          totals: {
+            delivery_fee: state.delivery_fee,
+            autograt: state.autograt,
+            subtotal: state.computed_subtotal,
+            tax: state.computed_tax,
+            tip: state.tip_value,
+            total: state.total,
+            balance: state.balance
+          },
+          store_credit: state.credit,
+          referral: SanitizeIfExists(state.referral),
+          load_time: state.debug_info.load_time,
+          time_selection_time: state.debug_info["time-selection-time"] ? state.debug_info["time-selection-time"].format("H:mm:ss") : "",
+          submittime: moment().format("MM-DD-YYYY HH:mm:ss"),
+          useragent: navigator.userAgent + " FEV18",
+        }
+
+export interface CreateOrderRequestV2 {
+  nonce: string;
+  customerInfo: CustomerInfoDto;
+  fulfillmentDto: FulfillmentDto;
+  sliced: boolean;
+  cart: CartDtoV2;
+  special_instructions: string;
+  totals: JSFETotalsV1;
+  store_credit: JSFECreditV2;
+  metrics: MetricsDto;
+};
+
+
+ * 
+ */
+
+export const SelectWarioSubmissionArguments = createSelector(
+  (s: RootState) => s.fulfillment,
+  (s: RootState) => s.ci,
+  (s: RootState) => getCart(s.cart.cart),
+  (s: RootState) => s.payment.storeCreditValidation,
+  (s: RootState) => s.metrics,
+  (s: RootState) => SelectBalanceAfterCredits(s),
+  (s: RootState) => SelectTipValue(s),
+  (fulfillment, customerInfo, cart, storeCredit, metrics, balanceAfterCredits, tipAmount) => {
+    const cartDto = cart.reduce((acc, entry) => ({...acc, [entry.categoryId]: [...(Object.hasOwn(acc, entry.categoryId) ? acc[entry.categoryId] : []), [entry.quantity, { pid: entry.product.p.PRODUCT_CLASS.id, modifiers: entry.product.p.modifiers }] ] }), {} as CartDtoV2);
+    return { 
+    customerInfo,
+    fulfillmentDto: fulfillment,
+    special_instructions: "",
+    cart: cartDto,
+    metrics,
+    store_credit: storeCredit,
+    sliced: false,
+    totals: {
+      balance: balanceAfterCredits,
+      tip: tipAmount,
+    } } as Omit<CreateOrderRequestV2, 'nonce'>;
+  })
+          
 
 // const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: Date | number, orderTime: number) => true, []);

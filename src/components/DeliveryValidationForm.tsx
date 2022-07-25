@@ -6,12 +6,12 @@ import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { FormProvider, RHFTextField } from './hook-form';
 import { DELIVERY_LINK } from '../config';
 
-import { DeliveryInfoRHFSchema, deliveryAddressSchema, setDeliveryInfo, validateDeliveryAddress } from '../app/slices/WFulfillmentSlice';
+import { DeliveryInfoFormData, deliveryAddressSchema, setDeliveryInfo, validateDeliveryAddress } from '../app/slices/WFulfillmentSlice';
 
 
 function useDeliveryInfoForm() {
   const preExisitingDeliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
-  const useFormApi = useForm<DeliveryInfoRHFSchema>({
+  const useFormApi = useForm<DeliveryInfoFormData>({
     defaultValues: {
       address: preExisitingDeliveryInfo?.address ?? "",
       address2: preExisitingDeliveryInfo?.address2 ?? "",
@@ -39,7 +39,7 @@ export default function DeliveryInfoForm() {
     dispatch(setDeliveryInfo(null));
   };
 
-  const setDeliveryInfoAndAttemptToValidate = function (formData: DeliveryInfoRHFSchema) {
+  const setDeliveryInfoAndAttemptToValidate = function (formData: DeliveryInfoFormData) {
     console.log(formData);
     if (isValid && deliveryValidationLoading !== 'PENDING') {
       dispatch(validateDeliveryAddress(formData));

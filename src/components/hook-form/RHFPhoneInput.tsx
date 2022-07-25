@@ -12,7 +12,6 @@ interface IPhoneInputParams {
   [x: string]: any;
 };
 
-
 export function RHFPhoneInput({ placeholder, error, label, country, name, ...other }: IPhoneInputParams & Omit<TextFieldProps, 'error' | 'name' | 'label'>) {
   const { control } = useFormContext();
   return (
@@ -21,39 +20,9 @@ export function RHFPhoneInput({ placeholder, error, label, country, name, ...oth
       return <TextField 
         inputRef={ref} 
         error={!!error}
-        helperText={error?.message} 
+        helperText={error?.message ?? " "} 
         {...other} 
         {...props} />})
       } />
   );
 }
-
-
-
-/*
-export function RHFPhoneInput({ placeholder, label, country, name, ...other }: IPhoneInputParams) {
-  const { control } = useFormContext();
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <PhoneInput
-          label={label}
-          metadata={LIBPHONE_METADATA}
-          country={country}
-          {...other}
-          placeholder={placeholder}
-          inputComponent={React.forwardRef((props, ref) =>
-            <TextField
-              {...field}
-              inputRef={ref}
-              error={!!error}
-              helperText={error?.message}
-              
-              {...props} />)}
-        />))}
-
-  );
-}
-*/

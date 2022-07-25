@@ -25,7 +25,7 @@ export function RHFTextField({ name, readOnly, inputProps, ...other }: Props) {
           fullWidth
           value={typeof field.value === 'number' && field.value === 0 ? '' : field.value}
           error={!!error}
-          helperText={error?.message}
+          helperText={error?.message ?? " "}
           {...other}
           inputProps={ {readOnly: readOnly, ...inputProps }}
         />

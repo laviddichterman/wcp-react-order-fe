@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Typography, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { SERVICE_DATE_FORMAT } from '../common';
+import { SERVICE_DATE_DISPLAY_FORMAT } from '@wcp/wcpshared';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { format } from 'date-fns';
@@ -78,7 +78,7 @@ export default function WReviewOrderStage() {
             </TableRow>
             <TableRow>
               <TableCell>Service</TableCell>
-              <TableCell>{services[selectedService]} on {format(serviceDateTime, SERVICE_DATE_FORMAT)} at {serviceTimeDisplayString}</TableCell>
+              <TableCell>{services[selectedService]} on {format(serviceDateTime, SERVICE_DATE_DISPLAY_FORMAT)} at {serviceTimeDisplayString}</TableCell>
             </TableRow>
             {dineInInfo &&
               <TableRow>

@@ -1,27 +1,18 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-// import { IMoney } from "@wcp/wcpshared";
+import type * as Square from '@square/web-sdk';
+import { CreateOrderRequestV2, CreateOrderResponse, RoundToTwoDecimalPlaces, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
-import { RoundToTwoDecimalPlaces } from "../../utils/numbers";
 
-export interface TipSelection { 
+export interface TipSelection {
   value: number;
   isSuggestion: boolean;
   isPercentage: boolean;
 };
 
-export const ComputeTipValue = (tip : TipSelection, basis : number) =>
- (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * basis) : tip.value);
+export const ComputeTipValue = (tip: TipSelection, basis: number) =>
+  (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * basis) : tip.value);
 
- export interface ValidateResponse {
-  enc: string;
-  iv: string;
-  auth: string;
-  validated: boolean;
-  amount: number;
-  credit_type: "MONEY" | "DISCOUNT"
- }
-
- export const validateStoreCredit = createAsyncThunk<ValidateResponse, string>(
+export const validateStoreCredit = createAsyncThunk<ValidateAndLockCreditResponse, string>(
   'credit/validate',
   async (code) => {
     const response = await axiosInstance.get('/api/v1/payments/storecredit/validate', {
@@ -31,26 +22,34 @@ export const ComputeTipValue = (tip : TipSelection, basis : number) =>
   }
 );
 
-export interface WPaymentState {
-  storeCreditValidation: ValidateResponse | null;
-  storeCreditRedemption: {
+export const submitToWario = createAsyncThunk<CreateOrderResponse, CreateOrderRequestV2>(
+  'order',
+  async (req) => {
+    const response = await axiosInstance.post('/api/v1/order', req);
+    return response.data;
+  }
+);
 
-  } | null;
-  squarePayment: {
+export interface WPaymentState {
+  storeCreditValidation: ValidateAndLockCreditResponse | null;
+  warioResponse: {
 
   } | null;
   selectedTip: TipSelection | null;
   storeCreditInput: string;
+  squareTokenErrors: Square.TokenError[];
   creditValidationLoading: 'IDLE' | 'PENDING' | 'SUCCEEDED' | 'FAILED';
+  submitToWarioStatus: 'IDLE' | 'PENDING' | 'SUCCEEDED' | 'FAILED';
 }
 
 const initialState: WPaymentState = {
   storeCreditValidation: null,
-  storeCreditRedemption: null,
-  squarePayment: null,
+  warioResponse: null,
+  squareTokenErrors: [],
   selectedTip: null,
   storeCreditInput: "",
-  creditValidationLoading: 'IDLE'
+  creditValidationLoading: 'IDLE',
+  submitToWarioStatus: 'IDLE'
 }
 
 const WPaymentSlice = createSlice({
@@ -60,10 +59,13 @@ const WPaymentSlice = createSlice({
     setTip(state, action: PayloadAction<TipSelection>) {
       state.selectedTip = action.payload;
     },
-    clearCreditCode(state) { 
+    clearCreditCode(state) {
       state.creditValidationLoading = 'IDLE';
       state.storeCreditInput = "";
       state.storeCreditValidation = null;
+    },
+    setSquareTokenizationErrors(state, action: PayloadAction<Square.TokenError[]>) {
+      state.squareTokenErrors = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -81,10 +83,19 @@ const WPaymentSlice = createSlice({
     .addCase(validateStoreCredit.rejected, (state) => {
       state.creditValidationLoading = 'FAILED';
     })
+    .addCase(submitToWario.fulfilled, (state, action) => {
+      state.warioResponse = action.payload;
+      state.submitToWarioStatus = 'SUCCEEDED';
+    })
+    .addCase(submitToWario.pending, (state, action) => {
+      state.submitToWarioStatus = 'PENDING';
+    })
+    .addCase(submitToWario.rejected, (state) => {
+      state.submitToWarioStatus = 'FAILED';
+    })
   },
 });
 
-export const { setTip, clearCreditCode } = WPaymentSlice.actions;
-
+export const { setTip, clearCreditCode, setSquareTokenizationErrors } = WPaymentSlice.actions;
 
 export default WPaymentSlice.reducer;
