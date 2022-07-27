@@ -4,9 +4,9 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { FormProvider, RHFTextField } from './hook-form';
-import { DELIVERY_LINK } from '../config';
 
 import { DeliveryInfoFormData, deliveryAddressSchema, setDeliveryInfo, validateDeliveryAddress } from '../app/slices/WFulfillmentSlice';
+import { SelectDeliveryAreaLink } from '../app/store';
 
 
 function useDeliveryInfoForm() {
@@ -27,6 +27,7 @@ function useDeliveryInfoForm() {
 
 export default function DeliveryInfoForm() {
   const dispatch = useAppDispatch();
+  const DELIVERY_LINK = useAppSelector(SelectDeliveryAreaLink);
   const deliveryValidationLoading = useAppSelector(s => s.fulfillment.deliveryValidationStatus);
 
   const deliveryForm = useDeliveryInfoForm();

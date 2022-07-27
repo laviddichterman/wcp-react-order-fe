@@ -7,7 +7,6 @@ import type * as Square from '@square/web-sdk';
 
 // TODO: need to add an interceptor for forward/back when the user has gotten to 2nd stage or at least reasonably far
 
-import { WShopForProductsStage } from './step/WShopForProductsStageComponent';
 import WFulfillmentStageComponent from './step/WFulfillmentStageComponent';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { WCustomerInformationStage } from './step/WCustomerInformationStageComponent';
@@ -17,6 +16,7 @@ import { WConfirmationStageComponent } from './step/WConfirmationStageComponent'
 import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import { SelectBalanceAfterCredits, SelectWarioSubmissionArguments } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
+import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
 
 const STAGES = [
   {
@@ -24,8 +24,12 @@ const STAGES = [
     content: <WFulfillmentStageComponent />
   },
   {
-    stepperTitle: "Add items",
-    content: <WShopForProductsStage />
+    stepperTitle: "Add pizza!",
+    content: <WShopForProductsContainer productSet='PRIMARY' />
+  },
+  {
+    stepperTitle: "Add other stuff!",
+    content: <WShopForProductsContainer productSet='SECONDARY' />
   },
   {
     stepperTitle: "Your info",

@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@reduxjs/toolkit";
+import { STEPPER_STAGE_ENUM } from "../../config";
 
 // const Loadable = (Component : ElementType) => (props : any) => {
 //   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -10,15 +11,6 @@ import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@r
 //     </Suspense>
 //   );
 // };
-
-export enum STEPPER_STAGE_ENUM {
-  TIMING,
-  ADD_PRODUCTS,
-  CUSTOMER_INFO,
-  REVIEW_ORDER,
-  CHECK_OUT,
-  CONFIRMATION
-};
 
 
 export interface StepperState {

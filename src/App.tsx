@@ -2,6 +2,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { SnackbarProvider } from 'notistack';
 import { useEffect } from 'react';
 import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
+import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import { WOrderingComponent } from './components/WOrderingComponent';
 // import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
@@ -32,6 +33,7 @@ const App = () => {
     if (socketIoState === 'NONE') {
       dispatch(SocketIoActions.startConnection());
     }
+    dispatch(setUserAgent(window.navigator.userAgent));
   }, [socketIoState, dispatch]);
   if (!isSocketDataLoaded) {
     return <div>Loading...</div>

@@ -434,11 +434,11 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       <hr className="separator" />
       <Grid container>
         {filteredModifiers.map(([mtid, _], i) =>
-          <Grid item container xs={12}><WModifierTypeCustomizerComponent menu={menu} mtid={mtid} key={i} product={selectedProduct} /></Grid>
+          <Grid item container key={i} xs={12}><WModifierTypeCustomizerComponent menu={menu} mtid={mtid} product={selectedProduct} /></Grid>
         )}
       </Grid>
-      {orderGuideMessages.map((msg, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{msg}</div>)}
-      {orderGuideErrors.map((msg, i) => <div key={i} className="wpcf7-response-output">{msg}</div>)}
+      {orderGuideMessages.map((msg, i) => <div key={`${i}guide`} className="wpcf7-response-output wpcf7-validation-errors">{msg}</div>)}
+      {orderGuideErrors.map((msg, i) => <div key={`${i}err`} className="wpcf7-response-output">{msg}</div>)}
       {allowAdvancedOptionPrompt ? <FormControlLabel
         control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
         label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}

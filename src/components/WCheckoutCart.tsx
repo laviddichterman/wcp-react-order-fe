@@ -1,16 +1,17 @@
 import { Typography, Table, TableBody, TableContainer, TableRow, TableHead, TableCell, Paper } from '@mui/material';
 import { WProductComponent } from './WProductComponent';
-import { CartEntry } from './common';
+import { CartEntry } from '@wcp/wcpshared';
 import { fCurrency, fPercent } from '../utils/numbers';
-import { DELIVERY_SERVICE, TAX_RATE } from '../config';
+import { DELIVERY_SERVICE } from '../config';
 import { useAppSelector } from '../app/useHooks';
 import { getCart } from '../app/slices/WCartSlice';
-import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTipValue } from '../app/store';
+import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
 
 
 export function WCheckoutCart() {
   const menu = useAppSelector(s=>s.ws.menu);
   const cart = useAppSelector(s => getCart(s.cart.cart));
+  const TAX_RATE = useAppSelector(SelectTaxRate);
   const discountApplied = useAppSelector(SelectDiscountApplied);
   const deliveryFee = useAppSelector(SelectDeliveryFee);
   const tipValue = useAppSelector(SelectTipValue);

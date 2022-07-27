@@ -1,16 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
-import { CreateOrderRequestV2, CreateOrderResponse, RoundToTwoDecimalPlaces, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
+import { CreateOrderRequestV2, TipSelection, CreateOrderResponse, RoundToTwoDecimalPlaces, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
-
-export interface TipSelection {
-  value: number;
-  isSuggestion: boolean;
-  isPercentage: boolean;
-};
-
-export const ComputeTipValue = (tip: TipSelection, basis: number) =>
-  (tip.isPercentage ? RoundToTwoDecimalPlaces(tip.value * basis) : tip.value);
 
 export const validateStoreCredit = createAsyncThunk<ValidateAndLockCreditResponse, string>(
   'credit/validate',
@@ -73,7 +64,7 @@ const WPaymentSlice = createSlice({
     builder
     .addCase(validateStoreCredit.fulfilled, (state, action) => {
       state.storeCreditValidation = action.payload;
-      state.creditValidationLoading = 'SUCCEEDED';
+      state.creditValidationLoading = action.payload.valid ? 'SUCCEEDED' : 'FAILED';
     })
     .addCase(validateStoreCredit.pending, (state, action) => {
       state.storeCreditValidation = null;
@@ -85,9 +76,11 @@ const WPaymentSlice = createSlice({
     })
     .addCase(submitToWario.fulfilled, (state, action) => {
       state.warioResponse = action.payload;
+      action.payload.result
       state.submitToWarioStatus = 'SUCCEEDED';
     })
-    .addCase(submitToWario.pending, (state, action) => {
+    .addCase(submitToWario.pending, (state) => {
+      state.warioResponse = null;
       state.submitToWarioStatus = 'PENDING';
     })
     .addCase(submitToWario.rejected, (state) => {

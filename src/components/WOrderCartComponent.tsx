@@ -1,9 +1,8 @@
 import { WProductComponent } from './WProductComponent';
-import { CartEntry } from './common';
 import { getCart, removeFromCart, updateCartQuantity } from '../app/slices/WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
-import { IMenu } from '@wcp/wcpshared';
+import { IMenu, CartEntry } from '@wcp/wcpshared';
 import { IconButton, Grid, TableContainer, Table, TableCell, TableHead, TableBody, Typography, Paper, TableRow } from '@mui/material';
 import { Clear, Edit } from '@mui/icons-material';
 import { GetSelectableModifiersForCartEntry } from '../app/store';

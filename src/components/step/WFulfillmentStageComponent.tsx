@@ -1,19 +1,21 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { MouseEventHandler, useCallback, useMemo } from 'react';
 import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
 import { Autocomplete, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText} from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, getTime } from 'date-fns';
-import { getTermsForService, MAX_PARTY_SIZE } from '../common';
+import { getTermsForService } from '../common';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
-import { SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
+import { SelectHasOperatingHoursForService, SelectMaxPartySize, SelectOptionsForServicesAndDate } from '../../app/store';
 import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
+import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();
+  const MAX_PARTY_SIZE = useAppSelector(SelectMaxPartySize);
   const services = useAppSelector(s => s.ws.services!);
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: Date | number, orderTime: number) => true, []);
   const HasOperatingHoursForService = useAppSelector(s => (serviceNumber: number) => SelectHasOperatingHoursForService(s, serviceNumber));
@@ -58,8 +60,8 @@ export default function WFulfillmentStageComponent() {
       dispatch(setService(serviceNum));
     }
   }
-  const onSetHasAgreedToTerms = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch(setHasAgreedToTerms(e.target.checked));
+  const onSetHasAgreedToTerms = () => {
+    dispatch(setHasAgreedToTerms(!hasAgreedToTerms));
   }
   const onSetServiceDate = (v: Date | null) => {
     if (v !== null) {
@@ -73,10 +75,12 @@ export default function WFulfillmentStageComponent() {
         }
       }
       dispatch(setDate(serviceDateNumber));
+      dispatch(setTimeToServiceDate(Date.now()));
     }
   }
   const onSetServiceTime = (v: number | null) => {
     dispatch(setTime(v));
+    v !== null && dispatch(setTimeToServiceTime(Date.now()));
   }
 
   const onSetDineInInfo = (v: number) => {
@@ -100,8 +104,7 @@ export default function WFulfillmentStageComponent() {
     {serviceTerms.length > 0 ?
       <span>
         <FormControlLabel control={
-          // @ts-ignore
-          <><Checkbox value={hasAgreedToTerms} onClick={(e) => onSetHasAgreedToTerms(e)} />
+          <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
           </>} label={<>
             REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
             <ul>
@@ -166,6 +169,6 @@ export default function WFulfillmentStageComponent() {
       </span>) : ""
     }
     {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <DeliveryInfoForm /> : ""}
-    <Navigation canBack={false} canNext={valid} handleBack={()=>{return;}} handleNext={() => dispatch(nextStage())} />
+    <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={()=>{return;}} handleNext={() => dispatch(nextStage())} />
   </>);
 }

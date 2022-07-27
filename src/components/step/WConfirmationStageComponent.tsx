@@ -4,21 +4,12 @@ import { Typography, Link, Checkbox, FormControlLabel, Input, Button } from '@mu
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
 import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
-import { TipSelection, ComputeTipValue, setTip } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency, fPercent } from '../../utils/numbers';
 import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { CreditCard, GooglePay, ApplePay } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
-
-const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
-const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
-// const TIP_SUGGESTION_225 = new TipSelection(true, true, 225);
-const TIP_SUGGESTION_25: TipSelection = { value: .25, isSuggestion: true, isPercentage: true };
-const TIP_SUGGESTION_30: TipSelection = { value: .3, isSuggestion: true, isPercentage: true };
-
-const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25, TIP_SUGGESTION_30];
 
 export function WConfirmationStageComponent() {
 

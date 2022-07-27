@@ -5,14 +5,15 @@ import { SelectOptionsForServicesAndDate } from '../store'
 import { SocketIoActions } from './SocketIoSlice';
 import { enqueueSnackbar } from 'notistack'
 
-import { setCurrentTime, setPageLoadTime } from './WMetricsSlice';
+import { incrementTimeBumps, setCurrentTime, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
 import { TIMING_POLLING_INTERVAL } from '../../components/common';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
-import { backStage, nextStage, setStage, STEPPER_STAGE_ENUM } from './StepperSlice';
+import { backStage, nextStage, setStage } from './StepperSlice';
 import { scrollToIdAfterDelay } from '../../utils/shared';
 import { clearCustomizer } from './WCustomizerSlice';
+import { STEPPER_STAGE_ENUM } from '../../config';
 
 export const ListeningMiddleware = createListenerMiddleware()
 
@@ -27,12 +28,13 @@ let interval;
 ListeningMiddleware.startListening({
   actionCreator: SocketIoActions.receiveServerTime,// && previousState.ws.serverTime === null,
   effect: (action: ReturnType<typeof SocketIoActions.receiveServerTime>, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    api.dispatch(setPageLoadTime(action.payload));
-    api.dispatch(setCurrentTime(action.payload));
-    const checkTiming = () => {
-      api.dispatch(setCurrentTime(Date.now()));
-    }
-    if (api.getOriginalState().ws.serverTime === null) {
+    if (api.getOriginalState().metrics.pageLoadTime === 0) {
+      api.dispatch(setPageLoadTime(action.payload));
+      api.dispatch(setCurrentTime(action.payload));
+      api.dispatch(setPageLoadTimeLocal(Date.now()));
+      const checkTiming = () => {
+        api.dispatch(setCurrentTime(Date.now()));
+      }
       interval = setInterval(checkTiming, TIMING_POLLING_INTERVAL);
     }
     //return () => clearInterval(interval);    
@@ -68,6 +70,7 @@ ListeningMiddleware.startListening({
             (closestEarlierOption ?? closestLaterOption);
           api.dispatch(setTime(newOption!.value));
           enqueueSnackbar(`Previously selected time of ${WDateUtils.MinutesToPrintTime(previouslySelectedTime)} is no longer available for your order. Updated to closest available time of ${WDateUtils.MinutesToPrintTime(newOption!.value)}.`, { variant: 'warning' });
+          api.dispatch(incrementTimeBumps());
           api.dispatch(setSelectedTimeExpired());
         } else {
           // no options for date anymore, send them back to the time selection screen
@@ -82,11 +85,20 @@ ListeningMiddleware.startListening({
   }
 });
 
+// handle scrolling on transitions
 ListeningMiddleware.startListening({
   matcher: isAnyOf(nextStage, backStage, setStage),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const toId = `WARIO_step_${api.getState().stepper.stage}`;
     scrollToIdAfterDelay(toId, 500);
+  }
+});
+
+// listener for stage progression time metrics
+ListeningMiddleware.startListening({
+  actionCreator: nextStage,
+  effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
+    api.dispatch(setTimeToStage({ stage: api.getState().stepper.stage, ticks: Date.now() }));
   }
 });
 

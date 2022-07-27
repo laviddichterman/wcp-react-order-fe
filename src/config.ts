@@ -1,24 +1,28 @@
 // API
 // ----------------------------------------------------------------------
 
+export enum STEPPER_STAGE_ENUM {
+  TIMING,
+  ADD_MAIN_PRODUCT,
+  ADD_SUPP_PRODUCT,
+  CUSTOMER_INFO,
+  REVIEW_ORDER,
+  CHECK_OUT,
+  CONFIRMATION
+};
+
+export const NUM_STAGES = Object.keys(STEPPER_STAGE_ENUM).length /2;
+
 export const HOST_API = process.env.REACT_APP_HOST_API_KEY || '';
 
 export const SOCKETIO = {
   ns: process.env.REACT_APP_SOCKETIO_NS,
 }
 
-export const MENU_CATID = process.env.REACT_APP_MENU_CATID;
-export const PIZZAS_CATID = process.env.REACT_APP_PIZZAS_CATID || "5eb21d084f5f1946916c6baf";
-export const ENABLE_SPLIT_TOPPINGS = process.env.REACT_APP_ENABLE_SPLIT_TOPPINGS;
-export const ALLOW_SLICING = process.env.REACT_APP_ALLOW_SLICING;
-export const ENABLE_DELIVERY = process.env.REACT_APP_ENABLE_DELIVERY;
 export const ENABLE_DINE_IN = process.env.REACT_APP_ENABLE_DINE_IN;
 export const ENABLE_DINE_IN_PREPAYMENT = process.env.REACT_APP_ENABLE_DINE_IN_PREPAYMENT;
 export const TIP_PREAMBLE = "The Windy City Pie family is working hard to serve you, safely. All gratuity is shared with the entire staff. Everyone, from our team that makes the house-made dough, to the staff that handles your order appreciates your support!";
 export const MUI_LICENSE = process.env.REACT_APP_MUI_KEY;
-export const TAX_RATE = 0.1025;
-export const EXTRAS_CATID = "5ef6cf1a3991a469ceda2598";
-export const DELIVERY_LINK = "http://bit.ly/2QsrfV8";
 export const DELIVERY_SERVICE = 2;
 export const DINEIN_SERVICE = 1;
 export const DELIVERY_FEE = 5;

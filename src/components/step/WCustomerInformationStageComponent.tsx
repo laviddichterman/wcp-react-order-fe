@@ -24,7 +24,7 @@ function useCIForm() {
       referral: useAppSelector(s => s.ci.referral)
     },
     resolver: yupResolver(customerInfoSchema),
-    mode: "onChange",
+    mode: "onBlur",
 
   });
 
@@ -34,7 +34,7 @@ function useCIForm() {
 export function WCustomerInformationStage() {
   const cIForm = useCIForm();
   const dispatch = useAppDispatch();
-  const { getValues, watch, formState: { isValid, errors, isDirty }, handleSubmit } = cIForm;
+  const { getValues, formState: { isValid, errors, isDirty }, handleSubmit } = cIForm;
   const handleNext = () => {
     dispatch(setCustomerInfo(getValues()));
     dispatch(nextStage());

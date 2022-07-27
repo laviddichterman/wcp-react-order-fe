@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Typography, Input, Button } from '@mui/material';
+import { Typography, Grid, Input, Button } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
 import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
-import { TipSelection, ComputeTipValue, setTip } from '../../app/slices/WPaymentSlice';
+import { setTip } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency, fPercent } from '../../utils/numbers';
 import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
@@ -13,6 +13,7 @@ import { CreditCard } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
+import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
@@ -31,19 +32,19 @@ export function WCheckoutStage() {
   const balance = useAppSelector(SelectBalanceAfterCredits);
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
-  const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length-1), [autogratEnabled]);
-  const currentTipSelection = useAppSelector(s=>s.payment.selectedTip);
+  const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
+  const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
   const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis).toFixed(2));
   const [orderSubmissionResponse, setOrderSubmissionResponse] = useState(null);//{ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
-  const squareTokenErrors = useAppSelector(s=>s.payment.squareTokenErrors);
+  const squareTokenErrors = useAppSelector(s => s.payment.squareTokenErrors);
   useEffect(() => {
     if (currentTipSelection === null) {
       dispatch(setTip(TIP_SUGGESTION_20));
     }
   }, [currentTipSelection, dispatch])
 
-  const onChangeSelectedTip = (tip : TipSelection) => { 
+  const onChangeSelectedTip = (tip: TipSelection) => {
     dispatch(setTip(tip));
   }
   const submitNoBalanceDue = () => {
@@ -57,10 +58,10 @@ export function WCheckoutStage() {
   const resetCustomTip = () => {
     const resetValue = ComputeTipValue(TIP_SUGGESTION_20, tipBasis);
     setCustomTipAmount(resetValue.toFixed(2));
-    dispatch(setTip({value: resetValue, isPercentage: false, isSuggestion: false}));
+    dispatch(setTip({ value: resetValue, isPercentage: false, isSuggestion: false }));
   }
 
-  const setCustomTipAmountIntercept = (value : string) => {
+  const setCustomTipAmountIntercept = (value: string) => {
     setIsCustomTipSelected(true);
     // setTipUiDirty(true);
     const parsedValue = parseFloat(value);
@@ -68,10 +69,10 @@ export function WCheckoutStage() {
       resetCustomTip()
     }
     setCustomTipAmount(value);
-    dispatch(setTip({value: parsedValue, isPercentage: false, isSuggestion: false}));
+    dispatch(setTip({ value: parsedValue, isPercentage: false, isSuggestion: false }));
   }
 
-  const onSelectSuggestedTip = (tip : TipSelection) => { 
+  const onSelectSuggestedTip = (tip: TipSelection) => {
     // setTipUiDirty(true);
     setIsCustomTipSelected(false);
     onChangeSelectedTip(tip);
@@ -87,7 +88,7 @@ export function WCheckoutStage() {
       resetCustomTip();
     } else {
       setCustomTipAmount(numericValue.toFixed(2));
-      dispatch(setTip({value: numericValue, isPercentage: false, isSuggestion: false}));
+      dispatch(setTip({ value: numericValue, isPercentage: false, isSuggestion: false }));
     }
   }
   if (!isProcessing) {
@@ -96,21 +97,27 @@ export function WCheckoutStage() {
         <div>
           <h3 className="flush--top">Add gratuity to your order and settle up!</h3>
           <h5>{TIP_PREAMBLE}</h5>
-          <div className="flexbox">
+          <Grid container>
             {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
-              <div className="flexbox__item one-third soft-quarter">
+              <Grid key={i} item xs={4} >
                 <Button onClick={() => onSelectSuggestedTip(tip)} className={`btn tipbtn flexbox__item one-whole${currentTipSelection === tip ? ' selected' : ''}`} >
                   <h3 className="flush--bottom">{fPercent(tip.value)}</h3>
                   <h5 className="flush--top">{fCurrency(ComputeTipValue(tip, tipBasis))}</h5>
                 </Button>
-              </div>
+              </Grid>
             )}
-          </div>
+            <Grid item xs={12}>
+              <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
+                <h3 className="flush">Custom Tip Amount</h3>
+                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0 }} /> : ""}
+              </button>
+            </Grid>
+          </Grid>
           <div className="flexbox">
             <div className="flexbox__item one-third soft-quarter" >
               <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
                 <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{min: 0}} /> : ""}
+                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0 }} /> : ""}
               </button>
             </div>
           </div>
@@ -127,9 +134,9 @@ export function WCheckoutStage() {
               <ApplePay /> */}
             </>}
             {squareTokenErrors.length > 0 &&
-                  squareTokenErrors.map((e, i) => <div key={i} className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div>)}
+              squareTokenErrors.map((e, i) => <div key={i} className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div>)}
             <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
-            <Navigation canBack canNext={!isProcessing} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />
+            <Navigation canBack hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
           </div>
         </div>);
     }

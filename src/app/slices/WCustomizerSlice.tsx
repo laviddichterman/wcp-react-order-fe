@@ -1,7 +1,6 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata } from "@wcp/wcpshared";
+import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata } from "@wcp/wcpshared";
 import { RootState } from "../store";
-import { CartEntry } from "../../components/common";
 import { getCartEntry } from "./WCartSlice";
 
 function GenerateMetadata(menu: IMenu, product: WCPProduct, serviceTime: number) {

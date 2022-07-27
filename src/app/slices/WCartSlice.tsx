@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@reduxjs/toolkit";
-import { MenuModifiers, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
-import { CartEntry } from "../../components/common";
+import { CartEntry, MenuModifiers, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
 
 const DeadCartAdapter = createEntityAdapter<CartEntry>({
   selectId: entry => entry.id
