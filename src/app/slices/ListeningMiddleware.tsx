@@ -4,16 +4,17 @@ import type { RootState, AppDispatch } from '../store'
 import { SelectOptionsForServicesAndDate } from '../store'
 import { SocketIoActions } from './SocketIoSlice';
 import { enqueueSnackbar } from 'notistack'
+import { DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
+
 
 import { incrementTimeBumps, setCurrentTime, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
-import { TIMING_POLLING_INTERVAL } from '../../components/common';
+import { STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
-import { DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
 import { backStage, nextStage, setStage } from './StepperSlice';
 import { scrollToIdAfterDelay } from '../../utils/shared';
 import { clearCustomizer } from './WCustomizerSlice';
-import { STEPPER_STAGE_ENUM } from '../../config';
+
 
 export const ListeningMiddleware = createListenerMiddleware()
 
@@ -98,7 +99,7 @@ ListeningMiddleware.startListening({
 ListeningMiddleware.startListening({
   actionCreator: nextStage,
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    api.dispatch(setTimeToStage({ stage: api.getState().stepper.stage, ticks: Date.now() }));
+    api.dispatch(setTimeToStage({ stage: api.getOriginalState().stepper.stage, ticks: Date.now() }));
   }
 });
 
@@ -143,8 +144,7 @@ ListeningMiddleware.startListening({
       }
       api.dispatch(SocketIoActions.setMenu(MENU));
     }
-    //api.getState().fulfillment
-    
+    //api.getState().fulfillment 
   }
 });
 

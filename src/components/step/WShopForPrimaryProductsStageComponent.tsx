@@ -16,7 +16,7 @@ export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSor
           <div className="ordering-menu menu-list menu-list__dotted">
             <Grid container className="flexitems menu-list__items">
               {ProductsForCategoryFilteredAndSorted(MAIN_CATID).map((p: IProductInstance, i: number) =>
-                <Grid item xs={12} sm={6} md={4} lg={3} key={i} className="flexitem menu-list__item">
+                <Grid item xs={12} md={6} lg={4} xl={3} key={i} className="flexitem menu-list__item">
                   <div className="offer-link" onClick={(e) => onProductSelection('topOfShop', MAIN_CATID, p.id)}>
                     <WProductComponent productMetadata={menu.product_instance_metadata[p.id]} allowAdornment description dots price menuModifiers={menu.modifiers} displayContext="order" />
                   </div>

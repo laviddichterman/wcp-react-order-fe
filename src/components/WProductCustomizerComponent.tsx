@@ -6,16 +6,16 @@ import { WProductComponent } from './WProductComponent';
 import { IMenu, WProduct, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
 import {
   clearCustomizer,
-  selectAllowAdvancedPrompt,
-  selectCartEntryBeingCustomized,
-  selectOptionState,
-  selectSelectedProduct,
-  selectShowAdvanced,
   setAdvancedModifierOption,
   setShowAdvanced,
   updateModifierOptionStateCheckbox,
   updateModifierOptionStateToggleOrRadio
 } from '../app/slices/WCustomizerSlice';
+import {  selectAllowAdvancedPrompt,
+  selectCartEntryBeingCustomized,
+  selectOptionState,
+  selectSelectedProduct,
+  selectShowAdvanced } from '../app/store';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
@@ -201,10 +201,10 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
               checked={isRight}
               onClick={() => onClickRight(serviceDateTime)} /> : null}
           </span>}
-        onClick={() => {
-          console.log(optionState)
+        // onClick={() => {
+        //   console.log(optionState)
 
-        }}
+        // }}
         label={option.mo.item.display_name} />
       {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo.id}_advanced`} aria-label={`${option.mo.id}_advanced`} size="small">
         <SettingsTwoTone fontSize="inherit" />
@@ -406,18 +406,18 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       const amountToAdd = cartEntry?.quantity ?? 1;
       const newQuantity = matchingCartEntry.quantity + amountToAdd;
       dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity }));
-      enqueueSnackbar(cartEntry ? `Merged duplicate ${selectedProduct.m.name} in your order.` : `Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success' });
+      enqueueSnackbar(cartEntry ? `Merged duplicate ${selectedProduct.m.name} in your order.` : `Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success', autoHideDuration: 3000  });
     }
     else {
       // cartEntry being undefined means it's an addition 
       if (cartEntry === undefined) {
         dispatch(addToCart({ categoryId, product: selectedProduct }))
-        enqueueSnackbar(`Added ${selectedProduct.m.name} to your order.`, { variant: 'success' });
+        enqueueSnackbar(`Added ${selectedProduct.m.name} to your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
       }
       else {
         dispatch(updateCartProduct({ id: cartEntry.id, product: selectedProduct }))
         dispatch(unlockCartEntry(cartEntry.id));
-        enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success' });
+        enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true  });
       }
     }
     unselectProduct();

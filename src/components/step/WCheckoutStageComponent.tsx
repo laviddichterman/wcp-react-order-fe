@@ -1,23 +1,22 @@
 import React, { useState, useMemo } from 'react';
-import { Typography, Grid, Input, Button } from '@mui/material';
+import { Typography, Card, CardHeader, CardActions, CardContent, Grid, Input, Button, Link } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
-import { SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
-import { setTip } from '../../app/slices/WPaymentSlice';
+import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { fCurrency, fPercent } from '../../utils/numbers';
-import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
+import { fCurrency } from '../../utils/numbers';
+import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectWarioSubmissionArguments } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { CreditCard } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
-import { backStage, nextStage } from '../../app/slices/StepperSlice';
+import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
+import LoadingScreen from '../LoadingScreen';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
-// const TIP_SUGGESTION_225 = new TipSelection(true, true, 225);
 const TIP_SUGGESTION_25: TipSelection = { value: .25, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_30: TipSelection = { value: .3, isSuggestion: true, isPercentage: true };
 
@@ -25,19 +24,23 @@ const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25
 
 export function WCheckoutStage() {
   const dispatch = useAppDispatch();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
-  const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
   const tipBasis = useAppSelector(SelectTipBasis);
   const balance = useAppSelector(SelectBalanceAfterCredits);
+  const creditApplied = useAppSelector(SelectAmountCreditUsed);
+  const storeCreditValidation = useAppSelector(s => s.payment.storeCreditValidation);
+  const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
+  const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
+
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
+  const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
+  const submitToWarioArgs = useAppSelector(SelectWarioSubmissionArguments);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
   const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis).toFixed(2));
-  const [orderSubmissionResponse, setOrderSubmissionResponse] = useState(null);//{ successful: true, squarePayment: {money_charged: 2342, last4: 1234, receipt_url: ""} });
   const squareTokenErrors = useAppSelector(s => s.payment.squareTokenErrors);
+  const orderSubmitErrors = useAppSelector(s => s.payment.orderSubmitErrors);
   useEffect(() => {
     if (currentTipSelection === null) {
       dispatch(setTip(TIP_SUGGESTION_20));
@@ -48,11 +51,7 @@ export function WCheckoutStage() {
     dispatch(setTip(tip));
   }
   const submitNoBalanceDue = () => {
-
-  }
-  const submitWithSquare = () => {
-    setIsProcessing(true);
-    // setOrderSubmissionResponse({});
+    dispatch(submitToWario(submitToWarioArgs))
   }
 
   const resetCustomTip = () => {
@@ -63,7 +62,6 @@ export function WCheckoutStage() {
 
   const setCustomTipAmountIntercept = (value: string) => {
     setIsCustomTipSelected(true);
-    // setTipUiDirty(true);
     const parsedValue = parseFloat(value);
     if (!isFinite(parsedValue) || !isNaN(parsedValue) || parsedValue < 0) {
       resetCustomTip()
@@ -73,7 +71,6 @@ export function WCheckoutStage() {
   }
 
   const onSelectSuggestedTip = (tip: TipSelection) => {
-    // setTipUiDirty(true);
     setIsCustomTipSelected(false);
     onChangeSelectedTip(tip);
     const newTipCashValue = ComputeTipValue(tip, tipBasis);
@@ -91,59 +88,84 @@ export function WCheckoutStage() {
       dispatch(setTip({ value: numericValue, isPercentage: false, isSuggestion: false }));
     }
   }
-  if (!isProcessing) {
-    if (!orderSubmissionResponse) {
-      return (
-        <div>
-          <h3 className="flush--top">Add gratuity to your order and settle up!</h3>
-          <h5>{TIP_PREAMBLE}</h5>
-          <Grid container>
-            {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
-              <Grid key={i} item xs={4} >
-                <Button onClick={() => onSelectSuggestedTip(tip)} className={`btn tipbtn flexbox__item one-whole${currentTipSelection === tip ? ' selected' : ''}`} >
-                  <h3 className="flush--bottom">{fPercent(tip.value)}</h3>
-                  <h5 className="flush--top">{fCurrency(ComputeTipValue(tip, tipBasis))}</h5>
-                </Button>
+  return submitToWarioStatus !== 'SUCCEEDED' ?
+    <Card elevation={0} sx={{width: 'inherit'}}>
+      {submitToWarioStatus === 'PENDING' && <LoadingScreen />}
+      <Typography variant='h4'>Add gratuity to your order and settle up!</Typography>
+      <Typography variant='h6'>{TIP_PREAMBLE}</Typography>
+      <Grid container sx={{ pb: 2 }}>
+        {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
+          <Grid key={i} item xs={4} sx={{ px: 0.5 }} >
+            <Button variant="outlined" fullWidth onClick={() => onSelectSuggestedTip(tip)} >
+              <Grid container>
+                <Grid item xs={12}><Typography variant='h3'>{(tip.value * 100)}%</Typography></Grid>
+                <Grid item xs={12}><Typography variant='subtitle2'>{fCurrency(ComputeTipValue(tip, tipBasis))}</Typography></Grid>
               </Grid>
-            )}
+            </Button>
+          </Grid>
+        )}
+        <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
+          <Button variant="outlined" fullWidth onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
+            <Grid container><Grid item xs={12}><Typography variant='h3' className="flush">Custom Tip Amount</Typography></Grid>
+              <Grid item xs={12} sx={{ height: '2.5em' }}>{isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0, sx: { textAlign: 'center' } }} /> : " "}</Grid>
+            </Grid>
+          </Button>
+        </Grid>
+      </Grid>
+      <WCheckoutCart />
+      <Card variant='outlined'>
+        <CardHeader title="Payment Information:" />
+        <CardContent>
+          <Grid container>
+            <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
             <Grid item xs={12}>
-              <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
-                <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0 }} /> : ""}
-              </button>
+              {balance > 0 && ( specialInstructions === null || specialInstructions.length < 4) ?
+                <>
+                  <CreditCard buttonProps={{ isLoading: submitToWarioStatus === 'PENDING' }}  >
+                    Submit Order
+                  </CreditCard>
+                  {/* <GooglePay />
+                  <ApplePay /> */}
+                </> :
+                <Button disabled={submitToWarioStatus === 'PENDING'} fullWidth onClick={() => submitNoBalanceDue()} >Submit Order</Button>}
+              {squareTokenErrors.length > 0 &&
+                squareTokenErrors.map((e, i) => <Grid item xs={12} key={i}><div className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div></Grid>)}
+              {orderSubmitErrors.length > 0 &&
+                orderSubmitErrors.map((e, i) => <Grid item xs={12} key={i}><div key={`${i}payment`} className="wpcf7-response-output wpcf7-mail-sent-ng">{e}</div></Grid>)}
+              <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
             </Grid>
           </Grid>
-          <div className="flexbox">
-            <div className="flexbox__item one-third soft-quarter" >
-              <button onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
-                <h3 className="flush">Custom Tip Amount</h3>
-                {isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0 }} /> : ""}
-              </button>
-            </div>
-          </div>
-          <WCheckoutCart />
-          {hasSelectedTimeExpired ? <div className="wpcf7-response-output wpcf7-mail-sent-ng">The previously selected service time has expired. We've updated your service time to {serviceTimeDisplayString}.</div> : ""}
-          <div className="flexbox">
-            <h4 className="flexbox__item one-whole">Payment Information:</h4>
-          </div>
-          <StoreCreditSection />
-          <div>
-            {balance > 0 && <>
-              <CreditCard buttonProps={{ isLoading: submitToWarioStatus === 'PENDING' }} />
-              {/* <GooglePay />
-              <ApplePay /> */}
-            </>}
-            {squareTokenErrors.length > 0 &&
-              squareTokenErrors.map((e, i) => <div key={i} className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div>)}
-            <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
-            <Navigation canBack hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
-          </div>
-        </div>);
-    }
-  }
-  // case: it's processing... show that we're waiting on the results
-  return (<div className="wpcf7 wpcf7-response-output wpcf7-mail-sent-ok">
-    <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
-    Submitting order! This can take a few seconds.<span className="ajax-loader"></span>
-  </div>);
+        </CardContent>
+      </Card>
+      <CardActions>
+        <Navigation canBack={submitToWarioStatus !== 'PENDING'} hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
+      </CardActions>
+    </Card> :
+    <Card>
+      <CardHeader title={<Typography variant='h3'>Order submitted successfully!</Typography>} />
+      <CardContent>
+        <Typography variant='h6'>Please check your email for order confirmation.</Typography>
+        <Grid container>
+          <Grid item xs={12} sx={{py: 3}}>
+            <Typography>Order details:</Typography>
+            <WCheckoutCart />
+          </Grid>
+          { // if paid with cc
+            submitToWarioResponse?.result?.payment?.status === 'COMPLETED' && 
+            submitToWarioResponse.result.payment.totalMoney?.amount && 
+            <Grid item xs={12}>
+              <Typography>Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!" }
+              Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
+            </Grid>
+          }
+          {creditApplied > 0 && storeCreditValidation !== null && storeCreditValidation.valid &&
+            <Grid item xs={12}>
+              <Typography variant='h6'>Digital Gift Card number {storeCreditCode} debited {fCurrency(creditApplied)}.</Typography>
+              <span>
+                {storeCreditValidation.amount === creditApplied ? "No balance remains." : `Balance of ${fCurrency(storeCreditValidation.amount - creditApplied)} remains.`}
+              </span>
+            </Grid>}
+        </Grid>
+      </CardContent>
+    </Card>;
 }

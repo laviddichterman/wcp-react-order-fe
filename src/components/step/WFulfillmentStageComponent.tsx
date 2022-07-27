@@ -1,6 +1,6 @@
-import React, { MouseEventHandler, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { Autocomplete, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText} from '@mui/material';
+import { Autocomplete, Grid, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText} from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, getTime } from 'date-fns';
 import { getTermsForService } from '../common';
@@ -89,8 +89,15 @@ export default function WFulfillmentStageComponent() {
 
   return (<>
     <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
-    <span id="service-selection-radio-buttons-label">Requested Service:</span>
-    <RadioGroup row onChange={onChangeServiceSelection} value={selectedService}>
+    <Grid 
+      container 
+      spacing={0}
+      alignItems="center"
+      justifyContent="center">
+    <Grid item xs={12} sx={{pl: 3, pt: 2, pb:5}}><span id="service-selection-radio-buttons-label">Requested Service:</span>
+    <RadioGroup 
+    sx={{alignContent: 'center', justifyItems: 'center'}}
+     row onChange={onChangeServiceSelection} value={selectedService}>
       {ServiceOptions.map((option) => (
         <FormControlLabel
           key={option.value}
@@ -100,9 +107,9 @@ export default function WFulfillmentStageComponent() {
         />
       ))}
     </RadioGroup>
-
+    </Grid>
     {serviceTerms.length > 0 ?
-      <span>
+      <Grid item xs={12}>
         <FormControlLabel control={
           <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
           </>} label={<>
@@ -112,8 +119,8 @@ export default function WFulfillmentStageComponent() {
             </ul>
           </>
           } />
-      </span> : ""}
-    <span className="service-date">
+      </Grid> : ""}
+    <Grid item xs={12} lg={6} sx={{justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3}} className="service-date">
       <StaticDatePicker
         displayStaticWrapperAs="desktop"
         openTo="day"
@@ -133,8 +140,10 @@ export default function WFulfillmentStageComponent() {
         )}
       />
       {hasSelectedDateExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service date has expired.</FormHelperText> : ""}
-    </span>
+    </Grid>
+    <Grid item xs={12} lg={6} sx={{justifyContent: 'center', alignContent: 'center', display: 'flex'}} >
     <Autocomplete
+    sx={{justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300 }} 
       openOnFocus
       disableClearable
       noOptionsText="Select a valid service date first"
@@ -145,7 +154,7 @@ export default function WFulfillmentStageComponent() {
       getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
       // @ts-ignore
       value={serviceTime || null}
-      sx={{ width: 300 }}
+      //sx={{ width: 300 }}
       onChange={(_, v) => onSetServiceTime(v)}
       renderInput={(params) => <TextField {...params} label="Time" />}
     />
@@ -168,7 +177,9 @@ export default function WFulfillmentStageComponent() {
         />
       </span>) : ""
     }
-    {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <DeliveryInfoForm /> : ""}
+    </Grid>
+    {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <Grid item xs={12}><DeliveryInfoForm /></Grid>: ""}
+    </Grid>
     <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={()=>{return;}} handleNext={() => dispatch(nextStage())} />
   </>);
 }

@@ -3,8 +3,6 @@ import metadata_custom from '../metadata.custom.json';
 
 export const LIBPHONE_METADATA = metadata_custom as unknown as MetadataJson;
 
-export const TIMING_POLLING_INTERVAL = 30000;
-
 const SERVICE_TERMS_LIST = [[], ["All of our party members 5 years of age and up will provide proof (either digital or physical) of full COVID-19 vaccination AND BOOSTER (if eligible) along with matching ID to Windy City Pie upon arrival.",
   "All members of our party consent to an IR temperature check.",
   "All members of our party who have recently had a COVID-19 infection have tested negative on a rapid test since their last infection.",

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { WProductComponent } from '../WProductComponent';
-import { FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
+import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
-import { scrollToElementAfterDelay, scrollToIdAfterDelay } from '../../utils/shared';
+import { scrollToElementAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
 
 

@@ -28,8 +28,8 @@ export function StoreCreditSection() {
     setUseCreditCheckbox(checked);
   }
   return (
-    <Grid container>
-      <Grid item md={useCreditCheckbox ? 6 : 12} xs={12}>
+    <Grid container alignContent={'center'}>
+      <Grid sx={{pt:2}} item md={useCreditCheckbox ? 6 : 12} xs={12}>
         <FormControlLabel
           className='flexbox__item'
           control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
@@ -37,7 +37,8 @@ export function StoreCreditSection() {
         />
       </Grid>
       {useCreditCheckbox &&
-        <Grid item xs={12} md={6} >
+        <Grid sx={{pl:2, justifyContent: 'flex-end'}} item xs={12} lg={6} container >
+          <Grid item xs={10} sx={{width: '100%'}}>
           <StoreCreditInputComponent
             autoFocus
             name="Credit Code"
@@ -47,9 +48,13 @@ export function StoreCreditSection() {
             value={localCreditCode}
             onChange={(e) => setLocalCreditCodeAndAttemptToValidate(e.target.value)}
           />
+          </Grid>
+          <Grid item xs={1} sx={{p:2}}>
           {creditValidationLoading === "FAILED" && <Error />}
           {creditValidationLoading === "SUCCEEDED" && <Done />}
+          </Grid>
         </Grid>}
+
       {creditValidationLoading === "FAILED" && 
         <Grid item xs={12} className="wpcf7-response-output wpcf7-mail-sent-ng">
           Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.

@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { MetricsDto } from "@wcp/wcpshared";
-import { TIMING_POLLING_INTERVAL } from "../../components/common";
-import { NUM_STAGES, STEPPER_STAGE_ENUM } from "../../config";
+import { NUM_STAGES, STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL} from "../../config";
 
 const initialState: MetricsDto = {
   pageLoadTime: 0,
@@ -49,16 +48,19 @@ const WMetricsSlice = createSlice({
     setTimeToServiceTime(state, action: PayloadAction<number>) {
       state.timeToServiceTime = action.payload - state.pageLoadTimeLocal;
     },
+    setSubmitTime(state, action: PayloadAction<number>) {
+      state.submitTime = action.payload - state.pageLoadTimeLocal;
+    },
     // handled by App.tsx
     setUserAgent(state, action: PayloadAction<string>) {
       state.useragent = action.payload;
-    },
+    }
   }
 });
 
 
 
-export const { setCurrentTime, setPageLoadTime, setUserAgent, setPageLoadTimeLocal, setTimeToStage, incrementTimeBumps, setTimeToServiceDate, setTimeToServiceTime } = WMetricsSlice.actions;
+export const { setCurrentTime, setPageLoadTime, setUserAgent, setPageLoadTimeLocal, setTimeToStage, incrementTimeBumps, setTimeToServiceDate, setTimeToServiceTime, setSubmitTime } = WMetricsSlice.actions;
 
 
 export default WMetricsSlice.reducer;

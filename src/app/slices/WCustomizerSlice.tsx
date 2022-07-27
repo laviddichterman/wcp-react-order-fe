@@ -1,7 +1,5 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata } from "@wcp/wcpshared";
-import { RootState } from "../store";
-import { getCartEntry } from "./WCartSlice";
 
 function GenerateMetadata(menu: IMenu, product: WCPProduct, serviceTime: number) {
   const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
@@ -107,26 +105,6 @@ export const WCustomizerSlice = createSlice({
     }
   }
 });
-
-
-export const selectAllowAdvancedPrompt = createSelector(
-  (s: RootState) => s.customizer.selectedProduct,
-  (s: RootState) => s.ws.settings!.config.ALLOW_ADVANCED,
-  (prod: WProduct | null, allowAdvanced: boolean) => allowAdvanced && prod !== null && prod.m.advanced_option_eligible
-)
-
-export const selectCartEntryBeingCustomized = createSelector(
-  (s: RootState) => s.customizer.cartId,
-  (s: RootState) => (cid: string) => getCartEntry(s.cart.cart, cid),
-  (cartId: string | null, cartEntryGetter) => cartId !== null ? cartEntryGetter(cartId) : undefined
-);
-
-// we cast here because nothing should be asking for the option state if there's no selected product
-export const selectOptionState = (s: RootState) => (mtId: string, moId: string) => (s.customizer.selectedProduct as WProduct).m.modifier_map[mtId].options[moId];
-
-export const selectShowAdvanced = (s: RootState) => s.customizer.showAdvanced;
-
-export const selectSelectedProduct = (s: RootState) => s.customizer.selectedProduct;
 
 export const { editCartEntry, customizeProduct, setShowAdvanced, clearCustomizer, setAdvancedModifierOption, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } = WCustomizerSlice.actions;
 

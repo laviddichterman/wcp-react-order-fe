@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
+import { Typography, TextField, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { SERVICE_DATE_DISPLAY_FORMAT } from '@wcp/wcpshared';
@@ -8,6 +8,7 @@ import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app
 import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
+import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
@@ -25,7 +26,7 @@ export default function WReviewOrderStage() {
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
-  const [specialInstructions, setSpecialInstructions] = useState("");
+  const specialInstructions = useAppSelector(s=>s.payment.specialInstructions);
   const [acknowledgeInstructionsDialogue, setAcknowledgeInstructionsDialogue] = useState(false);
   const [disableSubmit, setDisableSubmit] = useState(false); // switch to useMemo
   const [specialInstructionsResponses, setSpecialInstructionsResponses] = useState<{ level: number, text: string }[]>([]);
@@ -52,9 +53,13 @@ export default function WReviewOrderStage() {
     }
     setDisableSubmit(disableorder);
     setSpecialInstructionsResponses(special_instructions_responses);
-    setSpecialInstructions(ins);
-
+    dispatch(setSpecialInstructions(ins));
   }
+  const handleSetAcknowledgeInstructionsDialogue = (checked : boolean) => {
+    setAcknowledgeInstructionsDialogue(checked);
+    setSpecialInstructionsIntermediate("");
+  }
+
   if (selectedService === null || serviceDateTime === null) {
     return <div>You found a bug</div>;
   }
@@ -99,10 +104,10 @@ export default function WReviewOrderStage() {
       <WCheckoutCart />
       <div>
         <FormControlLabel
-          control={<Checkbox checked={acknowledgeInstructionsDialogue} onChange={(_, checked) => setAcknowledgeInstructionsDialogue(checked)} />}
+          control={<Checkbox checked={acknowledgeInstructionsDialogue} onChange={(_, checked) => handleSetAcknowledgeInstructionsDialogue(checked)} />}
           label="I need to specify some special instructions (which may delay my order or change its cost) and I've already texted or emailed to ensure the request can be handled."
         />
-        {acknowledgeInstructionsDialogue ? <textarea value={specialInstructions} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} ng-change="orderCtrl.ChangedEscapableInfo()" /> : ""}
+        {acknowledgeInstructionsDialogue ? <TextField fullWidth multiline value={specialInstructions || ""} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} /> : ""}
       </div>
       {specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>)}
       <Navigation canBack canNext={!disableSubmit} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />

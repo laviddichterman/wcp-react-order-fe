@@ -1,4 +1,4 @@
-import { m } from 'framer-motion';
+import { motion } from 'framer-motion';
 // @mui
 import { alpha, styled } from '@mui/material/styles';
 import { Box } from '@mui/material';
@@ -27,7 +27,7 @@ export default function LoadingScreen() {
   return (
     <>
         <RootStyle >
-          <m.div
+          <motion.div
             animate={{
               scale: [1, 0.9, 0.9, 1, 1],
               opacity: [1, 0.48, 0.48, 1, 1],
@@ -40,10 +40,10 @@ export default function LoadingScreen() {
             }}
           >
             <Logo sx={{ width: 64, height: 64 }} />
-          </m.div>
+          </motion.div>
 
           <Box
-            component={m.div}
+            component={motion.div}
             animate={{
               scale: [1.2, 1, 1, 1.2, 1.2],
               rotate: [270, 0, 0, 270, 270],
@@ -61,7 +61,7 @@ export default function LoadingScreen() {
           />
 
           <Box
-            component={m.div}
+            component={motion.div}
             animate={{
               scale: [1, 1.2, 1.2, 1, 1],
               rotate: [0, 270, 270, 0, 0],

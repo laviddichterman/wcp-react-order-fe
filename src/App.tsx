@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
+import LoadingScreen from './components/LoadingScreen';
 import { WOrderingComponent } from './components/WOrderingComponent';
 // import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
 
@@ -13,7 +14,7 @@ const theme = createTheme({
       xs: 0,
       sm: 350,
       md: 514,
-      lg: 900,
+      lg: 675,
       xl: 1536,
     },
   },
@@ -23,6 +24,16 @@ const theme = createTheme({
     }
   }
 });
+
+/**
+ * 
+ * TO LAUNCH CHECKLIST
+ * 
+ * ALLOW_SLICING
+ * accordion formatting
+ * product formatting
+ * checkout cart formatting and handle the wario payment being processed
+ */
 
 
 const App = () => {
@@ -35,9 +46,7 @@ const App = () => {
     }
     dispatch(setUserAgent(window.navigator.userAgent));
   }, [socketIoState, dispatch]);
-  if (!isSocketDataLoaded) {
-    return <div>Loading...</div>
-  }
+
   return (
     <ThemeProvider theme={theme}>
     <SnackbarProvider anchorOrigin={{horizontal: 'right', vertical: 'top'}}>
@@ -46,7 +55,7 @@ const App = () => {
           <div className="container">
             <section className="page__content js-post-gallery cf">
               {/* <WStoreCreditPurchase /> */}
-              <WOrderingComponent />
+              { !isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent /> } 
             </section>
           </div>
         </section>

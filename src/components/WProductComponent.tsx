@@ -40,7 +40,7 @@ export function WProductComponent({ productMetadata, description, allowAdornment
     return `${productMetadata.price}`;
   }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
-    <Box {...other} className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
+    <Box component='span' {...other} className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
       {adornmentHTML ? <span className="menu-list__item-highlight-title" dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
       <h4 className="menu-list__item-title">
         <span className="item_title">{productMetadata.name}</span>

@@ -1,25 +1,23 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Typography, Grid } from '@mui/material';
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { customerInfoSchema, setCustomerInfo } from '../../app/slices/WCustomerInfoSlice';
+import { CustomerInfoRHF, customerInfoSchema, setCustomerInfo } from '../../app/slices/WCustomerInfoSlice';
 import { FormProvider, RHFTextField, RHFPhoneInput } from '../hook-form';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { RHFMailTextField } from '../hook-form/RHFMailTextField';
 import { Navigation } from '../Navigation';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
-import { CustomerInfoDto } from '@wcp/wcpshared';
 
 // TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
 
 function useCIForm() {
-  const useFormApi = useForm<CustomerInfoDto>({
-
-    //  seems to be a bug here where this cannot be set?
+  const useFormApi = useForm<CustomerInfoRHF>({
     defaultValues: {
       givenName: useAppSelector(s => s.ci.givenName),
       familyName: useAppSelector(s => s.ci.familyName),
       mobileNum: useAppSelector(s => s.ci.mobileNum),
+      mobileNumRaw: useAppSelector(s => s.ci.mobileNumRaw),
       email: useAppSelector(s => s.ci.email),
       referral: useAppSelector(s => s.ci.referral)
     },
@@ -34,16 +32,16 @@ function useCIForm() {
 export function WCustomerInformationStage() {
   const cIForm = useCIForm();
   const dispatch = useAppDispatch();
-  const { getValues, formState: { isValid, errors, isDirty }, handleSubmit } = cIForm;
+  const { getValues, watch, formState: { isValid, errors, isDirty }, handleSubmit } = cIForm;
   const handleNext = () => {
     dispatch(setCustomerInfo(getValues()));
     dispatch(nextStage());
   }
   useEffect(() => {
-    if (isValid && isDirty) {
-      dispatch(setCustomerInfo(getValues()));
+    if (isValid) {
+      dispatch(setCustomerInfo(watch()));
     }
-  }, [isValid, isDirty])
+  }, [isValid, isDirty, watch, dispatch])
   return (
     <>
       <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Tell us a little about you.</Typography>
@@ -68,8 +66,8 @@ export function WCustomerInformationStage() {
             <RHFPhoneInput
               country='US'
               fullWidth
-              name="mobileNum"
-              error={errors.mobileNum}
+              name="mobileNumRaw"
+              error={errors.mobileNumRaw}
               label={<label className="phone-number-text">Mobile Phone Number:</label>}
               control={cIForm.control}
             />

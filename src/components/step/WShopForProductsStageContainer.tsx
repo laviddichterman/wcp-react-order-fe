@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react';
 import { useSnackbar } from 'notistack';
-import { CartEntry, CreateWCPProductFromPI, WProduct, FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
-import { customizeProduct, editCartEntry, selectSelectedProduct } from '../../app/slices/WCustomizerSlice';
+import { CartEntry, CreateWCPProductFromPI, WProduct, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
+import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
-import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors, SelectMainCategoryId, SelectMainProductCategoryCount, SelectSupplementalCategoryId } from '../../app/store';
+import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors, SelectMainProductCategoryCount, selectSelectedProduct } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEntry } from '../../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
@@ -63,7 +63,7 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
           }
           else {
             // it's a new entry!
-            enqueueSnackbar(`Added ${productCopy.m.name} to order.`, { variant: 'success' });
+            enqueueSnackbar(`Added ${productCopy.m.name} to order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
             dispatch(addToCart({ categoryId: cid, product: productCopy }));
           }
         }

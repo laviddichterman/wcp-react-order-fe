@@ -7,11 +7,12 @@ export enum STEPPER_STAGE_ENUM {
   ADD_SUPP_PRODUCT,
   CUSTOMER_INFO,
   REVIEW_ORDER,
-  CHECK_OUT,
-  CONFIRMATION
+  CHECK_OUT
 };
 
-export const NUM_STAGES = Object.keys(STEPPER_STAGE_ENUM).length /2;
+export const TIMING_POLLING_INTERVAL = 30000;
+
+export const NUM_STAGES = (Object.keys(STEPPER_STAGE_ENUM).length /2);
 
 export const HOST_API = process.env.REACT_APP_HOST_API_KEY || '';
 
