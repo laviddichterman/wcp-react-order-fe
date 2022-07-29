@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { Autocomplete, Grid, Typography, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText} from '@mui/material';
+import { Autocomplete, Grid, Container, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText } from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, getTime } from 'date-fns';
 import { getTermsForService } from '../common';
@@ -12,6 +12,7 @@ import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
 import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
+import { StageTitle } from '../styled/styled';
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();
@@ -19,7 +20,7 @@ export default function WFulfillmentStageComponent() {
   const services = useAppSelector(s => s.ws.services!);
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: Date | number, orderTime: number) => true, []);
   const HasOperatingHoursForService = useAppSelector(s => (serviceNumber: number) => SelectHasOperatingHoursForService(s, serviceNumber));
-  const OptionsForServicesAndDate = useAppSelector(s=> (selectedDate : Date | number, selectedServices : ServicesEnableMap) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
+  const OptionsForServicesAndDate = useAppSelector(s => (selectedDate: Date | number, selectedServices: ServicesEnableMap) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDate = useAppSelector(s => s.fulfillment.selectedDate);
   const serviceTime = useAppSelector(s => s.fulfillment.selectedTime);
@@ -36,8 +37,8 @@ export default function WFulfillmentStageComponent() {
       (selectedService !== DELIVERY_SERVICE || deliveryInfo !== null);
   }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
 
-  const OptionsForDate = useCallback((d: number | null) => (selectedService === null || d === null || !isValid(d)) ? 
-    [] : OptionsForServicesAndDate(d, {[String(selectedService)]: true}), [OptionsForServicesAndDate, selectedService]);
+  const OptionsForDate = useCallback((d: number | null) => (selectedService === null || d === null || !isValid(d)) ?
+    [] : OptionsForServicesAndDate(d, { [String(selectedService)]: true }), [OptionsForServicesAndDate, selectedService]);
 
   const canSelectService = useCallback((service: number) => true, []);
 
@@ -69,7 +70,7 @@ export default function WFulfillmentStageComponent() {
       // check if the selected servicetime is valid in the new service date
       if (serviceTime !== null) {
         const newDateOptions = OptionsForDate(serviceDateNumber);
-        const foundServiceTimeOption = newDateOptions.findIndex(x=>x.value === serviceTime);
+        const foundServiceTimeOption = newDateOptions.findIndex(x => x.value === serviceTime);
         if (foundServiceTimeOption === -1) {
           onSetServiceTime(null)
         }
@@ -88,98 +89,87 @@ export default function WFulfillmentStageComponent() {
   }
 
   return (<>
-    <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>How and when would you like your order?</Typography>
-    <Grid 
-      container 
-      spacing={0}
-      alignItems="center"
-      justifyContent="center">
-    <Grid item xs={12} sx={{pl: 3, pt: 2, pb:5}}><span id="service-selection-radio-buttons-label">Requested Service:</span>
-    <RadioGroup 
-    sx={{alignContent: 'center', justifyItems: 'center'}}
-     row onChange={onChangeServiceSelection} value={selectedService}>
-      {ServiceOptions.map((option) => (
-        <FormControlLabel
-          key={option.value}
-          value={option.value}
-          control={<Radio />}
-          label={option.label}
-        />
-      ))}
-    </RadioGroup>
-    </Grid>
-    {serviceTerms.length > 0 ?
-      <Grid item xs={12}>
-        <FormControlLabel control={
-          <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
-          </>} label={<>
-            REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
-            <ul>
-              {serviceTerms.map((term, i) => <li key={i}>{term}</li>)}
-            </ul>
-          </>
-          } />
-      </Grid> : ""}
-    <Grid item xs={12} lg={6} sx={{justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3}} className="service-date">
-      <StaticDatePicker
-        displayStaticWrapperAs="desktop"
-        openTo="day"
-        disablePast
-        label={selectedService === null ? "Select a requested service first" : "Service Date"}
-        maxDate={add(new Date(), { days: 60 })}
-        shouldDisableDate={(e: Date) => OptionsForDate(getTime(e)).length === 0}
-        disableMaskedInput
-        value={serviceDate}
-        onChange={(v) => onSetServiceDate(v)}
-        renderInput={(params) => (
-          (
-            <TextField
-              {...params}
+    <StageTitle>How and when would you like your order?</StageTitle>
+    <Grid container alignItems="center">
+      <Grid item xs={12} sx={{ pl: 3, pt: 2, pb: 5 }}><span>Requested Service:</span>
+        <RadioGroup
+          row onChange={onChangeServiceSelection} value={selectedService}>
+          {ServiceOptions.map((option) => (
+            <FormControlLabel
+              key={option.value}
+              value={option.value}
+              control={<Radio />}
+              label={option.label}
             />
-          )
-        )}
-      />
-      {hasSelectedDateExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service date has expired.</FormHelperText> : ""}
-    </Grid>
-    <Grid item xs={12} lg={6} sx={{justifyContent: 'center', alignContent: 'center', display: 'flex'}} >
-    <Autocomplete
-    sx={{justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300 }} 
-      openOnFocus
-      disableClearable
-      noOptionsText="Select a valid service date first"
-      id="service-time"
-      options={Object.values(TimeOptions).map(x => x.value)}
-      getOptionDisabled={o => TimeOptions[o].disabled}
-      isOptionEqualToValue={(o, v) => o === v}
-      getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
-      // @ts-ignore
-      value={serviceTime || null}
-      //sx={{ width: 300 }}
-      onChange={(_, v) => onSetServiceTime(v)}
-      renderInput={(params) => <TextField {...params} label="Time" />}
-    />
-    {hasSelectedTimeExpired ? <FormHelperText className="wpcf7-response-output wpcf7-mail-sent-ng" error>The previously selected service time has expired.</FormHelperText> : ""}
-    {selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null ?
-      (<span>
+          ))}
+        </RadioGroup>
+      </Grid>
+      {serviceTerms.length > 0 ?
+        <Grid item xs={12}>
+          <FormControlLabel control={
+            <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
+            </>} label={<>
+              REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
+              <ul>
+                {serviceTerms.map((term, i) => <li key={i}>{term}</li>)}
+              </ul>
+            </>
+            } />
+        </Grid> : ""}
+      <Grid item xs={12} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }} className="service-date">
+        <StaticDatePicker
+          displayStaticWrapperAs="desktop"
+          openTo="day"
+          disablePast
+          label={selectedService === null ? "Select a requested service first" : "Service Date"}
+          maxDate={add(new Date(), { days: 60 })}
+          shouldDisableDate={(e: Date) => OptionsForDate(getTime(e)).length === 0}
+          disableMaskedInput
+          value={serviceDate}
+          onChange={(v) => onSetServiceDate(v)}
+          renderInput={(params) => <TextField {...params} />}
+        />
+        {hasSelectedDateExpired ? <FormHelperText error>The previously selected service date has expired.</FormHelperText> : ""}
+      </Grid>
+      <Grid item xs={12} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
         <Autocomplete
-          disablePortal
+          sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300 }}
           openOnFocus
           disableClearable
-          className="guest-count"
-          options={[...Array(MAX_PARTY_SIZE - 1)].map((_, i) => i + 1)}
-          getOptionDisabled={o => !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
-          getOptionLabel={o => String(o)}
+          noOptionsText="Select a valid service date first"
+          id="service-time"
+          options={Object.values(TimeOptions).map(x => x.value)}
+          getOptionDisabled={o => TimeOptions[o].disabled}
+          isOptionEqualToValue={(o, v) => o === v}
+          getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
           // @ts-ignore
-          value={dineInInfo?.partySize ?? null}
-          sx={{ width: 300 }}
-          onChange={(_, v) => onSetDineInInfo(v)}
-          renderInput={(params) => <TextField {...params} label="Party Size" />}
+          value={serviceTime || null}
+          //sx={{ width: 300 }}
+          onChange={(_, v) => onSetServiceTime(v)}
+          renderInput={(params) => <TextField {...params} label="Time" />}
         />
-      </span>) : ""
-    }
+        {hasSelectedTimeExpired ? <FormHelperText error>The previously selected service time has expired.</FormHelperText> : ""}
+        {selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null ?
+          (<span>
+            <Autocomplete
+              disablePortal
+              openOnFocus
+              disableClearable
+              className="guest-count"
+              options={[...Array(MAX_PARTY_SIZE - 1)].map((_, i) => i + 1)}
+              getOptionDisabled={o => !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
+              getOptionLabel={o => String(o)}
+              // @ts-ignore
+              value={dineInInfo?.partySize ?? null}
+              sx={{ width: 300 }}
+              onChange={(_, v) => onSetDineInInfo(v)}
+              renderInput={(params) => <TextField {...params} label="Party Size" />}
+            />
+          </span>) : ""
+        }
+      </Grid>
+      {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <Grid item xs={12}><DeliveryInfoForm /></Grid> : ""}
     </Grid>
-    {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <Grid item xs={12}><DeliveryInfoForm /></Grid>: ""}
-    </Grid>
-    <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={()=>{return;}} handleNext={() => dispatch(nextStage())} />
+    <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);
 }

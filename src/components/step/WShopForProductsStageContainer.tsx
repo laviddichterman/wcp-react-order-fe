@@ -92,7 +92,7 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
           <WShopForSuppProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />)} 
       {selectedProduct !== null && (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />)}
       <WOrderCart isProductEditDialogOpen={selectedProduct !== null} menu={menu!} setProductToEdit={setProductToEdit} />
-      <Navigation canBack={selectedProduct === null} canNext={selectedProduct === null && numMainCategoryProducts > 0} handleBack={()=>dispatch(backStage())} handleNext={()=>dispatch(nextStage())} />
+      {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={()=>dispatch(backStage())} handleNext={()=>dispatch(nextStage())} />}
     </div>
   );
 }

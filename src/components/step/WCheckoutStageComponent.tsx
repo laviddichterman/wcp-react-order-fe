@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Typography, Card, CardHeader, CardActions, CardContent, Grid, Input, Button, Link } from '@mui/material';
+import { useState, useMemo } from 'react';
+import { Box, Typography, CardContent, Grid, Input, Button, Link } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
@@ -14,6 +14,7 @@ import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
 import LoadingScreen from '../LoadingScreen';
+import { StageTitle } from '../styled/styled';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
@@ -89,9 +90,9 @@ export function WCheckoutStage() {
     }
   }
   return submitToWarioStatus !== 'SUCCEEDED' ?
-    <Card elevation={0} sx={{width: 'inherit'}}>
+    <Box>
       {submitToWarioStatus === 'PENDING' && <LoadingScreen />}
-      <Typography variant='h4'>Add gratuity to your order and settle up!</Typography>
+      <StageTitle>Add gratuity to your order and settle up!</StageTitle>
       <Typography variant='h6'>{TIP_PREAMBLE}</Typography>
       <Grid container sx={{ pb: 2 }}>
         {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
@@ -113,8 +114,8 @@ export function WCheckoutStage() {
         </Grid>
       </Grid>
       <WCheckoutCart />
-      <Card variant='outlined'>
-        <CardHeader title="Payment Information:" />
+      <Box>
+        <StageTitle>Payment Information:</StageTitle>
         <CardContent>
           <Grid container>
             <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
@@ -135,15 +136,16 @@ export function WCheckoutStage() {
               <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
             </Grid>
           </Grid>
+          
         </CardContent>
-      </Card>
-      <CardActions>
         <Navigation canBack={submitToWarioStatus !== 'PENDING'} hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
-      </CardActions>
-    </Card> :
-    <Card>
-      <CardHeader title={<Typography variant='h3'>Order submitted successfully!</Typography>} />
+      </Box>
+        
+    </Box> :
+    <Box>
+      <StageTitle>Order submitted successfully!</StageTitle>
       <CardContent>
+
         <Typography variant='h6'>Please check your email for order confirmation.</Typography>
         <Grid container>
           <Grid item xs={12} sx={{py: 3}}>
@@ -167,5 +169,5 @@ export function WCheckoutStage() {
             </Grid>}
         </Grid>
       </CardContent>
-    </Card>;
+    </Box>;
 }

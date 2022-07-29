@@ -16,6 +16,7 @@ import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import { SelectBalanceAfterCredits, SelectWarioSubmissionArguments } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
+import { StepperTitle } from './styled/styled';
 
 const STAGES = [
   {
@@ -31,7 +32,7 @@ const STAGES = [
     content: <WShopForProductsContainer productSet='SECONDARY' />
   },
   {
-    stepperTitle: "Your info",
+    stepperTitle: "Tell us about yourself",
     content: <WCustomerInformationStage />
   },
   {
@@ -39,7 +40,7 @@ const STAGES = [
     content: <WReviewOrderStage />
   },
   {
-    stepperTitle: "Check Out",
+    stepperTitle: "Check out",
     content: <WCheckoutStage />
   }
 ];
@@ -53,16 +54,16 @@ export function WOrderingComponent() {
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
   const theme = useTheme();
-  const useVerticalStepper = useMediaQuery(theme.breakpoints.up('lg'));
+  const useVerticalStepper = useMediaQuery(theme.breakpoints.up('md'));
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
-      if (props.token) {
-        dispatch(submitToWario({
-          ...warioSubmissionArgs,
-          nonce: props.token,
-        }))
-      } else if (props.errors) {
-        dispatch(setSquareTokenizationErrors(props.errors));
-      }
+    if (props.token) {
+      dispatch(submitToWario({
+        ...warioSubmissionArgs,
+        nonce: props.token,
+      }))
+    } else if (props.errors) {
+      dispatch(setSquareTokenizationErrors(props.errors));
+    }
   }
 
   const createPaymentRequest: () => Square.PaymentRequestOptions = () => {
@@ -82,12 +83,12 @@ export function WOrderingComponent() {
     >
       <div className="orderform">
         {useVerticalStepper ?
-          <Stepper activeStep={stage} >
+          <Stepper sx={{ px: 1, pt: 2, mx: 'auto'}} activeStep={stage} >
             {STAGES.map((stg, i) => (
-              <Step key={i} id={`WARIO_step_${i}`} completed={stage > i || submitToWarioStatus === 'SUCCEEDED'}> 
-                <StepLabel>{stg.stepperTitle}</StepLabel>
+              <Step key={i} id={`WARIO_step_${i}`} completed={stage > i || submitToWarioStatus === 'SUCCEEDED'}>
+                <StepLabel><StepperTitle>{stg.stepperTitle}</StepperTitle></StepLabel>
               </Step>))}
-             {/*STAGES.map((stg, i) => (
+            {/*STAGES.map((stg, i) => (
             //   <Step id={`WARIO_step_${i}`} key={i} >
             //     <StepLabel>{stg.stepperTitle}</StepLabel>
             //     <StepContent>
@@ -95,7 +96,7 @@ export function WOrderingComponent() {
             //     </StepContent>
             //   </Step>))*/}
           </Stepper> :
-          <Box sx={{ width: '95%', flexGrow: 1 }}>
+          <Box sx={{ mx: 'auto', width: '95%', p: 1 }}>
             <Paper
               square
               elevation={0}
@@ -107,16 +108,15 @@ export function WOrderingComponent() {
                 bgcolor: 'background.default',
               }}
             >
-              <Typography sx={{color: 'primary'}}id={`WARIO_step_${stage}`}>{STAGES[stage].stepperTitle}</Typography>
+              <StepperTitle sx={{ color: 'primary' }} id={`WARIO_step_${stage}`}>{STAGES[stage].stepperTitle}</StepperTitle>
             </Paper>
             {/* <Box sx={{ width: '100%', p: 2 }}>
               {STAGES[stage].content}
             </Box> */}
           </Box>}
-          <Box sx={{ width: '98%', m: 3, flexGrow: 1,  display: 'flex',
-                alignItems: 'center', }}>
-              {STAGES[stage].content}
-            </Box>
+        <Box sx={{ mx: 'auto', width: '95%', p: 1 }}>
+          {STAGES[stage].content}
+        </Box>
       </div>
     </PaymentForm>
   );

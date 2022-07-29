@@ -21,6 +21,7 @@ import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { scrollToIdAfterDelay } from '../utils/shared';
+import { ErrorResponseOutput, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -172,6 +173,7 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
   return (
     <Grid item xs={12} sm={6} md={4} lg={3}>
       <FormControlLabel
+        disabled={!optionState.enable_whole}
         control={
           <span>
             {!advancedOptionSelected ? <Checkbox
@@ -425,11 +427,9 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
   return (
     <div ref={ref} className="customizer menu-list__items">
       {mtid_moid !== null && <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} />}
-      <h3 className="flush--top">
-        <strong>Customize {customizerTitle}!</strong>
-      </h3>
+      <StageTitle>Customize {customizerTitle}!</StageTitle>
       <div className="menu-list__item">
-        <WProductComponent productMetadata={selectedProduct.m} allowAdornment={false} description dots price menuModifiers={menu.modifiers} displayContext="order" />
+        <WProductComponent productMetadata={selectedProduct.m} description price menuModifiers={menu.modifiers} displayContext="order" />
       </div>
       <hr className="separator" />
       <Grid container>
@@ -437,22 +437,23 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
           <Grid item container key={i} xs={12}><WModifierTypeCustomizerComponent menu={menu} mtid={mtid} product={selectedProduct} /></Grid>
         )}
       </Grid>
-      {orderGuideMessages.map((msg, i) => <div key={`${i}guide`} className="wpcf7-response-output wpcf7-validation-errors">{msg}</div>)}
-      {orderGuideErrors.map((msg, i) => <div key={`${i}err`} className="wpcf7-response-output">{msg}</div>)}
+      {orderGuideMessages.map((msg, i) => <WarningResponseOutput key={`${i}guide`}>{msg}</WarningResponseOutput>)}
+      {orderGuideErrors.map((msg, i) => <ErrorResponseOutput key={`${i}err`}>{msg}</ErrorResponseOutput>)}
       {allowAdvancedOptionPrompt ? <FormControlLabel
         control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
         label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}
-      <Grid container justifyContent="flex-end" item xs={12}>
-        <Grid item>
-          <Button onClick={unselectProduct}>
+      <Grid container item xs={12}>
+        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-start" }}>
+          <WarioButton onClick={unselectProduct}>
             Cancel
-          </Button>
+          </WarioButton>
         </Grid>
-        <Grid item>
-          <Button disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
+        <Grid item xs />
+        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <WarioButton disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
             onClick={confirmCustomization}>
             {cartEntry === undefined ? "Add to order" : "Save changes"}
-          </Button>
+          </WarioButton>
         </Grid>
       </Grid>
     </div>

@@ -8,6 +8,7 @@ import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { scrollToElementAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
+import { ClickableProductDisplay, StageTitle } from '../styled/styled';
 
 
 const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
@@ -51,18 +52,21 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
 
     return (
       <div>
-        <Typography variant="h5" className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Add small plates or beverages to your order.</Typography>
+        <StageTitle>Add small plates or beverages to your order.</StageTitle>
         {extrasCategories.map((catId, i) =>
-          <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} className="ordering-menu menu-list menu-list__dotted" >
-            <AccordionSummary expandIcon={<ExpandMore />}>
+          <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
+            <AccordionSummary expandIcon={ activePanel === i && isExpanded ? <ExpandMore /> : <ExpandMore />}>
               <Typography sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].menu_name }} /></Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Grid container className="menu-list__items">
-                {menu.categories[catId].subtitle ? <Grid item xs={12} className="menu-list__item"><strong><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></span></strong></Grid> : ""}
+              <Grid container>
+                {menu.categories[catId].subtitle && 
+                  <Grid item xs={12}>
+                    <strong><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></span></strong>
+                  </Grid>}
                 {ProductsForCategoryFilteredAndSorted(catId).map((p: IProductInstance, j: number) =>
-                  <Grid item xs={12} key={j} className="menu-list__item">
-                    <div className="offer-link" onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}>
+                  <Grid item xs={12} key={j}>
+                    <ClickableProductDisplay onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}>
                       <WProductComponent
                         productMetadata={menu!.product_instance_metadata[p.id]}
                         allowAdornment
@@ -71,7 +75,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
                         price
                         menuModifiers={menu!.modifiers}
                         displayContext="order" />
-                    </div>
+                    </ClickableProductDisplay>
                   </Grid>)}
               </Grid>
             </AccordionDetails>

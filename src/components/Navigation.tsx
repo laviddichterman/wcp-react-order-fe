@@ -1,9 +1,10 @@
 import React from 'react';
-import { Button, Box, MobileStepper, useMediaQuery } from '@mui/material';
+import { Grid, useMediaQuery } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NUM_STAGES } from '../config';
+import { WarioButton } from './styled/styled';
 
 
 export interface NavigationProps {
@@ -20,59 +21,31 @@ export interface NavigationProps {
 export function Navigation({ canNext, canBack, nextText = "Next", backText = "Back", handleNext, handleBack, hasBack = true, hasNext = true }: NavigationProps) {
   const currentStage = useAppSelector(s => s.stepper.stage);
   const theme = useTheme();
-  const useVerticalStepper = useMediaQuery(theme.breakpoints.up('lg'));
+  const useVerticalStepper = useMediaQuery(theme.breakpoints.up('md'));
 
-  return useVerticalStepper ?
-    <Box className="order-nav" sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-      {hasBack ? <Button
-        color="inherit"
-        disabled={!canBack}
+  return <Grid container sx={{ mx: 'auto', width: '100%', pt: 3, pb: 2 }}>
+    <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-start" }}>
+      {hasBack && <WarioButton size="small"
         onClick={handleBack}
-        sx={{ mr: 1 }}
-      >
-        {backText}
-      </Button> : <Button disabled />}
-      <Box sx={{ flex: '1 1 auto' }} />
-      { hasNext ?
-      <Button 
-        onClick={handleNext} 
-        disabled={!canNext} 
-        sx={{ mr: 1 }}>
-        {nextText}
-      </Button> : <Button disabled /> }
-      {/* <button type="submit" className="btn" ng-disabled="!orderCtrl.s.date_valid || (orderCtrl.CONFIG.TERMS_LIST[orderCtrl.s.service_type].length > 0 && !orderCtrl.s.acknowledge_terms) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY && (!orderCtrl.s.is_address_validated)) || (orderCtrl.s.service_type == orderCtrl.CONFIG.DINEIN && (Number.isNaN(orderCtrl.s.number_guests) || orderCtrl.s.number_guests < 1 || orderCtrl.s.number_guests > orderCtrl.CONFIG.MAX_PARTY_SIZE))" ng-show="orderCtrl.HasNextStage()" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage(); orderCtrl.ClearTimeoutFlag();">Next</button> */}
-    </Box> :
-    <MobileStepper
-      variant="text"
-      steps={NUM_STAGES}
-      position="static"
-      activeStep={currentStage}
-      
-      nextButton={ hasNext ? 
-      <Button
+        disabled={!canBack} >
+        <KeyboardArrowLeft sx={{ ml: -1 }} />
+        {backText ?? "Back"}
+      </WarioButton>}
+    </Grid>
+    <Grid item xs={4} sx={{ mx: 'auto', width: '100%', textAlign: 'center' }}>
+      {!useVerticalStepper &&
+        <span>{`${currentStage + 1} / ${NUM_STAGES}`}</span>
+      }
+    </Grid>
+    <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
+      {hasNext &&
+        <WarioButton
           size="small"
           onClick={handleNext}
           disabled={!canNext}
-        >
-          {nextText ?? "Next"}
-          {theme.direction === 'rtl' ? (
-            <KeyboardArrowLeft />
-          ) : (
-            <KeyboardArrowRight />
-          )}
-        </Button> : <Button disabled />
-      }
-      backButton={ hasBack ?
-        <Button size="small"
-          onClick={handleBack}
-          disabled={!canBack} >
-          {theme.direction === 'rtl' ? (
-            <KeyboardArrowRight />
-          ) : (
-            <KeyboardArrowLeft />
-          )}
-          {backText ?? "Back"}
-        </Button> : <Button disabled />
-      }
-    />;
+        > {nextText ?? "Next"}
+          <KeyboardArrowRight sx={{ mr: -1 }} />
+        </WarioButton>}
+    </Grid>
+  </Grid>;
 };

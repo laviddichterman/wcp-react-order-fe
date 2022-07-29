@@ -2,15 +2,16 @@ import { useMemo } from 'react';
 import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuModifiers, PriceDisplay } from '@wcp/wcpshared';
 import { IProductInstancesSelectors } from '../app/store';
 import { useAppSelector } from '../app/useHooks';
-import { Box, BoxProps } from '@mui/material';
-interface WProductComponentProps { 
+import { Box, BoxProps, Typography } from '@mui/material';
+import { Dots, ProductAdornment, ProductPrice, ProductTitle } from './styled/styled';
+interface WProductComponentProps {
   productMetadata: WProductMetadata;
-  description: boolean;
-  allowAdornment: boolean;
-  dots: boolean;
+  description?: boolean;
+  allowAdornment?: boolean;
+  dots?: boolean;
   menuModifiers: MenuModifiers;
   displayContext: "order" | "menu";
-  price: boolean;
+  price?: boolean;
 };
 
 export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, ...other }: WProductComponentProps & BoxProps) {
@@ -40,26 +41,48 @@ export function WProductComponent({ productMetadata, description, allowAdornment
     return `${productMetadata.price}`;
   }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
-    <Box component='span' {...other} className={adornmentHTML ? "menu-list__item-highlight-wrapper" : ""} >
-      {adornmentHTML ? <span className="menu-list__item-highlight-title" dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
-      <h4 className="menu-list__item-title">
-        <span className="item_title">{productMetadata.name}</span>
-        {dots ? <span className="dots" /> : ""}
-      </h4>
-      {descriptionHTML ? <p className="menu-list__item-desc">
+    <Box component='div' {...other} sx={adornmentHTML ? {
+      mt: 0,
+      mb: 0,
+      "&:before": {
+        content: '""',
+        position: "absolute",
+        top: "-18px",
+        left: "-18px",
+        right: "-18px",
+        bottom: "-18px",
+        border: "2px solid #c59d5f",
+        borderImage: "linear-gradient(to bottom, #c59d5f 0%, #fff 70%) 0 0 0 4",
+        zIndex: 0
+      },
+      "&:after": {
+        position: "absolute",
+        content: '""',
+        top: "-18px",
+        left: "-18px",
+        right: "-18px",
+        bottom: "-18px",
+        border: "2px solid",
+        borderImage: "linear-gradient(to right, #c59d5f 0%, #fff 90%) 1  0 0",
+        zIndex: 0
+      }
+    } : {}} >
+      {adornmentHTML ? <ProductAdornment dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
+        <ProductTitle sx={ dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle>
+        {dots && <Dots />}
+      {descriptionHTML && <p className="menu-list__item-desc">
         <span className="desc__content">
           <span dangerouslySetInnerHTML={{ __html: descriptionHTML }} />
         </span>
-      </p> : ""}
-      {description && optionsSections ? optionsSections.map((option_section, l) =>
+      </p>}
+      {description && optionsSections && optionsSections.map((option_section, l) =>
         <p key={l} className="menu-list__item-desc">
           <span className="desc__content">
             {productMetadata.is_split ? <span ><strong>{option_section[0]}: </strong></span> : ""}
             <span>{option_section[1]}</span>
           </span>
-        </p>) : ""}
-      {dots ? <span className="dots" /> : ""}
-      {price ? <span className="menu-list__item-price">{priceText}</span> : ""}
+        </p>)}
+      {price && <ProductPrice sx={ dots ? { bgcolor: "#fff" } : {} }>{priceText}</ProductPrice>}
     </Box>)
 };
 

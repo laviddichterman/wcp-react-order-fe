@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Done, Error } from '@mui/icons-material';
 import { CREDIT_REGEX } from '@wcp/wcpshared';
 import { validateStoreCredit, clearCreditCode } from '../app/slices/WPaymentSlice';
+import { ErrorResponseOutput } from './styled/styled';
 
 
 
@@ -31,7 +32,6 @@ export function StoreCreditSection() {
     <Grid container alignContent={'center'}>
       <Grid sx={{pt:2}} item md={useCreditCheckbox ? 6 : 12} xs={12}>
         <FormControlLabel
-          className='flexbox__item'
           control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
           label="Use Digital Gift Card / Store Credit"
         />
@@ -56,8 +56,8 @@ export function StoreCreditSection() {
         </Grid>}
 
       {creditValidationLoading === "FAILED" && 
-        <Grid item xs={12} className="wpcf7-response-output wpcf7-mail-sent-ng">
-          Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.
+        <Grid item xs={12}>
+          <ErrorResponseOutput>Code entered looks to be invalid. Please check your input and try again. Please copy/paste from the e-mail you received. Credit codes are case sensitive.</ErrorResponseOutput>
         </Grid>}
     </Grid>
   )

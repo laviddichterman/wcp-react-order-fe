@@ -1,7 +1,7 @@
 import { Typography, Table, TableBody, TableContainer, TableRow, TableHead, TableCell, Paper } from '@mui/material';
 import { WProductComponent } from './WProductComponent';
 import { CartEntry } from '@wcp/wcpshared';
-import { fCurrency, fPercent } from '../utils/numbers';
+import { fCurrencyNoUnit, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE } from '../config';
 import { useAppSelector } from '../app/useHooks';
 import { getCart } from '../app/slices/WCartSlice';
@@ -9,7 +9,7 @@ import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, Se
 
 
 export function WCheckoutCart() {
-  const menu = useAppSelector(s=>s.ws.menu);
+  const menu = useAppSelector(s => s.ws.menu);
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const TAX_RATE = useAppSelector(SelectTaxRate);
   const discountApplied = useAppSelector(SelectDiscountApplied);
@@ -25,123 +25,75 @@ export function WCheckoutCart() {
     return null;
   }
   return (
-    <div className="cart">
-      <div className="content border-bottom border-none-at-medium">
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Item</TableCell>
-                <TableCell>Quantity</TableCell>
-                <TableCell>x</TableCell>
-                <TableCell>Price</TableCell>
-                <TableCell>Subtotal</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {cart.map((cartEntry: CartEntry, i: number) => (
-                <TableRow key={i} className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="menu-list__item">
-                      <WProductComponent productMetadata={cartEntry.product.m} allowAdornment={false} description dots={false} price={false} menuModifiers={menu.modifiers} displayContext="order" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="column no-shrink menu-list__item-price">{cartEntry.quantity}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="column no-shrink">×</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="column no-shrink menu-list__item-price">{cartEntry.product.m.price}</span>
-                  </TableCell>
-                  <TableCell className="cart-item-subtotal no-wrap">
-                    <span className="menu-list__item-price">{cartEntry.product.m.price * cartEntry.quantity}</span>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {selectedService === DELIVERY_SERVICE && (
-                <TableRow className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                      <div className="cart-item-title-subtitle column menu-list__item">
-                        <h4 className="menu-list__item-title">
-                          <span className="item_title">Delivery Fee{deliveryFee === 0 && " (waived)"}</span></h4>
-                      </div>
-                    </div>
-                  </TableCell>
-                  {/* <TableCell className="cart-item-quantity-price no-wrap"></TableCell> */}
-                  <TableCell className="cart-item-subtotal no-wrap">
-                    <span className="menu-list__item-price">
-                      {deliveryFee === 0 ? <Typography sx={{ textDecoration: "line-through" }}>{fCurrency(5)}</Typography> : <>{fCurrency(deliveryFee)}</>}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              )}
-              {discountApplied !== 0 &&
-                <TableRow className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                      <div className="cart-item-title-subtitle column menu-list__item">
-                        <h4 className="menu-list__item-title"><span className="item_title">Discount Code Applied (<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)</span></h4>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="cart-item-quantity-price no-wrap"></TableCell>
-                  <TableCell className="cart-item-subtotal no-wrap"><span className="menu-list__item-price">-{fCurrency(discountApplied)}</span></TableCell>
-                </TableRow>}
-              {taxValue > 0 &&
-                <TableRow className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                      <div className="cart-item-title-subtitle column menu-list__item">
-                        <h4 className="menu-list__item-title"><span className="item_title">Sales Tax ({fPercent(TAX_RATE)})</span></h4>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="cart-item-quantity-price no-wrap"></TableCell>
-                  <TableCell className="cart-item-subtotal no-wrap"><span className="menu-list__item-price">{fCurrency(taxValue)}</span></TableCell>
-                </TableRow>}
-              {tipValue > 0 &&
-                <TableRow className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                      <div className="cart-item-title-subtitle column menu-list__item">
-                        <h4 className="menu-list__item-title"><span className="item_title">Gratuity*</span></h4>
-                        <div>Gratuity is distributed in its entirety to non-owner staff working on the day of your order.</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="cart-item-quantity-price no-wrap"></TableCell>
-                  <TableCell className="cart-item-subtotal no-wrap"><span className="menu-list__item-price">{fCurrency(tipValue)}</span></TableCell>
-                </TableRow>}
-              {giftCardApplied > 0 &&
-                <TableRow className="cart-item">
-                  <TableCell className="cart-item-description">
-                    <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                      <div className="cart-item-title-subtitle column menu-list__item">
-                        <h4 className="menu-list__item-title"><span className="item_title">Digital Gift Applied ((<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)</span></h4>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="cart-item-quantity-price no-wrap"></TableCell>
-                  <TableCell className="cart-item-subtotal no-wrap"><span className="menu-list__item-price">-{fCurrency(giftCardApplied)}</span></TableCell>
-                </TableRow>}
-              <TableRow className="cart-item">
-                <TableCell className="cart-item-description">
-                  <div className="grid-flex grid-align-justify grid-align-left-at-small grid-valign-middle">
-                    <div className="cart-item-title-subtitle column menu-list__item">
-                      <h4 className="menu-list__item-title"><span className="item_title">Total</span></h4>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="cart-item-quantity-price no-wrap"></TableCell>
-                <TableCell className="cart-item-subtotal no-wrap"><span className="menu-list__item-price">{fCurrency(balanceAfterCredits)}</span></TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </div>
-    </div>
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Item</TableCell>
+            <TableCell colSpan={3}>Quantity x Price</TableCell>
+            <TableCell>Subtotal</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {cart.map((cartEntry: CartEntry, i: number) => (
+            <TableRow key={i}>
+              <TableCell>
+                <WProductComponent productMetadata={cartEntry.product.m} allowAdornment={false} description dots={false} price={false} menuModifiers={menu.modifiers} displayContext="order" />
+              </TableCell>
+              <TableCell>{cartEntry.quantity}</TableCell>
+              <TableCell>×</TableCell>
+              <TableCell>{cartEntry.product.m.price}</TableCell>
+              <TableCell>{cartEntry.product.m.price * cartEntry.quantity}</TableCell>
+            </TableRow>
+          ))}
+          {selectedService === DELIVERY_SERVICE && (
+            <TableRow>
+              <TableCell>
+                Delivery Fee{deliveryFee === 0 && " (waived)"}
+              </TableCell>
+              <TableCell>
+                {deliveryFee === 0 ? <Typography sx={{ textDecoration: "line-through" }}>{fCurrencyNoUnit(5)}</Typography> : <>{fCurrencyNoUnit(deliveryFee)}</>}
+              </TableCell>
+            </TableRow>
+          )}
+          {discountApplied !== 0 &&
+            <TableRow>
+              <TableCell>
+                Discount Code Applied (<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)
+              </TableCell>
+              <TableCell></TableCell>
+              <TableCell>-{fCurrencyNoUnit(discountApplied)}</TableCell>
+            </TableRow>}
+          {taxValue > 0 &&
+            <TableRow>
+              <TableCell>
+                Sales Tax ({fPercent(TAX_RATE)})
+              </TableCell>
+              <TableCell>{fCurrencyNoUnit(taxValue)}</TableCell>
+            </TableRow>}
+          {tipValue > 0 &&
+            <TableRow>
+              <TableCell>
+                <h4 className="menu-list__item-title">Gratuity*</h4>
+                <div>Gratuity is distributed in its entirety to non-owner staff working on the day of your order.</div>
+              </TableCell>
+              <TableCell>{fCurrencyNoUnit(tipValue)}</TableCell>
+            </TableRow>}
+          {giftCardApplied > 0 &&
+            <TableRow>
+              <TableCell>
+                Digital Gift Applied ((<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)
+              </TableCell>
+              <TableCell>-{fCurrencyNoUnit(giftCardApplied)}</TableCell>
+            </TableRow>}
+          <TableRow>
+            <TableCell>
+              Total
+            </TableCell>
+            <TableCell>{fCurrencyNoUnit(balanceAfterCredits)}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }

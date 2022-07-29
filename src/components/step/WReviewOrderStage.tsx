@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Typography, TextField, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
+import { useState } from 'react';
+import { TextField, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { SERVICE_DATE_DISPLAY_FORMAT } from '@wcp/wcpshared';
@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
+import { StageTitle, WarningResponseOutput } from '../styled/styled';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
@@ -65,7 +66,7 @@ export default function WReviewOrderStage() {
   }
   return (
     <div>
-      <Typography className="flush--top" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Everything look right?</Typography>
+      <StageTitle>Everything look right?</StageTitle>
       <TableContainer component={Paper} >
         <Table>
           <TableBody>
@@ -100,7 +101,6 @@ export default function WReviewOrderStage() {
           </TableBody>
         </Table>
       </TableContainer>
-
       <WCheckoutCart />
       <div>
         <FormControlLabel
@@ -109,10 +109,8 @@ export default function WReviewOrderStage() {
         />
         {acknowledgeInstructionsDialogue ? <TextField fullWidth multiline value={specialInstructions || ""} onChange={(e) => setSpecialInstructionsIntermediate(e.target.value)} /> : ""}
       </div>
-      {specialInstructionsResponses.map((res, i) => <div key={i} className="wpcf7-response-output wpcf7-validation-errors">{res.text}</div>)}
+      {specialInstructionsResponses.map((res, i) => <WarningResponseOutput key={i}>{res.text}</WarningResponseOutput>)}
       <Navigation canBack canNext={!disableSubmit} handleBack={()=>dispatch(backStage())} handleNext={() => dispatch(nextStage())} />
-      {/* <button type="submit" className="btn" ng-show="orderCtrl.HasNextStage() && (!orderCtrl.s.acknowledge_instructions_dialogue && !(orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT))" ng-click="orderCtrl.ScrollTop(); orderCtrl.NextStage();">Next</button>
-        <button type="submit" className="btn" disabled={disableSubmit} ng-show="orderCtrl.s.acknowledge_instructions_dialogue || (orderCtrl.s.service_type === orderCtrl.CONFIG.DINEIN && !orderCtrl.CONFIG.ENABLE_DINE_IN_PREPAYMENT)" ng-click="orderCtrl.ScrollTop(); orderCtrl.SubmitToWario()">Submit Order</button> */}
     </div >
   )
 }

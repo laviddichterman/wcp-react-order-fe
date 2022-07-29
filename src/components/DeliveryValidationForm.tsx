@@ -7,6 +7,7 @@ import { FormProvider, RHFTextField } from './hook-form';
 
 import { DeliveryInfoFormData, deliveryAddressSchema, setDeliveryInfo, validateDeliveryAddress } from '../app/slices/WFulfillmentSlice';
 import { SelectDeliveryAreaLink } from '../app/store';
+import { ErrorResponseOutput, OkResponseOutput } from './styled/styled';
 
 
 function useDeliveryInfoForm() {
@@ -53,13 +54,13 @@ export default function DeliveryInfoForm() {
         <span className="flexbox__item one-whole">Delivery Information:</span>
       </span>
       {deliveryValidationLoading === 'VALID' ?
-        <div className="wpcf7-response-output wpcf7-mail-sent-ok">
+        <OkResponseOutput>
           Found an address in our delivery area: <br />
           <span className="title cart">
             {`${validatedDeliveryAddress}${validatedDeliveryAddress2 ? ` ${validatedDeliveryAddress2}` : ''}, ${validatedZipcode}`}
-            <IconButton name="remove" onClick={resetValidatedAddress} className="button-remove"><Clear /></IconButton>
+            <IconButton name="remove" onClick={resetValidatedAddress}><Clear /></IconButton>
           </span>
-        </div>
+        </OkResponseOutput>
         :
         <FormProvider methods={deliveryForm}>
           <span className="flexbox">
@@ -68,7 +69,7 @@ export default function DeliveryInfoForm() {
                 name="address"
                 readOnly={deliveryValidationLoading === 'PENDING'}
                 autoComplete="shipping address-line1"
-                label={<label className="delivery-address-text">Address:</label>}
+                label="Address:"
                 placeholder={"Address"}
               />
             </span>
@@ -77,8 +78,7 @@ export default function DeliveryInfoForm() {
                 name="address2"
                 readOnly={deliveryValidationLoading === 'PENDING'}
                 autoComplete="shipping address-line2"
-                label={<label className="delivery-address-text">Apt/Unit:</label>}
-                placeholder={"Apt/Unit"}
+                label="Apt/Unit:"
               />
             </span>
             <span className="flexbox__item one-quarter">
@@ -86,22 +86,21 @@ export default function DeliveryInfoForm() {
                 name="zipcode"
                 readOnly={deliveryValidationLoading === 'PENDING'}
                 autoComplete="shipping postal-code"
-                label={<label className="delivery-address-text">ZIP Code:</label>}
-                placeholder={"ZIP Code"}
+                label="ZIP Code:"
               />
             </span>
           </span>
         </FormProvider>
       }
       {deliveryValidationLoading === 'OUTSIDE_RANGE' &&
-        <div className="wpcf7-response-output wpcf7-mail-sent-ng">
+        <ErrorResponseOutput>
           The address {validatedDeliveryAddress} isn't in our <Link target="_blank" href={DELIVERY_LINK}>delivery area</Link>
-        </div>
+        </ErrorResponseOutput>
       }
       {deliveryValidationLoading === 'INVALID' &&
-        <div className="wpcf7-response-output wpcf7-mail-sent-ng">
+        <ErrorResponseOutput>
           Unable to determine the specified address. Send us a text or email if you continue having issues.
-        </div>
+        </ErrorResponseOutput>
       }
 
       <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">

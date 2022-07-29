@@ -1,4 +1,5 @@
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ScopedCssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import { useEffect } from 'react';
 import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
@@ -13,14 +14,32 @@ const theme = createTheme({
     values: {
       xs: 0,
       sm: 350,
-      md: 514,
-      lg: 675,
-      xl: 1536,
+      md: 654,
+      lg: 850,
+      xl: 1100,
     },
   },
   typography: {
     allVariants: {
       fontFamily: 'Cabin'
+    }
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "black",
+          "&.Mui-disabled": {
+            pointerEvents: "unset",
+            cursor: "not-allowed",
+            backgroundColor: "#D3D3D3",
+            color: 'black'
+          },
+          "&:hover": {
+            backgroundColor: "#c59d5f"
+          },
+        },
+      }
     }
   }
 });
@@ -33,6 +52,7 @@ const theme = createTheme({
  * accordion formatting
  * product formatting
  * checkout cart formatting and handle the wario payment being processed
+ * prevent selecting a service for which the selected options don't allow
  */
 
 
@@ -48,20 +68,14 @@ const App = () => {
   }, [socketIoState, dispatch]);
 
   return (
-    <ThemeProvider theme={theme}>
-    <SnackbarProvider anchorOrigin={{horizontal: 'right', vertical: 'top'}}>
-      <article className="article--page article--main border-simple post-69 page type-page status-publish has-post-thumbnail hentry">
-        <section className="article__content">
-          <div className="container">
-            <section className="page__content js-post-gallery cf">
-              {/* <WStoreCreditPurchase /> */}
-              { !isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent /> } 
-            </section>
-          </div>
-        </section>
-      </article>
-    </SnackbarProvider>
-    </ThemeProvider>
+    <ScopedCssBaseline>
+      <ThemeProvider theme={theme}>
+        <SnackbarProvider anchorOrigin={{ horizontal: 'right', vertical: 'top' }}>
+          {/* <WStoreCreditPurchase /> */}
+          {!isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent />}
+        </SnackbarProvider>
+      </ThemeProvider>
+    </ScopedCssBaseline>
   );
 };
 
