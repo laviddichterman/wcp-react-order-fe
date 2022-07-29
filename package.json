@@ -55,7 +55,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy:wpwcp": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wmenu/build/"
+    "deploy:wmenu": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wmenu/build/",
+    "deploy:worder": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/worder/build/",
+    "deploy:wcredit": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wcredit/build/"
   },
   "eslintConfig": {
     "extends": [
