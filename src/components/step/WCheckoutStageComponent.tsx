@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, CardContent, Grid, Input, Button, Link } from '@mui/material';
+import { Box, Typography, Grid, Input, Button, Link } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
@@ -14,7 +14,7 @@ import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
 import LoadingScreen from '../LoadingScreen';
-import { StageTitle } from '../styled/styled';
+import { Separator, StageTitle } from '../styled/styled';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
@@ -116,11 +116,10 @@ export function WCheckoutStage() {
       <WCheckoutCart />
       <Box>
         <StageTitle>Payment Information:</StageTitle>
-        <CardContent>
           <Grid container>
             <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
             <Grid item xs={12}>
-              {balance > 0 && ( specialInstructions === null || specialInstructions.length < 4) ?
+              {balance > 0 && (specialInstructions === null || specialInstructions.length < 4) ?
                 <>
                   <CreditCard buttonProps={{ isLoading: submitToWarioStatus === 'PENDING' }}  >
                     Submit Order
@@ -136,38 +135,35 @@ export function WCheckoutStage() {
               <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
             </Grid>
           </Grid>
-          
-        </CardContent>
+
         <Navigation canBack={submitToWarioStatus !== 'PENDING'} hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
       </Box>
-        
+
     </Box> :
     <Box>
       <StageTitle>Order submitted successfully!</StageTitle>
-      <CardContent>
-
-        <Typography variant='h6'>Please check your email for order confirmation.</Typography>
-        <Grid container>
-          <Grid item xs={12} sx={{py: 3}}>
-            <Typography>Order details:</Typography>
-            <WCheckoutCart />
-          </Grid>
-          { // if paid with cc
-            submitToWarioResponse?.result?.payment?.status === 'COMPLETED' && 
-            submitToWarioResponse.result.payment.totalMoney?.amount && 
-            <Grid item xs={12}>
-              <Typography>Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!" }
-              Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
-            </Grid>
-          }
-          {creditApplied > 0 && storeCreditValidation !== null && storeCreditValidation.valid &&
-            <Grid item xs={12}>
-              <Typography variant='h6'>Digital Gift Card number {storeCreditCode} debited {fCurrency(creditApplied)}.</Typography>
-              <span>
-                {storeCreditValidation.amount === creditApplied ? "No balance remains." : `Balance of ${fCurrency(storeCreditValidation.amount - creditApplied)} remains.`}
-              </span>
-            </Grid>}
+      <Separator sx={{ pb: 3 }} />
+      <Typography variant='h6'>Please check your email for order confirmation.</Typography>
+      <Grid container>
+        <Grid item xs={12} sx={{ py: 3 }}>
+          <Typography>Order details:</Typography>
+          <WCheckoutCart />
         </Grid>
-      </CardContent>
+        { // if paid with cc
+          submitToWarioResponse?.result?.payment?.status === 'COMPLETED' &&
+          submitToWarioResponse.result.payment.totalMoney?.amount &&
+          <Grid item xs={12}>
+            <Typography>Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
+              Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
+          </Grid>
+        }
+        {creditApplied > 0 && storeCreditValidation !== null && storeCreditValidation.valid &&
+          <Grid item xs={12}>
+            <Typography variant='h6'>Digital Gift Card number {storeCreditCode} debited {fCurrency(creditApplied)}.</Typography>
+            <span>
+              {storeCreditValidation.amount === creditApplied ? "No balance remains." : `Balance of ${fCurrency(storeCreditValidation.amount - creditApplied)} remains.`}
+            </span>
+          </Grid>}
+      </Grid>
     </Box>;
 }

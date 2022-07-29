@@ -21,7 +21,7 @@ import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { scrollToIdAfterDelay } from '../utils/shared';
-import { ErrorResponseOutput, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
+import { CustomizerFormControlLabel, ErrorResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -49,7 +49,7 @@ function WModifierOptionToggle({ menu, toggleOptionChecked, toggleOptionUnchecke
     }));
   }
   return (
-    <FormControlLabel
+    <CustomizerFormControlLabel
       control={<Checkbox
         checkedIcon={<Circle />}
         icon={<CircleOutlined />}
@@ -96,7 +96,7 @@ export function WModifierRadioComponent({ options, menu }: IModifierRadioCustomi
     <Grid container>
       {options.map((opt, i) =>
         <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-          <FormControlLabel
+          <CustomizerFormControlLabel
             value={opt.mo.id}
             control={<Radio
               checkedIcon={<Circle />}
@@ -172,7 +172,7 @@ function WModifierOptionCheckboxComponent({ option, menu }: IModifierOptionCheck
 
   return (
     <Grid item xs={12} sm={6} md={4} lg={3}>
-      <FormControlLabel
+      <CustomizerFormControlLabel
         disabled={!optionState.enable_whole}
         control={
           <span>
@@ -428,10 +428,9 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
     <div ref={ref} className="customizer menu-list__items">
       {mtid_moid !== null && <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} />}
       <StageTitle>Customize {customizerTitle}!</StageTitle>
-      <div className="menu-list__item">
-        <WProductComponent productMetadata={selectedProduct.m} description price menuModifiers={menu.modifiers} displayContext="order" />
-      </div>
-      <hr className="separator" />
+      <Separator sx={{pb: 3}}/>
+      <WProductComponent productMetadata={selectedProduct.m} description price menuModifiers={menu.modifiers} displayContext="order" />
+      <Separator />
       <Grid container>
         {filteredModifiers.map(([mtid, _], i) =>
           <Grid item container key={i} xs={12}><WModifierTypeCustomizerComponent menu={menu} mtid={mtid} product={selectedProduct} /></Grid>
@@ -442,14 +441,14 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       {allowAdvancedOptionPrompt ? <FormControlLabel
         control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
         label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}
-      <Grid container item xs={12}>
-        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-start" }}>
+      <Grid container item xs={12} sx={{py: 3}}>
+        <Grid item xs />
+        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
           <WarioButton onClick={unselectProduct}>
             Cancel
           </WarioButton>
         </Grid>
-        <Grid item xs />
-        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Grid item sx={{ display: "flex", justifyContent: "flex-end", width: "200px"}}>
           <WarioButton disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
             onClick={confirmCustomization}>
             {cartEntry === undefined ? "Add to order" : "Save changes"}

@@ -7,6 +7,13 @@ import { IconButton, Grid, TableContainer, Table, TableCell, TableHead, TableBod
 import { Clear, Edit } from '@mui/icons-material';
 import { GetSelectableModifiersForCartEntry } from '../app/store';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
+import { styled } from '@mui/system';
+
+const RemoveFromCart = styled(Clear)(()=>({
+  border: '1px solid',
+  borderRadius: 16,
+  padding: 4
+}))
 
 interface IOrderCart {
   menu: IMenu;
@@ -59,13 +66,12 @@ export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: 
                         allowEmpty={false} />
                     </Grid>
                     <Grid item sx={{ py: 1, pl: 1, textAlign: 'center' }} xs={6} >
-                      <IconButton size="small" disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(cartEntry.id)} >
-                        <Clear /></IconButton>
+                      <IconButton disabled={cartEntry.isLocked} name="remove" onClick={() => setRemoveEntry(cartEntry.id)} >
+                        <RemoveFromCart /></IconButton>
                     </Grid>
                     <Grid item sx={{ py: 1, pr: 1, textAlign: 'center' }} xs={6}>
                       {productHasSelectableModifiers(cartEntry.id, menu) &&
                         <IconButton
-                          size="small"
                           disabled={isProductEditDialogOpen || cartEntry.isLocked}
                           onClick={() => setProductToEdit(cartEntry)}
                         >

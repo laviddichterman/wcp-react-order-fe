@@ -1,5 +1,5 @@
-import { alpha, styled } from '@mui/material/styles';
-import { Box, Typography, Button } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { Box, Typography, Button, FormControlLabel } from '@mui/material';
 
 export const RootStyle = styled('div')(({ theme, sx }) => ({
   right: 0,
@@ -37,7 +37,7 @@ export const StageTitle = styled(Typography)(() => ({
   letterSpacing: '.1em',
   fontWeight: '700',
   fontSize: "24px",
-  margin: "15px 0 30px",
+  margin: "15px 0",
   textTransform: 'uppercase'
 }))
 
@@ -62,8 +62,14 @@ export const ProductDisplay = styled(Box)(() => ({
 export const ClickableProductDisplay = styled(ProductDisplay)(() => ({
   cursor: "pointer",
   "&:hover": {
-    color: "#c59d5f"
+    color: "#c59d5f",
+    '& div > p': {
+      color: "#c59d5f"
+    }
   },
+  '& div > p': {
+    fontSize: "0.85em",
+  }
 }));
 
 export const ProductAdornment = styled('span')(({ }) => ({
@@ -75,8 +81,8 @@ export const ProductAdornment = styled('span')(({ }) => ({
   fontSize: 10,
   textTransform: 'uppercase',
   position: "absolute",
-  left: -18,
-  padding: "0, 18px",
+  left: -10,
+  padding: "0 18px",
   letterSpacing: ".25em"
 }));
 
@@ -92,7 +98,17 @@ export const ProductTitle = styled('span')(() => ({
   lineHeight: "1.27316",
 }));
 
+export const ProductDescription = styled('p')(()=>({
+  fontFamily: "Cabin",
+  letterSpacing: 'normal',
+  margin: 0,
+  left: 8,
+  position: 'relative',
+  color: '#515150' 
+}))
+
 export const ProductPrice = styled('span')(() => ({
+  fontFamily: "Cabin",
   position: 'absolute',
   top: 0,
   right: 0,
@@ -117,6 +133,20 @@ export const Dots = styled('span')(() => ({
   backgroundPosition: 'bottom',
   backgroundSize: '6px 3px',
   backgroundRepeat: 'repeat-x'
+}))
+
+export const CustomizerFormControlLabel = styled(FormControlLabel)(() => ({
+  marginLeft: 0
+}));
+
+export const Separator = styled('hr')(() => ({
+  border: '0px solid #51515037',
+  borderTopWidth: 2,
+  color: "#515150",
+  height: 0,
+  boxSizing: 'content-box',
+  margin: "10px 0",
+  padding: 0
 }))
 
 

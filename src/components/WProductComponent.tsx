@@ -3,7 +3,7 @@ import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuM
 import { IProductInstancesSelectors } from '../app/store';
 import { useAppSelector } from '../app/useHooks';
 import { Box, BoxProps, Typography } from '@mui/material';
-import { Dots, ProductAdornment, ProductPrice, ProductTitle } from './styled/styled';
+import { Dots, ProductAdornment, ProductDescription, ProductPrice, ProductTitle } from './styled/styled';
 interface WProductComponentProps {
   productMetadata: WProductMetadata;
   description?: boolean;
@@ -14,7 +14,9 @@ interface WProductComponentProps {
   price?: boolean;
 };
 
-export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, ...other }: WProductComponentProps & BoxProps) {
+
+
+export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, sx, ...other }: WProductComponentProps & BoxProps) {
   const productInstance = useAppSelector(s => IProductInstancesSelectors.selectById(s, productMetadata.pi[0]));
   const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.display_flags[displayContext].adornment ? productInstance.display_flags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
   const descriptionHTML = useMemo(() => description && productMetadata.description ? productMetadata.description : "", [description, productMetadata.description]);
@@ -41,14 +43,14 @@ export function WProductComponent({ productMetadata, description, allowAdornment
     return `${productMetadata.price}`;
   }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
-    <Box component='div' {...other} sx={adornmentHTML ? {
+    <Box component='div' {...other} sx={adornmentHTML ? {...sx,
       mt: 0,
       mb: 0,
       "&:before": {
         content: '""',
         position: "absolute",
         top: "-18px",
-        left: "-18px",
+        left: "-10px",
         right: "-18px",
         bottom: "-18px",
         border: "2px solid #c59d5f",
@@ -59,29 +61,28 @@ export function WProductComponent({ productMetadata, description, allowAdornment
         position: "absolute",
         content: '""',
         top: "-18px",
-        left: "-18px",
+        left: "-10px",
         right: "-18px",
         bottom: "-18px",
         border: "2px solid",
         borderImage: "linear-gradient(to right, #c59d5f 0%, #fff 90%) 1  0 0",
         zIndex: 0
       }
-    } : {}} >
+    } : {...sx}} >
       {adornmentHTML ? <ProductAdornment dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
         <ProductTitle sx={ dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle>
         {dots && <Dots />}
-      {descriptionHTML && <p className="menu-list__item-desc">
-        <span className="desc__content">
-          <span dangerouslySetInnerHTML={{ __html: descriptionHTML }} />
-        </span>
-      </p>}
+      {descriptionHTML && 
+      <ProductDescription>
+        <span dangerouslySetInnerHTML={{ __html: descriptionHTML }} />
+      </ProductDescription>}
       {description && optionsSections && optionsSections.map((option_section, l) =>
-        <p key={l} className="menu-list__item-desc">
-          <span className="desc__content">
+        <ProductDescription key={l} >
+          <span>
             {productMetadata.is_split ? <span ><strong>{option_section[0]}: </strong></span> : ""}
             <span>{option_section[1]}</span>
           </span>
-        </p>)}
+        </ProductDescription>)}
       {price && <ProductPrice sx={ dots ? { bgcolor: "#fff" } : {} }>{priceText}</ProductPrice>}
     </Box>)
 };

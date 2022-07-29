@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
+import { Box, Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { WProductComponent } from '../WProductComponent';
 import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
@@ -8,7 +8,7 @@ import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { scrollToElementAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { ClickableProductDisplay, StageTitle } from '../styled/styled';
+import { ClickableProductDisplay, Separator, StageTitle } from '../styled/styled';
 
 
 const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
@@ -53,6 +53,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
     return (
       <div>
         <StageTitle>Add small plates or beverages to your order.</StageTitle>
+        <Separator sx={{pb: 3}}/>
         {extrasCategories.map((catId, i) =>
           <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
             <AccordionSummary expandIcon={ activePanel === i && isExpanded ? <ExpandMore /> : <ExpandMore />}>

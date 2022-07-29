@@ -13,6 +13,7 @@ import { scrollToIdAfterDelay } from '../../utils/shared';
 import { WOrderCart } from '../WOrderCartComponent';
 import { WShopForPrimaryProductsStage } from './WShopForPrimaryProductsStageComponent';
 import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent';
+import { Separator } from '../styled/styled';
 
 // NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
 const FilterProductWrapper = function (menu: IMenu, order_time: Date | number) {
@@ -91,6 +92,7 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
           <WShopForPrimaryProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> : 
           <WShopForSuppProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />)} 
       {selectedProduct !== null && (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />)}
+      { cart.length > 0 && <Separator />}
       <WOrderCart isProductEditDialogOpen={selectedProduct !== null} menu={menu!} setProductToEdit={setProductToEdit} />
       {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={()=>dispatch(backStage())} handleNext={()=>dispatch(nextStage())} />}
     </div>

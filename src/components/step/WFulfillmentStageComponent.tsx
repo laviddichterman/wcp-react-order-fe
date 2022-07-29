@@ -12,7 +12,7 @@ import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
 import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
-import { StageTitle } from '../styled/styled';
+import { Separator, StageTitle } from '../styled/styled';
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();
@@ -90,8 +90,9 @@ export default function WFulfillmentStageComponent() {
 
   return (<>
     <StageTitle>How and when would you like your order?</StageTitle>
+    <Separator sx={{pb: 3}}  />
     <Grid container alignItems="center">
-      <Grid item xs={12} sx={{ pl: 3, pt: 2, pb: 5 }}><span>Requested Service:</span>
+      <Grid item xs={12} sx={{ pl: 3, pb: 5 }}><span>Requested Service:</span>
         <RadioGroup
           row onChange={onChangeServiceSelection} value={selectedService}>
           {ServiceOptions.map((option) => (

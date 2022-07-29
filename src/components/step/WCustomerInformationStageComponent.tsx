@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { RHFMailTextField } from '../hook-form/RHFMailTextField';
 import { Navigation } from '../Navigation';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
-import { StageTitle } from '../styled/styled';
+import { Separator, StageTitle } from '../styled/styled';
 
 // TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
 
@@ -46,6 +46,7 @@ export function WCustomerInformationStage() {
   return (
     <>
       <StageTitle>Tell us a little about you.</StageTitle>
+      <Separator sx={{pb: 3}} />
       <Typography>All information is used solely to facilitate the getting of your pizza to you. We don't sell or share customer information, ever.<br />By filling out this information, you agree to receive text messages relating to your order.</Typography>
       <FormProvider methods={cIForm}>
         <Grid sx={{ p: 2 }} container>
