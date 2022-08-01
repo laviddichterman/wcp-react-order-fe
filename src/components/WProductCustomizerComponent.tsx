@@ -20,7 +20,7 @@ import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
-import { scrollToIdAfterDelay } from '../utils/shared';
+import { scrollToIdOffsetAfterDelay } from '../utils/shared';
 import { CustomizerFormControlLabel, ErrorResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
 
 interface IModifierOptionToggle {
@@ -396,7 +396,7 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
     dispatch(setShowAdvanced(e.target.checked));
   }
   const unselectProduct = () => {
-    scrollToIdAfterDelay(scrollToWhenDone, 200);
+    scrollToIdOffsetAfterDelay(scrollToWhenDone, 200);
     if (cartEntry) {
       dispatch(unlockCartEntry(cartEntry.id));
     }
@@ -441,19 +441,20 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       {allowAdvancedOptionPrompt ? <FormControlLabel
         control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
         label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}
-      <Grid container item xs={12} sx={{py: 3}}>
-        <Grid item xs />
-        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <WarioButton onClick={unselectProduct}>
-            Cancel
-          </WarioButton>
-        </Grid>
-        <Grid item sx={{ display: "flex", justifyContent: "flex-end", width: "200px"}}>
+      <Grid container item xs={12} sx={{py: 3, flexDirection: 'row-reverse'}}>
+      <Grid item sx={{ display: "flex", width: "200px", justifyContent: "flex-end"}}>
           <WarioButton disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
             onClick={confirmCustomization}>
             {cartEntry === undefined ? "Add to order" : "Save changes"}
           </WarioButton>
         </Grid>
+        <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <WarioButton onClick={unselectProduct}>
+            Cancel
+          </WarioButton>
+        </Grid>
+        
+        <Grid item xs sx={{ display: 'flex'}} />
       </Grid>
     </div>
   );

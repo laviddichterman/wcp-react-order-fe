@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { WProductComponent } from '../WProductComponent';
 import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
-import { scrollToElementAfterDelay } from '../../utils/shared';
+import { scrollToElementAfterDelay, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
 import { ClickableProductDisplay, Separator, StageTitle } from '../styled/styled';
 
@@ -41,13 +41,13 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
       if (activePanel === i) {
         if (isExpanded) {
           setIsExpanded(false);
-          scrollToElementAfterDelay(ref, 200, 'center');
+          scrollToElementOffsetAfterDelay(ref, 200, 'center', -100);
           return;
         }
       }
       setActivePanel(i);
       setIsExpanded(true);
-      scrollToElementAfterDelay(ref, 450);
+      scrollToIdOffsetAfterDelay(ref.id, 450, -100);
     }, [activePanel, isExpanded]);
 
     return (
@@ -57,16 +57,16 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
         {extrasCategories.map((catId, i) =>
           <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
             <AccordionSummary expandIcon={ activePanel === i && isExpanded ? <ExpandMore /> : <ExpandMore />}>
-              <Typography sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].menu_name }} /></Typography>
+              <Typography variant='h5' sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].menu_name }} /></Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container>
                 {menu.categories[catId].subtitle && 
                   <Grid item xs={12}>
-                    <strong><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></span></strong>
+                    <Typography variant='body1' dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></Typography>
                   </Grid>}
                 {ProductsForCategoryFilteredAndSorted(catId).map((p: IProductInstance, j: number) =>
-                  <Grid item xs={12} key={j}>
+                  <Grid item xs={12} sx={{pt: 2.5, pb: 1, px: 0.25}} key={j}>
                     <ClickableProductDisplay onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}>
                       <WProductComponent
                         productMetadata={menu!.product_instance_metadata[p.id]}

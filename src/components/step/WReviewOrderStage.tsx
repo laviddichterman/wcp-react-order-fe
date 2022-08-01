@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
-import { StageTitle, WarningResponseOutput } from '../styled/styled';
+import { Separator, StageTitle, WarningResponseOutput } from '../styled/styled';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
@@ -67,7 +67,8 @@ export default function WReviewOrderStage() {
   return (
     <div>
       <StageTitle>Everything look right?</StageTitle>
-      <TableContainer component={Paper} >
+      <Separator />
+      <TableContainer component={Paper} sx={{pb: 3}} >
         <Table>
           <TableBody>
             <TableRow>

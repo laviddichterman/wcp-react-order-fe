@@ -1,7 +1,7 @@
 import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } from '@reduxjs/toolkit'
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
-import type { RootState, AppDispatch } from '../store'
-import { SelectOptionsForServicesAndDate } from '../store'
+import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../store'
+import { SelectOptionsForServicesAndDate, SelectHasOperatingHoursForService } from '../store'
 import { SocketIoActions } from './SocketIoSlice';
 import { enqueueSnackbar } from 'notistack'
 import { DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
@@ -12,7 +12,7 @@ import { STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
-import { scrollToIdAfterDelay } from '../../utils/shared';
+import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { clearCustomizer } from './WCustomizerSlice';
 
 
@@ -90,8 +90,8 @@ ListeningMiddleware.startListening({
 ListeningMiddleware.startListening({
   matcher: isAnyOf(nextStage, backStage, setStage),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    const toId = `WARIO_step_${api.getState().stepper.stage}`;
-    scrollToIdAfterDelay(toId, 500);
+    //const toId = `WARIO_step_${api.getState().stepper.stage}`;
+    scrollToIdOffsetAfterDelay("WARIO_order", 500);
   }
 });
 
@@ -105,11 +105,12 @@ ListeningMiddleware.startListening({
 
 ListeningMiddleware.startListening({
   matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime),
-  effect: (action: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
+  effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const catalog = api.getState().ws.catalog;
-    if (catalog !== null) {
-      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? Date.now();
-      console.log(menuTime);
+    const currentTime = api.getState().metrics.currentTime;
+    if (catalog !== null && currentTime !== 0) {
+      const currentTime = api.getState().metrics.currentTime;
+      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState(), currentTime);
       const MENU = GenerateMenu(catalog, menuTime);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
@@ -123,8 +124,6 @@ ListeningMiddleware.startListening({
       const toRevive = deadCart.filter(x => DoesProductExistInMenu(MENU, x.product.p) && FilterWCPProduct(x.product.p, MENU, menuTime));
 
       if (toKill.length > 0) {
-        console.log("toKill");
-        console.log(toKill);
         if (toKill.length < 4) {
           toKill.forEach(x=>enqueueSnackbar(`${x.product.m.name} as configured is no longer available.`, { variant: 'warning' }));
         } else {
@@ -133,8 +132,6 @@ ListeningMiddleware.startListening({
         api.dispatch(killAllCartEntries(toKill));
       }
       if (toRevive.length > 0) {
-        console.log("toRevive");
-        console.log(toRevive);
         if (toRevive.length < 4) {
           toRevive.forEach(x=>enqueueSnackbar(`${x.product.m.name} as configured is once again available and has been returned to your order.`, { variant: 'warning' }));
         } else {

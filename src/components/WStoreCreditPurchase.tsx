@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Typography, Grid, FormLabel } from '@mui/material';
+import { Box, Link, Typography, Grid, FormLabel } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { MoneyInput } from './MoneyInput';
 import { CURRENCY, IMoney, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
@@ -9,18 +9,20 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { FormProvider, RHFTextField, RHFCheckbox } from './hook-form';
 import { RHFMailTextField } from './hook-form/RHFMailTextField';
-import { CreditCard, PaymentForm } from 'react-square-web-payments-sdk';
+import { ApplePay, CreditCard, PaymentForm } from 'react-square-web-payments-sdk';
 import type * as Square from '@square/web-sdk';
 import axiosInstance from '../utils/axios';
 import { styled } from '@mui/system';
+import { ErrorResponseOutput, SquareButtonCSS } from './styled/styled';
+import { SelectSquareAppId, SelectSquareLocationId } from '../app/store';
 
 const CabinTypography = styled(Typography)({
   fontFamily: "Cabin",
 });
 
 const Title = styled(CabinTypography)({
-  fontWeight: 500, 
-  fontSize: 19, 
+  fontWeight: 500,
+  fontSize: 19,
   textTransform: 'uppercase'
 })
 
@@ -40,7 +42,11 @@ const creditPurchaseInfoSchema = yup.object().shape({
   recipientNameFirst: yup.string().ensure().required("Please enter the given name.").min(2, "Please enter the full name."),
   recipientNameFamily: yup.string().ensure().required("Please enter the family name.").min(2, "Please enter the family name."),
   sendEmailToRecipient: yup.bool().required(),
-  recipientEmail: yup.string().when('sendEmailToRecipient', (sendEmailToRecipient: boolean, s) => sendEmailToRecipient === true ? YupValidateEmail(s) : s),
+  recipientEmail: yup.string().when('sendEmailToRecipient', {
+    is: true,
+    then: (s) => YupValidateEmail(s),
+    otherwise: s => s
+  }),
   recipientMessage: yup.string()
 });
 
@@ -59,7 +65,7 @@ function useCPForm() {
       recipientMessage: ""
     },
     resolver: yupResolver(creditPurchaseInfoSchema),
-    mode: "onChange",
+    mode: "onBlur",
 
   });
 
@@ -98,8 +104,8 @@ const makeRequest = (token: string, amount: number, values: CreditPurchaseInfo) 
 }
 
 export function WStoreCreditPurchase() {
-  const squareApplicationId = useAppSelector(s => s.ws.settings!.config.SQUARE_APPLICATION_ID as string);
-  const squareLocationId = useAppSelector(s => s.ws.settings!.config.SQUARE_LOCATION as string);
+  const squareApplicationId = useAppSelector(SelectSquareAppId);
+  const squareLocationId = useAppSelector(SelectSquareLocationId);
   const cPForm = useCPForm();
   const { getValues, watch, formState: { isValid, errors } } = cPForm;
   const sendEmailToRecipientState = watch('sendEmailToRecipient');
@@ -148,6 +154,7 @@ export function WStoreCreditPurchase() {
     }
   }
   return (
+    <Box sx={{ mx: 'auto', pt: 1 }}>
       <PaymentForm
         applicationId={squareApplicationId}
         locationId={squareLocationId}
@@ -156,145 +163,153 @@ export function WStoreCreditPurchase() {
       >
         {purchaseStatus !== 'SUCCESS' &&
           <FormProvider methods={cPForm} >
-            <Grid container justifyContent="center" sx={{ }} className="creditForm">
-              <Grid item sx={{ p: 2 }} xs={12}>
-                <Typography align='center' sx={{fontFamily: "Cabin"}}>
+
+            <Grid container justifyContent="center">
+              {/* <Grid item sx={{ p: 2 }} xs={12}>
+                <Typography variant="body1" align='center'>
                   Use this page to purchase a gift for yourself or a loved one. It never expires and is good at both Windy City Pie and Breezy Town Pizza!
                 </Typography>
-              </Grid>
-              <Grid item sx={{ p: 2 }} xs={12}>
-                <Typography sx={{fontFamily: "Cabin", fontWeight: 500, fontSize: 24, textTransform: 'uppercase'}}>
-                  Spread pizza, electronically!
+              </Grid> */}
+              <Grid item sx={{ p: 1 }} xs={12}>
+                <Typography variant='h4'>
+                  Spread pizza,<br />electronically!
                 </Typography>
               </Grid>
 
-              <Grid item sx={{ pt: 4, pb: 4 }} xs={2}>
-                <FormLabel sx={{verticalAlign: 'center', alignContent: 'left'}} htmlFor='creditAmount'>
+              <Grid item sx={{ pl: 2, pt: 4, pb: 4 }} xs={4}>
+                <FormLabel sx={{ verticalAlign: 'center', alignContent: 'left' }} htmlFor='creditAmount'>
                   <Title>Amount</Title>
                 </FormLabel>
               </Grid>
-              <Grid item sx={{ pl: 2, pt: 2, pb: 2 }} xs={8}>
-                <MoneyInput 
-                  id="creditAmount" 
-                  fullWidth 
-                  label="" 
-                  autoFocus 
-                  value={creditAmount.amount / 100} 
-                  onChange={(e) => setCreditAmount({ ...creditAmount, amount: e * 100 })} 
-                  parseFunction={parseFloat} 
-                  inputProps={{ min: 2, max: 2000, sx:{fontFamily: "Cabin"} }} />
+              <Grid item sx={{ pl: 1, pt: 2, pb: 2, pr: 2 }} xs={8}>
+                <MoneyInput
+                  id="creditAmount"
+                  fullWidth
+                  label=""
+                  autoFocus
+                  value={creditAmount.amount / 100}
+                  onChange={(e) => setCreditAmount({ ...creditAmount, amount: e * 100 })}
+                  parseFunction={parseFloat}
+                  inputProps={{ min: 2, max: 2000, sx: { fontFamily: "Cabin" } }} />
               </Grid>
-              <Grid item sx={{ p: 2 }} container xs={12}>
+              <Grid item sx={{ p: 1 }} container xs={12}>
                 <Grid item xs={12}>
                   <Title>Sender Information:</Title>
                 </Grid>
-                <Grid item sx={{ p: 3 }} xs={12}>
+                <Grid item sx={{ p: 1 }} xs={12}>
                   <RHFTextField
                     name="senderName"
                     autoComplete="full-name name"
                     label="Sender's Name:"
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
-                <Grid item sx={{ p: 3 }} xs={12}>
+                <Grid item sx={{ p: 1 }} xs={12}>
                   <RHFMailTextField
                     name="senderEmail"
                     autoComplete={"d"}
                     label={!errors.senderName && senderName !== "" ? `${senderName}'s e-mail address:` : "Sender's e-mail address:"}
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
               </Grid>
-              <Grid item sx={{ p: 2 }} container xs={12}>
+              <Grid item sx={{ p: 1 }} container xs={12}>
                 <Grid item xs={12}>
                   <Title>Recipient information:</Title>
                 </Grid>
-                <Grid item sx={{ p: 3, pr: 2 }} xs={6}>
+                <Grid item sx={{ p: 1, pr: 1 }} xs={6}>
                   <RHFTextField
                     name="recipientNameFirst"
                     autoComplete="given-name name"
                     label={<CabinTypography>Recipient's first name:</CabinTypography>}
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
-                <Grid item sx={{ p: 3, pl: 0 }} xs={6}>
+                <Grid item sx={{ p: 1, pl: 1 }} xs={6}>
                   <RHFTextField
                     name="recipientNameFamily"
                     autoComplete="family-name"
                     label={<CabinTypography>{!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s family name:` : "Recipient's family name:"}</CabinTypography>}
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <RHFCheckbox
                     readOnly={purchaseStatus === 'PROCESSING'}
                     name="sendEmailToRecipient"
-                    label={<CabinTypography>{!errors.recipientNameFirst && recipientNameFirst !== "" ? `Please send an e-mail to ${recipientNameFirst} for me!` : "Please send an e-mail to the recipient for me!"}</CabinTypography>}
+                    label={`Please inform ${!errors.recipientNameFirst && recipientNameFirst !== "" ? recipientNameFirst : 'the recipient'} via e-mail for me!`}
                   />
                 </Grid>
                 {sendEmailToRecipientState &&
                   <>
-                    <Grid item sx={{ p: 3 }} xs={12}>
+                    <Grid item sx={{ p: 1 }} xs={12}>
                       <RHFMailTextField
-                        name="recipientEmail;"
+                        name="recipientEmail"
                         autoComplete=""
                         label={<CabinTypography>{!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s e-mail address:` : "Recipient's e-mail address:"}</CabinTypography>}
                         fullWidth
                         readOnly={purchaseStatus === 'PROCESSING'}
-                        inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                        inputProps={{ sx: { fontFamily: "Cabin" } }}
                       />
                     </Grid>
-                    <Grid item sx={{ p: 3 }} xs={12}>
+                    <Grid item sx={{ p: 1 }} xs={12}>
                       <RHFTextField
                         name="recipientMessage"
                         multiline
                         label={<CabinTypography>Additional message (optional):</CabinTypography>}
-                        inputProps={{ sx:{fontFamily: "Cabin"} }} 
+                        inputProps={{ sx: { fontFamily: "Cabin" } }}
                       />
                     </Grid>
                   </>
                 }
               </Grid>
-              <Grid item sx={{ p: 5 }} xs={12}>
+              <Grid item sx={{ p: 2 }} xs={12}>
                 {displayPaymentForm &&
-                  <CreditCard buttonProps={{ isLoading: purchaseStatus === 'PROCESSING' }} />}
+                  <>
+                    <CreditCard
+                      // @ts-ignore 
+                      focus={""}
+                      buttonProps={{ isLoading: purchaseStatus === 'PROCESSING' || !isValid, css: SquareButtonCSS }} />
+                    {/* <ApplePay /> */}
+                  </>}
                 {paymentErrors.length > 0 &&
-                  paymentErrors.map((e, i) => <div key={i} className="wpcf7-response-output wpcf7-mail-sent-ng">{e}</div>)}
+                  paymentErrors.map((e, i) => <ErrorResponseOutput key={i}>{e}</ErrorResponseOutput>)}
               </Grid>
             </Grid>
           </FormProvider>
         }
         {purchaseStatus === 'SUCCESS' && purchaseResponse !== null &&
-          <div>
-            <h3>Payment of {purchaseResponse.amount_money / 100} received
-              from card ending in: {purchaseResponse.last4}!</h3>
-            <div>Store credit details:
-              <div className="flexbox">
-                <div className="flexbox__item one-third">
-                  <Typography sx={{ fontWeight: 'bold' }}>Credit Amount: </Typography>
-                  <span>{purchaseResponse.amount_money / 100}</span>
-                </div>
-                <div className="flexbox__item one-third soft-half--sides">
-                  <Typography sx={{ fontWeight: 'bold' }}>Recipient: </Typography>
-                  <span>{getValues('recipientNameFirst')} {getValues('recipientNameFamily')}</span>
-                </div>
-                <div className="flexbox__item one-third">
-                  <Typography sx={{ fontWeight: 'bold' }}>Credit Code:</Typography>
-                  <span>{purchaseResponse.joint_credit_code}</span>
-                </div>
-              </div>
-              Here's your <Link href={purchaseResponse.receipt_url} target="_blank">receipt</Link>.
-            </div>
-          </div>}
-
+          <Grid container>
+            <Grid item xs={12}>
+              <Typography variant="h3">Payment of {purchaseResponse.amount_money / 100} received
+                from card ending in: {purchaseResponse.last4}!</Typography>
+              <Typography variant="body2">Here's your <Link href={purchaseResponse.receipt_url} target="_blank">receipt</Link>.</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant='h6'>Store credit details:</Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="h4">Credit Amount: </Typography>
+              <span>{purchaseResponse.amount_money / 100}</span>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="h4">Recipient: </Typography>
+              <span>{getValues('recipientNameFirst')} {getValues('recipientNameFamily')}</span>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography sx={{ fontWeight: 'bold' }}>Credit Code:</Typography>
+              <span>{purchaseResponse.joint_credit_code}</span>
+            </Grid>
+          </Grid>}
       </PaymentForm>
+    </Box>
   );
 }

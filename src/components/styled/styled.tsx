@@ -1,5 +1,49 @@
 import { styled } from '@mui/material/styles';
-import { Box, Typography, Button, FormControlLabel } from '@mui/material';
+import { Box, Typography, ToggleButton, Button, FormControlLabel } from '@mui/material';
+
+export const SquareButtonCSS = {
+  backgroundColor: "#252525",
+  color: "#fff",
+  textTransform: 'uppercase',
+  transition: "all .15s",
+  padding: "12px 30px",
+  fontSize: 12,
+  lineHeight: 1,
+  height: 36,
+  letterSpacing: ".2em",
+  borderRadius: 3,
+  fontWeight: 400,
+  '&:hover': {
+    backgroundColor: '#c59d5f',
+  },
+};
+
+export const AdornedSxProps = {
+  mt: 0,
+  mb: 0,
+  "&:before": {
+    content: '""',
+    position: "absolute",
+    top: "-18px",
+    left: "-10px",
+    right: "-18px",
+    bottom: "-18px",
+    border: "2px solid #c59d5f",
+    borderImage: "linear-gradient(to bottom, #c59d5f 0%, #fff 70%) 0 0 0 4",
+    zIndex: 0
+  },
+  "&:after": {
+    position: "absolute",
+    content: '""',
+    top: "-18px",
+    left: "-10px",
+    right: "-18px",
+    bottom: "-18px",
+    border: "2px solid",
+    borderImage: "linear-gradient(to right, #c59d5f 0%, #fff 90%) 1  0 0",
+    zIndex: 0
+  }
+};
 
 export const RootStyle = styled('div')(({ theme, sx }) => ({
   right: 0,
@@ -49,9 +93,22 @@ export const WarioButton = styled(Button)(() => ({
   padding: "12px 30px",
   fontSize: "12px",
   lineHeight: 1,
+  height: 36,
   letterSpacing: '.2em',
   borderRadius: '3px',
-  height: '36px',
+  fontWeight: 400,
+}));
+
+export const WarioToggleButton = styled(ToggleButton)(() => ({
+  backgroundColor: "#252525",
+  color: '#fff',
+  textTransform: 'uppercase',
+  transition: 'all .15s',
+  padding: "12px 30px",
+  fontSize: "12px",
+  lineHeight: 1,
+  letterSpacing: '.2em',
+  borderRadius: '3px',
   fontWeight: 400,
 }));
 
@@ -72,7 +129,7 @@ export const ClickableProductDisplay = styled(ProductDisplay)(() => ({
   }
 }));
 
-export const ProductAdornment = styled('span')(({ }) => ({
+export const ProductAdornment = styled('span')(() => ({
   fontFamily: "Cabin",
   backgroundColor: "#c59d5f",
   color: "#ffffff",
@@ -91,29 +148,30 @@ export const ProductTitle = styled('span')(() => ({
   position: "relative",
   zIndex: 5,
   textAlign: 'left',
+  maxWidth: "90px",
   fontFamily: "Source Sans Pro",
   letterSpacing: "0.1em",
   textTransform: 'uppercase',
   fontSize: "1.1875rem",
   lineHeight: "1.27316",
+  marginRight: 50
 }));
 
 export const ProductDescription = styled('p')(()=>({
   fontFamily: "Cabin",
   letterSpacing: 'normal',
   margin: 0,
-  left: 8,
+  //left: 8,  
   position: 'relative',
   color: '#515150' 
 }))
 
 export const ProductPrice = styled('span')(() => ({
   fontFamily: "Cabin",
-  position: 'absolute',
+  position: 'relative',
   top: 0,
   right: 0,
   zIndex: 1,
-  maxWidth: 96,
   fontSize: '1.1875rem',
   lineHeight: 1.27316,
   fontWeight: 700,

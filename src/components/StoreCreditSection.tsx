@@ -30,14 +30,14 @@ export function StoreCreditSection() {
   }
   return (
     <Grid container alignContent={'center'}>
-      <Grid sx={{pt:2}} item md={useCreditCheckbox ? 6 : 12} xs={12}>
+      <Grid sx={{pt:2}} item sm={useCreditCheckbox ? 6 : 12} xs={12}>
         <FormControlLabel
           control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
           label="Use Digital Gift Card / Store Credit"
         />
       </Grid>
       {useCreditCheckbox &&
-        <Grid sx={{pl:2, justifyContent: 'flex-end'}} item xs={12} lg={6} container >
+        <Grid sx={{pl:2, justifyContent: 'flex-end'}} item xs={12} sm={6} container >
           <Grid item xs={10} sx={{width: '100%'}}>
           <StoreCreditInputComponent
             autoFocus

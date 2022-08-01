@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
-import { Autocomplete, Grid, Container, Checkbox, Radio, RadioGroup, TextField, FormControlLabel, FormHelperText } from '@mui/material';
+import { Autocomplete, Grid, Checkbox, Radio, RadioGroup, TextField, FormControlLabel } from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, getTime } from 'date-fns';
 import { getTermsForService } from '../common';
@@ -92,7 +92,7 @@ export default function WFulfillmentStageComponent() {
     <StageTitle>How and when would you like your order?</StageTitle>
     <Separator sx={{pb: 3}}  />
     <Grid container alignItems="center">
-      <Grid item xs={12} sx={{ pl: 3, pb: 5 }}><span>Requested Service:</span>
+      <Grid item xs={12} xl={4} sx={{ pl: 3, pb: 5 }}><span>Requested Service:</span>
         <RadioGroup
           row onChange={onChangeServiceSelection} value={selectedService}>
           {ServiceOptions.map((option) => (
@@ -106,7 +106,7 @@ export default function WFulfillmentStageComponent() {
         </RadioGroup>
       </Grid>
       {serviceTerms.length > 0 ?
-        <Grid item xs={12}>
+        <Grid item xs={12} xl={8}>
           <FormControlLabel control={
             <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
             </>} label={<>
@@ -117,7 +117,7 @@ export default function WFulfillmentStageComponent() {
             </>
             } />
         </Grid> : ""}
-      <Grid item xs={12} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }} className="service-date">
+      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6: 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }}>
         <StaticDatePicker
           displayStaticWrapperAs="desktop"
           openTo="day"
@@ -128,11 +128,10 @@ export default function WFulfillmentStageComponent() {
           disableMaskedInput
           value={serviceDate}
           onChange={(v) => onSetServiceDate(v)}
-          renderInput={(params) => <TextField {...params} />}
+          renderInput={(params) => <TextField {...params}  error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null}  />}
         />
-        {hasSelectedDateExpired ? <FormHelperText error>The previously selected service date has expired.</FormHelperText> : ""}
       </Grid>
-      <Grid item xs={12} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
+      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6: 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
         <Autocomplete
           sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300 }}
           openOnFocus
@@ -147,9 +146,8 @@ export default function WFulfillmentStageComponent() {
           value={serviceTime || null}
           //sx={{ width: 300 }}
           onChange={(_, v) => onSetServiceTime(v)}
-          renderInput={(params) => <TextField {...params} label="Time" />}
+          renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
         />
-        {hasSelectedTimeExpired ? <FormHelperText error>The previously selected service time has expired.</FormHelperText> : ""}
         {selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null ?
           (<span>
             <Autocomplete

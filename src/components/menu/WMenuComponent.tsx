@@ -1,95 +1,101 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WProductComponent } from '../WProductComponent';
-import { WModifiersComponent } from '../WModifiersComponent';
+import { WModifiersComponent } from './WModifiersComponent';
 import { useAppSelector } from "../../app/useHooks";
+import { Box, Tab, Typography } from '@mui/material';
+import { TabList, TabPanel, TabContext } from '@mui/lab'
+import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu } from '@wcp/wcpshared';
+import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectMenuCategoryId } from '../../app/store';
+import LoadingScreen from '../LoadingScreen';
+import { Separator } from '../styled/styled';
 
-import { IMenu, CategoryEntry, IProductInstance } from '@wcp/wcpshared';
-import { IProductsSelectors } from '../../app/store';
 
-
-function WMenuSection({ menu, section } : { menu: IMenu; section: CategoryEntry;}) {
-  const productClassSelector = useAppSelector(s => (id : string) => IProductsSelectors.selectById(s, id)); 
-  const productDisplay = useCallback((product : IProductInstance) => {
-    const productClass = productClassSelector(product.product_id);
-    return productClass ? <>
-    <li className="menu-list__item">
-      <WProductComponent description allowAdornment dots menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product.id]} />
-    </li>
-    {product.display_flags.menu.show_modifier_options && productClass.modifiers.length ? <WModifiersComponent product={productClass} menuModifiers={menu.modifiers} /> : ""}
-  </> : "";
-  }, [productClassSelector, menu.modifiers, menu.product_instance_metadata]) 
-
+function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; }) {
+  const productClassSelector = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   return (
     <>
-      <ul className="menu-list__items">
-        {section.menu.sort((a: any, b: any) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k: number) => (
+      {section.menu.sort((a, b) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k) => {
+        const productClass = productClassSelector(product.product_id);
+        return productClass &&
           <React.Fragment key={k}>
-            {productDisplay(product)}
+            <WProductComponent description allowAdornment dots={false} menuModifiers={menu.modifiers} displayContext="menu" price productMetadata={menu.product_instance_metadata[product.id]} />
+            {product.display_flags.menu.show_modifier_options && productClass.modifiers.length ? <WModifiersComponent product={productClass} menuModifiers={menu.modifiers} /> : ""}
           </React.Fragment>
-        ))}
-      </ul>
-      {section.footer ? (
+      })}
+      {section.footer && (
         <small>
           <span dangerouslySetInnerHTML={{ __html: section.footer }} />
         </small>
-      ) : ""}
+      )}
     </>);
 };
 
-export function WMenuComponent({ menu, displayMenu }: {menu: IMenu; displayMenu: string[];}) {
+export function WMenuComponent() {
+  const menu = useAppSelector(s => s.ws.menu);
+  const [filteredMenu, setFilteredMenu] = useState<IMenu | null>(null);
+  const MENU_CATID = useAppSelector(SelectMenuCategoryId);
+  const currentTime = useAppSelector(s => s.metrics.currentTime);
+  const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s, currentTime));
+  const [displayMenu, setDisplayMenu] = useState<string[]>([]);
+  useEffect(() => {
+    if (menu !== null && MENU_CATID) {
+      const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime);
+      const menuCopy = structuredClone(menu);
+      FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime);
+      setFilteredMenu(menuCopy);
+      const MENU_CATEGORIES = menuCopy.categories[MENU_CATID].children;
+      // e.g.: [FOOD: [SMALL PLATES, PIZZAS], COCKTAILS: [], WINE: [BUBBLES, WHITE, RED, PINK]]
+      // create a menu from the filtered categories and products.
+      const is_tabbed_menu = MENU_CATEGORIES.reduce((acc, child_id) => acc || menuCopy.categories[child_id].children.length > 0, false);
+      setDisplayMenu(is_tabbed_menu ? MENU_CATEGORIES : [MENU_CATID as string]);
+    }
+  }, [menu, nextAvailableTime, MENU_CATID]);
   const [active, setActive] = useState(0);
+  if (!MENU_CATID) {
+    return <>We're misconfigured!</>
+  }
+  if (filteredMenu === null) {
+    return <LoadingScreen />;
+  }
   return (
-    <article className="article--page article--main border-simple post-69 page type-page status-publish has-post-thumbnail hentry">
-      <section className="article__content">
-        <div className="container">
-          <section className="page__content js-post-gallery cf">
-            <div className="wmenu">
-              <div className="tabs">
-                {displayMenu.length > 1 ? (
-                  <ul className="tabs__nav nav nav-tabs">
-                    {displayMenu.map((section, i) => (
-                      <li key={i}>
-                        <button onClick={() => setActive(i)} className={i === active ? "current" : ""}>{menu.categories[section].menu_name}</button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : ""}
-                {active < displayMenu.length ? (
-                  <div>
-                    {menu.categories[displayMenu[active]].children.map((subsection: any, j: number) =>
-                      <div key={j}>
-                        <h2 className="menu-list__title">
-                          <span dangerouslySetInnerHTML={{ __html: menu.categories[subsection].menu_name }} />
-                        </h2>
-                        <div className="menu-list menu-list__dotted">
-                          {menu.categories[subsection].subtitle !== null ? (
-                            <h4 className="subtitle flush--top">
-                              <span dangerouslySetInnerHTML={{ __html: menu.categories[subsection].subtitle as string }} />
-                            </h4>) : ""}
-                          <hr className="separator" />
-                          <WMenuSection menu={menu} section={menu.categories[subsection]} />
-                        </div>
-                      </div>
-                    )}
+    <Box className="wmenu">
+      <TabContext value={String(active)}>
+        {displayMenu.length > 1 && (
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <TabList centered selectionFollowsFocus onChange={(_, v) => setActive(v)} aria-label="Menu tab navigation">
+              {displayMenu.map((section, i) => (
+                <Tab key={i} label={<Typography variant='h6'>{filteredMenu.categories[section].menu_name}</Typography>} value={String(i)} />
+              ))}
+            </TabList>
+          </Box>
+        )}
+        {displayMenu.map((section, i) => {
+          const category = filteredMenu.categories[section];
+          return (
+            <TabPanel key={i} value={`${i}`}>
+              {category.children.map((subsection: any, j: number) => {
+                const subCategory = filteredMenu.categories[subsection];
+                return (<div key={j}>
+                  <Typography variant="h2" dangerouslySetInnerHTML={{ __html: subCategory.menu_name }} />
+                  {subCategory.subtitle !== null &&
+                    <Typography variant="h4" dangerouslySetInnerHTML={{ __html: subCategory.subtitle }} />
+                  }
+                  <Separator />
+                  <WMenuSection menu={filteredMenu} section={subCategory} />
+                </div>)
+              })}
 
-                    {menu.categories[displayMenu[active]].menu.length ? (
-                      <div className="menu-list menu-list__dotted">
-                        {menu.categories[displayMenu[active]].subtitle ? (
-                          <h3 className="subtitle flush--top">
-                            <strong><span dangerouslySetInnerHTML={{ __html: menu.categories[displayMenu[active]].subtitle as string }} /></strong>
-                          </h3>
-                        ) : ""}
-                        <WMenuSection menu={menu} section={menu.categories[displayMenu[active]]} />
-                      </div>
-                    ) : ""}
-
-                  </div>
-                ) : ""}
-
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
-    </article>);
+              {category.menu.length && (
+                <div>
+                  {category.subtitle && (
+                    <Typography variant="h3" dangerouslySetInnerHTML={{ __html: category.subtitle }} />
+                  )}
+                  <WMenuSection menu={filteredMenu} section={category} />
+                </div>
+              )}
+            </TabPanel>
+          )
+        })}
+      </TabContext>
+    </Box>);
 }

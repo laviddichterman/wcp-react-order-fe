@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
-import { CreateOrderRequestV2, TipSelection, CreateOrderResponse, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
+import { TipSelection, CreateOrderResponse, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
+import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
 import { setSubmitTime } from "./WMetricsSlice";
 
 export const validateStoreCredit = createAsyncThunk<ValidateAndLockCreditResponse, string>(
@@ -14,20 +15,21 @@ export const validateStoreCredit = createAsyncThunk<ValidateAndLockCreditRespons
   }
 );
 
-export const submitToWario = createAsyncThunk<CreateOrderResponse, CreateOrderRequestV2>(
+export const submitToWario = createAsyncThunk<CreateOrderResponse, void, {dispatch: AppDispatch; state: RootState}>(
   'order',
-  async (req, { rejectWithValue, dispatch }) => {
-    dispatch(setSubmitTime(Date.now()));
+  async (_, thunkApi) => {
+    thunkApi.dispatch(setSubmitTime(Date.now()));
+    const request = SelectWarioSubmissionArguments(thunkApi.getState());
     try {
-      const result = await axiosInstance.post('/api/v1/order', req);
+      const result = await axiosInstance.post('/api/v1/order', request);
       return result.data;
     }
     catch (err : any) { 
       console.log(err);
       try {
-        dispatch(setOrderSubmitErrors(err!.result.errors.map(((x : any) => x.detail))));
+        thunkApi.dispatch(setOrderSubmitErrors(err!.result.errors.map(((x : any) => x.detail))));
       } catch (e) { }
-      return rejectWithValue(err);
+      return thunkApi.rejectWithValue(err);
     }
   }
 );
@@ -40,6 +42,7 @@ export interface WPaymentState {
   storeCreditInput: string;
   squareTokenErrors: Square.TokenError[];
   orderSubmitErrors: string[];
+  squareNonce?: string;
   creditValidationLoading: 'IDLE' | 'PENDING' | 'SUCCEEDED' | 'FAILED';
   submitToWarioStatus: 'IDLE' | 'PENDING' | 'SUCCEEDED' | 'FAILED';
 }
@@ -76,6 +79,9 @@ const WPaymentSlice = createSlice({
     },
     setSpecialInstructions(state, action: PayloadAction<string>) {
       state.specialInstructions = action.payload;
+    },
+    setSquareNonce(state, action: PayloadAction<string>) { 
+      state.squareNonce = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -99,6 +105,7 @@ const WPaymentSlice = createSlice({
     })
     .addCase(submitToWario.pending, (state) => {
       state.warioResponse = null;
+      state.squareNonce = undefined;
       state.orderSubmitErrors = [];
       state.squareTokenErrors = [];
       state.submitToWarioStatus = 'PENDING';
@@ -112,6 +119,6 @@ const WPaymentSlice = createSlice({
   },
 });
 
-export const { setTip, clearCreditCode, setSquareTokenizationErrors, setOrderSubmitErrors, setSpecialInstructions } = WPaymentSlice.actions;
+export const { setTip, clearCreditCode, setSquareTokenizationErrors, setOrderSubmitErrors, setSpecialInstructions, setSquareNonce } = WPaymentSlice.actions;
 
 export const WPaymentReducer = WPaymentSlice.reducer;

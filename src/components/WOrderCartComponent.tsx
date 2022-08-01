@@ -36,7 +36,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: 
   };
   return cart.length === 0 ? <></> :
     <div id="orderCart">
-      <Typography sx={{ p: 2 }}>Current Order</Typography>
+      <Typography variant="h4" sx={{ p: 2, textTransform: 'uppercase', fontFamily: 'Source Sans Pro', }}>Current Order</Typography>
       <TableContainer elevation={0} component={Paper}>
         <Table size="small">
           <TableHead>
@@ -47,7 +47,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: 
           </TableHead>
           <TableBody>
             {cart.map((cartEntry, i: number) =>
-              <TableRow style={i % 2 ? { background: "#fcfcfc" } : { background: "white" }} key={i} className={`cart-item${productHasSelectableModifiers(cartEntry.id, menu) ? " editible" : ""}`}>
+              <TableRow key={i} className={`cart-item${productHasSelectableModifiers(cartEntry.id, menu) ? " editible" : ""}`}>
                 <TableCell sx={{ py: 0 }}>
                   <WProductComponent productMetadata={cartEntry.product.m} description allowAdornment={false} dots={false} menuModifiers={menu.modifiers} displayContext="order" price={false} />
                 </TableCell>

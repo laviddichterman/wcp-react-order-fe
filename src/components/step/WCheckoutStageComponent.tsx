@@ -1,20 +1,20 @@
 import { useState, useMemo } from 'react';
-import { Box, Typography, Grid, Input, Button, Link } from '@mui/material';
+import { Box, Typography, Grid, Input, Link } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { fCurrency } from '../../utils/numbers';
-import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectWarioSubmissionArguments } from '../../app/store';
+import { fCurrency, fCurrencyNoUnit } from '../../utils/numbers';
+import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
-import { CreditCard } from 'react-square-web-payments-sdk';
+import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
 import LoadingScreen from '../LoadingScreen';
-import { Separator, StageTitle } from '../styled/styled';
+import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton } from '../styled/styled';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
 const TIP_SUGGESTION_20: TipSelection = { value: .2, isSuggestion: true, isPercentage: true };
@@ -34,7 +34,6 @@ export function WCheckoutStage() {
 
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
-  const submitToWarioArgs = useAppSelector(SelectWarioSubmissionArguments);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
@@ -52,7 +51,7 @@ export function WCheckoutStage() {
     dispatch(setTip(tip));
   }
   const submitNoBalanceDue = () => {
-    dispatch(submitToWario(submitToWarioArgs))
+    dispatch(submitToWario())
   }
 
   const resetCustomTip = () => {
@@ -93,77 +92,89 @@ export function WCheckoutStage() {
     <Box>
       {submitToWarioStatus === 'PENDING' && <LoadingScreen />}
       <StageTitle>Add gratuity to your order and settle up!</StageTitle>
-      <Typography variant='h6'>{TIP_PREAMBLE}</Typography>
-      <Grid container sx={{ pb: 2 }}>
+      <Separator sx={{ pb: 3 }} />
+      <Typography variant='body1'>{TIP_PREAMBLE}</Typography>
+      <Grid container sx={{ py: 2 }}>
         {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
           <Grid key={i} item xs={4} sx={{ px: 0.5 }} >
-            <Button variant="outlined" fullWidth onClick={() => onSelectSuggestedTip(tip)} >
-              <Grid container>
-                <Grid item xs={12}><Typography variant='h3'>{(tip.value * 100)}%</Typography></Grid>
-                <Grid item xs={12}><Typography variant='subtitle2'>{fCurrency(ComputeTipValue(tip, tipBasis))}</Typography></Grid>
+            <WarioToggleButton selected={currentTipSelection === tip} sx={{ display: 'table-cell' }} value={tip} fullWidth onClick={() => onSelectSuggestedTip(tip)} >
+              <Grid container sx={{ py: 2 }}>
+                <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='h4'>{(tip.value * 100)}%</Typography></Grid>
+                <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='subtitle2'>{fCurrencyNoUnit(ComputeTipValue(tip, tipBasis))}</Typography></Grid>
               </Grid>
-            </Button>
+            </WarioToggleButton>
           </Grid>
         )}
         <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
-          <Button variant="outlined" fullWidth onClick={() => setCustomTipAmountIntercept(customTipAmount)} className={`btn tipbtn flexbox__item one-whole${isCustomTipSelected ? " selected" : ""}`} >
-            <Grid container><Grid item xs={12}><Typography variant='h3' className="flush">Custom Tip Amount</Typography></Grid>
-              <Grid item xs={12} sx={{ height: '2.5em' }}>{isCustomTipSelected ? <Input value={customTipAmount} onChange={(e) => setCustomTipAmountIntercept(e.target.value)} onBlur={(e) => setCustomTipHandler(e.target.value)} type="number" className="quantity" inputProps={{ min: 0, sx: { textAlign: 'center' } }} /> : " "}</Grid>
+          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipAmountIntercept(customTipAmount)} >
+            <Grid container>
+              <Grid item xs={12}>
+                <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
+              </Grid>
+              <Grid item xs={12} sx={{ height: '2.5em' }}>
+                {isCustomTipSelected ?
+                  <Input
+                    value={customTipAmount}
+                    onChange={(e) => setCustomTipAmountIntercept(e.target.value)}
+                    onBlur={(e) => setCustomTipHandler(e.target.value)}
+                    type="number"
+                    inputProps={{ min: 0, sx: { textAlign: 'center', color: 'white' } }}
+                  /> : " "}
+              </Grid>
             </Grid>
-          </Button>
-        </Grid>
+          </WarioToggleButton>
+        </Grid> 
       </Grid>
       <WCheckoutCart />
       <Box>
         <StageTitle>Payment Information:</StageTitle>
-          <Grid container>
-            <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
-            <Grid item xs={12}>
-              {balance > 0 && (specialInstructions === null || specialInstructions.length < 4) ?
-                <>
-                  <CreditCard buttonProps={{ isLoading: submitToWarioStatus === 'PENDING' }}  >
-                    Submit Order
-                  </CreditCard>
-                  {/* <GooglePay />
-                  <ApplePay /> */}
-                </> :
-                <Button disabled={submitToWarioStatus === 'PENDING'} fullWidth onClick={() => submitNoBalanceDue()} >Submit Order</Button>}
-              {squareTokenErrors.length > 0 &&
-                squareTokenErrors.map((e, i) => <Grid item xs={12} key={i}><div className="wpcf7-response-output wpcf7-mail-sent-ng">{e.message}</div></Grid>)}
-              {orderSubmitErrors.length > 0 &&
-                orderSubmitErrors.map((e, i) => <Grid item xs={12} key={i}><div key={`${i}payment`} className="wpcf7-response-output wpcf7-mail-sent-ng">{e}</div></Grid>)}
-              <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
-            </Grid>
+        <Grid container>
+          <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
+          <Grid item xs={12}>
+            {balance > 0 && (specialInstructions === null || specialInstructions.length < 4) ?
+              <>
+                <CreditCard buttonProps={{
+                  isLoading: submitToWarioStatus === 'PENDING', css: SquareButtonCSS }}>
+                  Submit Order
+                </CreditCard>
+                {/* <ApplePay>Pay with Apple Pay</ApplePay> */}
+                {/* <GooglePay /> */}
+              </> :
+              <WarioButton disabled={submitToWarioStatus === 'PENDING'} fullWidth onClick={() => submitNoBalanceDue()} >Submit Order</WarioButton>}
+            {squareTokenErrors.length > 0 &&
+              squareTokenErrors.map((e, i) => <Grid item xs={12} key={i}><ErrorResponseOutput key={`${i}tokenerrors`}>{e.message}</ErrorResponseOutput></Grid>)}
+            {orderSubmitErrors.length > 0 &&
+              orderSubmitErrors.map((e, i) => <Grid item xs={12} key={i}><ErrorResponseOutput key={`${i}payment`}>{e}</ErrorResponseOutput></Grid>)}
+            <div>Note: Once orders are submitted, they are non-refundable. We will attempt to make any changes requested, but please do your due diligence to check the order for correctness!</div>
           </Grid>
-
+        </Grid>
         <Navigation canBack={submitToWarioStatus !== 'PENDING'} hasNext={false} canNext={false} handleBack={() => dispatch(backStage())} handleNext={() => ""} />
       </Box>
-
     </Box> :
     <Box>
       <StageTitle>Order submitted successfully!</StageTitle>
       <Separator sx={{ pb: 3 }} />
-      <Typography variant='h6'>Please check your email for order confirmation.</Typography>
+      <Typography variant='body1'>Please check your email for order confirmation.</Typography>
       <Grid container>
-        <Grid item xs={12} sx={{ py: 3 }}>
-          <Typography>Order details:</Typography>
-          <WCheckoutCart />
-        </Grid>
         { // if paid with cc
           submitToWarioResponse?.result?.payment?.status === 'COMPLETED' &&
           submitToWarioResponse.result.payment.totalMoney?.amount &&
-          <Grid item xs={12}>
-            <Typography>Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
+          <Grid item sx={{ pt: 1 }} xs={12}>
+            <Typography variant="body2">
+              Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
               Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </Grid>
         }
         {creditApplied > 0 && storeCreditValidation !== null && storeCreditValidation.valid &&
-          <Grid item xs={12}>
+          <Grid item sx={{ pt: 1 }} xs={12}>
             <Typography variant='h6'>Digital Gift Card number {storeCreditCode} debited {fCurrency(creditApplied)}.</Typography>
-            <span>
+            <Typography variant="body2">
               {storeCreditValidation.amount === creditApplied ? "No balance remains." : `Balance of ${fCurrency(storeCreditValidation.amount - creditApplied)} remains.`}
-            </span>
+            </Typography>
           </Grid>}
+        <Grid item xs={12} sx={{ py: 3 }}>
+          <WCheckoutCart />
+        </Grid>
       </Grid>
     </Box>;
 }

@@ -123,10 +123,13 @@ const WFulfillmentSlice = createSlice({
   },
 });
 
+// Todo: move to WCPShared
+export const ComputeServiceDateTime = (selectedDate: Date | number, selectedTime: number) => subMinutes(addDays(selectedDate, 1), 1440 - selectedTime);
+
 export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedDate,
   (s: WFulfillmentState) => s.selectedTime,
-  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? subMinutes(addDays(selectedDate, 1), 1440 - selectedTime) : null
+  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? ComputeServiceDateTime(selectedDate, selectedTime) : null
 );
 
 export const SelectServiceTimeDisplayString = createSelector(

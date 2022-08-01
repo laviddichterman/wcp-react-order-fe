@@ -6,6 +6,7 @@ import { DELIVERY_SERVICE } from '../config';
 import { useAppSelector } from '../app/useHooks';
 import { getCart } from '../app/slices/WCartSlice';
 import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
+import { ProductPrice, ProductTitle } from './styled/styled';
 
 
 export function WCheckoutCart() {
@@ -24,7 +25,8 @@ export function WCheckoutCart() {
   if (menu === null || selectedService === null) {
     return null;
   }
-  return (
+  return (<>
+    <Typography variant="h4" sx={{ p: 2, textTransform: 'uppercase', fontFamily: 'Source Sans Pro', }}>Order summary</Typography>
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -40,60 +42,64 @@ export function WCheckoutCart() {
               <TableCell>
                 <WProductComponent productMetadata={cartEntry.product.m} allowAdornment={false} description dots={false} price={false} menuModifiers={menu.modifiers} displayContext="order" />
               </TableCell>
-              <TableCell>{cartEntry.quantity}</TableCell>
-              <TableCell>×</TableCell>
-              <TableCell>{cartEntry.product.m.price}</TableCell>
-              <TableCell>{cartEntry.product.m.price * cartEntry.quantity}</TableCell>
+              <TableCell><ProductPrice>{cartEntry.quantity}</ProductPrice></TableCell>
+              <TableCell><ProductPrice>×</ProductPrice></TableCell>
+              <TableCell align="right"><ProductPrice>{cartEntry.product.m.price}</ProductPrice></TableCell>
+              <TableCell align="right"><ProductPrice>{cartEntry.product.m.price * cartEntry.quantity}</ProductPrice></TableCell>
             </TableRow>
           ))}
+          <TableRow />
           {selectedService === DELIVERY_SERVICE && (
             <TableRow>
-              <TableCell>
+              <TableCell colSpan={2} >
                 Delivery Fee{deliveryFee === 0 && " (waived)"}
               </TableCell>
-              <TableCell>
+              <TableCell  />
+              <TableCell colSpan={2} align="right">
                 {deliveryFee === 0 ? <Typography sx={{ textDecoration: "line-through" }}>{fCurrencyNoUnit(5)}</Typography> : <>{fCurrencyNoUnit(deliveryFee)}</>}
               </TableCell>
             </TableRow>
           )}
           {discountApplied !== 0 &&
             <TableRow>
-              <TableCell>
-                Discount Code Applied (<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)
+              <TableCell colSpan={3} >
+                <ProductTitle>Discount Code Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
               </TableCell>
-              <TableCell></TableCell>
-              <TableCell>-{fCurrencyNoUnit(discountApplied)}</TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>-{fCurrencyNoUnit(discountApplied)}</ProductPrice></TableCell>
             </TableRow>}
           {taxValue > 0 &&
             <TableRow>
-              <TableCell>
-                Sales Tax ({fPercent(TAX_RATE)})
+              <TableCell colSpan={3} >
+              <ProductTitle>Sales Tax ({fPercent(TAX_RATE)})</ProductTitle>
               </TableCell>
-              <TableCell>{fCurrencyNoUnit(taxValue)}</TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(taxValue)}</ProductPrice></TableCell>
             </TableRow>}
           {tipValue > 0 &&
             <TableRow>
-              <TableCell>
-                <h4 className="menu-list__item-title">Gratuity*</h4>
+              <TableCell colSpan={3} >
+                <ProductTitle>Gratuity*</ProductTitle>
                 <div>Gratuity is distributed in its entirety to non-owner staff working on the day of your order.</div>
               </TableCell>
-              <TableCell>{fCurrencyNoUnit(tipValue)}</TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(tipValue)}</ProductPrice></TableCell>
             </TableRow>}
           {giftCardApplied > 0 &&
             <TableRow>
-              <TableCell>
-                Digital Gift Applied ((<Typography sx={{ textTransform: "none" }}>{storeCreditCode}</Typography>)
+              <TableCell colSpan={3} >
+                <ProductTitle>Digital Gift Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
               </TableCell>
-              <TableCell>-{fCurrencyNoUnit(giftCardApplied)}</TableCell>
+              <TableCell colSpan={2} align="right">
+                <ProductPrice >-{fCurrencyNoUnit(giftCardApplied)}</ProductPrice>
+                </TableCell>
             </TableRow>}
           <TableRow>
-            <TableCell>
-              Total
+            <TableCell colSpan={3} >
+              <ProductTitle>Total</ProductTitle>
             </TableCell>
-            <TableCell>{fCurrencyNoUnit(balanceAfterCredits)}</TableCell>
+            <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(balanceAfterCredits)}</ProductPrice></TableCell>
           </TableRow>
         </TableBody>
       </Table>
     </TableContainer>
+  </>
   )
 }

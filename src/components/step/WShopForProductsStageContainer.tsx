@@ -9,7 +9,7 @@ import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEn
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
-import { scrollToIdAfterDelay } from '../../utils/shared';
+import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { WOrderCart } from '../WOrderCartComponent';
 import { WShopForPrimaryProductsStage } from './WShopForPrimaryProductsStageComponent';
 import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent';
@@ -31,7 +31,7 @@ export interface WShopForProductsStageProps {
 }
 
 export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY' | 'SECONDARY' }) {
-  const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('topOfShop');
+  const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
   const menu = useAppSelector(s => s.ws.menu!);
   const { enqueueSnackbar } = useSnackbar();
@@ -71,7 +71,7 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
         else {
           // add to the customizer
           dispatch(customizeProduct({ product: productCopy, categoryId: cid }));
-          scrollToIdAfterDelay('topOfShop', 0);
+          scrollToIdOffsetAfterDelay('WARIO_order', 0);
         }
       }
       setScrollToOnReturn(returnToId);
@@ -81,12 +81,12 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
   const setProductToEdit = useCallback((entry: CartEntry) => {
     dispatch(lockCartEntry(entry.id));
     dispatch(editCartEntry(entry));
-    scrollToIdAfterDelay('topOfShop', 100);
+    scrollToIdOffsetAfterDelay('WARIO_order', 100);
     setScrollToOnReturn('orderCart');
   }, [dispatch, setScrollToOnReturn]);
 
   return (
-    <div id="topOfShop">
+    <div>
       {selectedProduct === null && (
         productSet ==='PRIMARY' ? 
           <WShopForPrimaryProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> : 

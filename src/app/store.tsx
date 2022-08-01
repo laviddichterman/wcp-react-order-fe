@@ -74,6 +74,7 @@ export const SelectAllowAdvanced = (s: RootState) => s.ws.settings?.config.ALLOW
 export const SelectAllowSlicing = (s: RootState) => s.ws.settings?.config.ALLOW_SLICING as boolean ?? false;
 export const SelectMainCategoryId = (s: RootState) => s.ws.settings?.config.MAIN_CATID as string ?? "";
 export const SelectSupplementalCategoryId = (s: RootState) => s.ws.settings?.config.SUPP_CATID as string ?? "";
+export const SelectMenuCategoryId = (s: RootState) => s.ws.settings?.config.MENU_CATID as string ?? "";
 export const SelectMaxPartySize = (s: RootState) => s.ws.settings?.config.MAX_PARTY_SIZE as number ?? 20;
 export const SelectDeliveryFeeSetting = (s: RootState) => s.ws.settings!.config.DELIVERY_FEE as number ?? 5;
 export const SelectDeliveryAreaLink = (s: RootState) => s.ws.settings!.config.DELIVERY_LINK as string;
@@ -83,7 +84,7 @@ export const SelectAutoGratutityThreshold = (s: RootState) => s.ws.settings!.con
 export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
   SelectAllowAdvanced,
-  (prod: WProduct | null, allowAdvanced: boolean) => allowAdvanced && prod !== null && prod.m.advanced_option_eligible
+  (prod: WProduct | null, allowAdvanced: boolean) => allowAdvanced === true && prod !== null && prod.m.advanced_option_eligible
 )
 
 export const selectCartEntryBeingCustomized = createSelector(
@@ -208,7 +209,7 @@ export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
   (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.leadtime!,
   (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.blockedOff!,
   (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.settings!,
-  (s: RootState, _: Date | number, __: ServicesEnableMap, mainProductCount: number) => mainProductCount,
+  (_: RootState, __: Date | number, ___: ServicesEnableMap, mainProductCount: number) => mainProductCount,
   (_: RootState, selectedDate: Date | number, __: ServicesEnableMap) => selectedDate,
   (_: RootState, __: Date | number, serviceSelection: ServicesEnableMap) => serviceSelection,
   (leadtime, blockedOff, settings, mainProductCount, selectedDate, serviceSelection) => 
@@ -230,6 +231,11 @@ export const SelectOptionsForServicesAndDate = createSelector(
   (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, currentTime)
 )
 
+// export const SelectFirstAvailableDateAndTimeForService = createSelector(
+//   (s: RootState, service: number) => SelectHasOperatingHoursForService(s, service),
+//   (s: RootState, _ : number) => s.ws.
+// )
+
 export const SelectAmountCreditUsed = createSelector(
   (s: RootState) => SelectDiscountApplied(s),
   (s: RootState) => SelectGiftCardApplied(s),
@@ -248,11 +254,12 @@ export const SelectWarioSubmissionArguments = createSelector(
   (s: RootState) => s.payment.storeCreditValidation,
   (s: RootState) => s.payment.storeCreditInput,
   (s: RootState) => s.payment.specialInstructions,
+  (s: RootState) => s.payment.squareNonce,
   (s: RootState) => s.metrics,
   (s: RootState) => SelectBalanceAfterCredits(s),
   (s: RootState) => SelectAmountCreditUsed(s),
   (s: RootState) => SelectTipValue(s),
-  (fulfillment, customerInfo, cart, storeCredit, creditCode, specialInstructions, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
+  (fulfillment, customerInfo, cart, storeCredit, creditCode, specialInstructions, nonce, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
     const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } }) ) as CoreCartEntry<WCPProductV2Dto>[];
     return { 
     customerInfo,
@@ -260,6 +267,7 @@ export const SelectWarioSubmissionArguments = createSelector(
     special_instructions: specialInstructions ?? "",
     cart: cartDto,
     metrics,
+    nonce,
     store_credit: storeCredit !== null ? { validation: storeCredit, code: creditCode, amount_used: creditApplied } : null,
     sliced: false,
     totals: {

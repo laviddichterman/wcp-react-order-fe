@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, useMediaQuery } from '@mui/material';
+import { Box, useMediaQuery } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -23,29 +23,29 @@ export function Navigation({ canNext, canBack, nextText = "Next", backText = "Ba
   const theme = useTheme();
   const useVerticalStepper = useMediaQuery(theme.breakpoints.up('md'));
 
-  return <Grid container sx={{ mx: 'auto', width: '100%', pt: 3, pb: 2 }}>
-    <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-start" }}>
-      {hasBack && <WarioButton size="small"
-        onClick={handleBack}
-        disabled={!canBack} >
-        <KeyboardArrowLeft sx={{ ml: -1 }} />
-        {backText ?? "Back"}
-      </WarioButton>}
-    </Grid>
-    <Grid item xs={4} sx={{ mx: 'auto', width: '100%', textAlign: 'center' }}>
-      {!useVerticalStepper &&
-        <span>{`${currentStage + 1} / ${NUM_STAGES}`}</span>
-      }
-    </Grid>
-    <Grid item xs={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
-      {hasNext &&
+  return <Box sx={{ float: 'right', display: 'block', mx: 'auto', width: '100%', pt: 3, pb: 2 }}>
+    <Box sx={{ float: 'right', width: '33.3%', textAlign: 'right' }}>
+      {hasNext ?
         <WarioButton
           size="small"
+          endIcon={<KeyboardArrowRight />}
           onClick={handleNext}
           disabled={!canNext}
         > {nextText ?? "Next"}
-          <KeyboardArrowRight sx={{ mr: -1 }} />
-        </WarioButton>}
-    </Grid>
-  </Grid>;
+        </WarioButton> : <div>&nbsp;</div>}
+    </Box>
+    <Box sx={{ py: 0.5, textAlign: 'center', verticalAlign: 'center', float: 'right', my: 'auto', height: '100%', minWidth: '33.3%'}}>
+      {!useVerticalStepper ?
+        <span>{`${currentStage + 1} / ${NUM_STAGES}`}</span> : <div>&nbsp;</div>
+      }
+    </Box>
+    <Box sx={{ float: 'right', width: '33.3%', textAlign: 'left' }}>
+      {hasBack ? <WarioButton size="small"
+      startIcon={<KeyboardArrowLeft />}
+        onClick={handleBack}
+        disabled={!canBack} >
+        {backText ?? "Back"}
+      </WarioButton> : <div>&nbsp;</div>}
+    </Box>
+  </Box>;
 };
