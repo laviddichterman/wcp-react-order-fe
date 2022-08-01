@@ -284,7 +284,7 @@ export const ProductTitle = styled('span')(() => ({
   lineHeight: "1.27316"
 }));
 
-export const ProductDescription = styled('p')(() => ({
+export const ProductDescription = styled('span')(() => ({
   fontFamily: "Cabin",
   letterSpacing: 'normal',
   margin: 0,

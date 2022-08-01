@@ -13,11 +13,11 @@ import { Separator } from '../styled/styled';
 function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; }) {
   const productClassSelector = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   return (
-    <>
+    <Box sx={{pt: 0}}>
       {section.menu.sort((a, b) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k) => {
         const productClass = productClassSelector(product.product_id);
         return productClass &&
-          <Box key={k} sx={{ pt: 2 }}>
+          <Box key={k} sx={{ pt: 4 }}>
             <ProductDisplay
               description
               allowAdornment
@@ -36,7 +36,7 @@ function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; 
           <span dangerouslySetInnerHTML={{ __html: section.footer }} />
         </small>
       )}
-    </>);
+    </Box>);
 };
 
 function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry; }) {
@@ -63,7 +63,7 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
             const subCategory = menu.categories[subSection];
             console.log(subCategory)
             return (
-              <TabPanel sx={{px:0}} key={subSection} value={subSection}>
+              <TabPanel sx={{p:0}} key={subSection} value={subSection}>
                 <WTabbedMenu menu={menu} category={subCategory} />
               </TabPanel>);
           }
@@ -72,14 +72,14 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
         (category.children.map((subSection) => {
           const subCategory = menu.categories[subSection];
           return (
-            <div key={subSection}>
+            <Box sx={{pt:4}} key={subSection}>
               <Typography variant="h4" dangerouslySetInnerHTML={{ __html: subCategory.menu_name }} />
               {subCategory.subtitle !== null &&
                 <Typography variant="h6" dangerouslySetInnerHTML={{ __html: subCategory.subtitle }} />
               }
               <Separator />
               <WMenuSection menu={menu} section={subCategory} />
-            </div>)
+            </Box>)
         }))}
 
       {category.menu.length > 0 && (
