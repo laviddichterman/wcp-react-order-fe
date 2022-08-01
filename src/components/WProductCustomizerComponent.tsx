@@ -2,7 +2,7 @@ import React, { forwardRef, useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import { FormControl, FormControlProps, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone, Circle, CircleOutlined } from "@mui/icons-material";
-import { WProductComponent } from './WProductComponent';
+import { ProductDisplay } from './WProductComponent';
 import { IMenu, WProduct, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID } from '@wcp/wcpshared';
 import {
   clearCustomizer,
@@ -429,7 +429,7 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       {mtid_moid !== null && <WOptionDetailModal menu={menu} mtid_moid={mtid_moid} />}
       <StageTitle>Customize {customizerTitle}!</StageTitle>
       <Separator sx={{pb: 3}}/>
-      <WProductComponent productMetadata={selectedProduct.m} description price menuModifiers={menu.modifiers} displayContext="order" />
+      <ProductDisplay productMetadata={selectedProduct.m} description price menuModifiers={menu.modifiers} displayContext="order" />
       <Separator />
       <Grid container>
         {filteredModifiers.map(([mtid, _], i) =>

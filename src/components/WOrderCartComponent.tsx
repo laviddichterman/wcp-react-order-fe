@@ -1,4 +1,4 @@
-import { WProductComponent } from './WProductComponent';
+import { ProductDisplay } from './WProductComponent';
 import { getCart, removeFromCart, updateCartQuantity } from '../app/slices/WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
@@ -49,7 +49,7 @@ export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: 
             {cart.map((cartEntry, i: number) =>
               <TableRow key={i} className={`cart-item${productHasSelectableModifiers(cartEntry.id, menu) ? " editible" : ""}`}>
                 <TableCell sx={{ py: 0 }}>
-                  <WProductComponent productMetadata={cartEntry.product.m} description allowAdornment={false} dots={false} menuModifiers={menu.modifiers} displayContext="order" price={false} />
+                  <ProductDisplay productMetadata={cartEntry.product.m} description menuModifiers={menu.modifiers} displayContext="order" />
                 </TableCell>
                 <TableCell sx={{ py: 1 }}>
                   <Grid container alignContent={'center'} >

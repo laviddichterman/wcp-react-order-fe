@@ -1,5 +1,5 @@
 import { Typography, Table, TableBody, TableContainer, TableRow, TableHead, TableCell, Paper } from '@mui/material';
-import { WProductComponent } from './WProductComponent';
+import { ProductDisplay } from './WProductComponent';
 import { CartEntry } from '@wcp/wcpshared';
 import { fCurrencyNoUnit, fPercent } from '../utils/numbers';
 import { DELIVERY_SERVICE } from '../config';
@@ -40,7 +40,7 @@ export function WCheckoutCart() {
           {cart.map((cartEntry: CartEntry, i: number) => (
             <TableRow key={i}>
               <TableCell>
-                <WProductComponent productMetadata={cartEntry.product.m} allowAdornment={false} description dots={false} price={false} menuModifiers={menu.modifiers} displayContext="order" />
+                <ProductDisplay productMetadata={cartEntry.product.m} menuModifiers={menu.modifiers} description displayContext="order" />
               </TableCell>
               <TableCell><ProductPrice>{cartEntry.quantity}</ProductPrice></TableCell>
               <TableCell><ProductPrice>×</ProductPrice></TableCell>

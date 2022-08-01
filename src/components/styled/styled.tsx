@@ -1,5 +1,151 @@
 import { styled } from '@mui/material/styles';
-import { Box, Typography, ToggleButton, Button, FormControlLabel } from '@mui/material';
+import { Box, Typography, ToggleButton, Button, FormControlLabel, ThemeOptions } from '@mui/material';
+
+export const themeOptions: ThemeOptions = {
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 350,
+      md: 750,
+      lg: 935,
+      xl: 1250,
+    },
+  },
+  zIndex: {
+    snackbar: 2500
+  },
+  typography: {
+    allVariants: {
+      fontFamily: 'Cabin',
+    },
+    fontFamily: '"Cabin", "Source Sans Pro"',
+    fontSize: 13,
+    h1: {
+      fontFamily: 'Source Sans Pro',
+      textTransform: 'uppercase',
+    },
+    h2: {
+      fontFamily: 'Source Sans Pro',
+      textTransform: 'uppercase',
+    },
+    h3: {
+      fontFamily: 'Source Sans Pro',
+      textTransform: 'uppercase',
+    },
+    h4: {
+      fontFamily: 'Source Sans Pro',
+      textTransform: 'uppercase',
+    },
+    h5: {
+      fontFamily: 'Source Sans Pro',
+      textTransform: 'uppercase',
+      fontWeight: 600,
+    },
+  },
+  components: {
+    MuiTabs: {
+      styleOverrides: {
+        flexContainer: {
+          flexWrap: 'wrap'
+        }
+      }
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          border: "1px dotted rgba(255,0,0,0.0)",
+          '&.Mui-selected': {
+            backgroundColor: "#c59d5f",
+            color: 'black',
+            borderBottom: "1px solid #000000",
+          } 
+        },
+      }
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          border: "1px solid #000000",
+          backgroundColor: '#fcfcfc',
+        }
+      }
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          '& input': {
+            padding: '16.5px 14px',
+            border: 0,
+            outlineWidth: 0,
+            '&:focus': {
+              outlineWidth: 0,
+            }
+          }
+        },
+      },
+    },
+    MuiAccordionSummary: {
+      styleOverrides: {
+        content: {
+          margin: "0px",
+        },
+        root: {
+          paddingLeft: 0,
+          borderBottom: '1px solid',
+        }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "black",
+          "&.Mui-disabled": {
+            pointerEvents: "unset",
+            cursor: "not-allowed",
+            backgroundColor: "#D3D3D3",
+            color: 'black'
+          },
+          "&.Mui-selected": {
+            backgroundColor: "#c59d5f"
+          },
+          "&:hover": {
+            backgroundColor: "#c59d5f"
+          },
+        },
+      }
+    },
+    MuiGrid: {
+      styleOverrides: {
+
+      }
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "black",
+          "&.Mui-disabled": {
+            pointerEvents: "unset",
+            cursor: "not-allowed",
+            backgroundColor: "#D3D3D3",
+            color: 'black'
+          },
+          "&.Mui-selected": {
+            color: 'white',
+            backgroundColor: "#c59d5f",
+            "&:hover": {
+              color: 'white',
+              backgroundColor: "#c59d5f"
+            },
+          },
+          "&:hover": {
+            color: 'white',
+            backgroundColor: "#c59d5f"
+          },
+        },
+      }
+    }
+  }
+};
 
 export const SquareButtonCSS = {
   backgroundColor: "#252525",
@@ -112,23 +258,6 @@ export const WarioToggleButton = styled(ToggleButton)(() => ({
   fontWeight: 400,
 }));
 
-export const ProductDisplay = styled(Box)(() => ({
-  position: 'relative',
-}));
-
-export const ClickableProductDisplay = styled(ProductDisplay)(() => ({
-  cursor: "pointer",
-  "&:hover": {
-    color: "#c59d5f",
-    '& div > p': {
-      color: "#c59d5f"
-    }
-  },
-  '& div > p': {
-    fontSize: "0.85em",
-  }
-}));
-
 export const ProductAdornment = styled('span')(() => ({
   fontFamily: "Cabin",
   backgroundColor: "#c59d5f",
@@ -148,27 +277,25 @@ export const ProductTitle = styled('span')(() => ({
   position: "relative",
   zIndex: 5,
   textAlign: 'left',
-  maxWidth: "90px",
   fontFamily: "Source Sans Pro",
   letterSpacing: "0.1em",
   textTransform: 'uppercase',
   fontSize: "1.1875rem",
-  lineHeight: "1.27316",
-  marginRight: 50
+  lineHeight: "1.27316"
 }));
 
-export const ProductDescription = styled('p')(()=>({
+export const ProductDescription = styled('p')(() => ({
   fontFamily: "Cabin",
   letterSpacing: 'normal',
   margin: 0,
   //left: 8,  
   position: 'relative',
-  color: '#515150' 
+  color: '#515150'
 }))
 
 export const ProductPrice = styled('span')(() => ({
   fontFamily: "Cabin",
-  position: 'relative',
+  position: 'absolute',
   top: 0,
   right: 0,
   zIndex: 1,

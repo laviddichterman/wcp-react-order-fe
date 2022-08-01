@@ -1,7 +1,7 @@
 import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
-import WFulfillmentReducer from './slices/WFulfillmentSlice';
+import WFulfillmentReducer, { ComputeServiceDateTime } from './slices/WFulfillmentSlice';
 import WMetricsReducer from './slices/WMetricsSlice';
 import WCustomerInfoReducer from "./slices/WCustomerInfoSlice";
 import StepperReducer from "./slices/StepperSlice";
@@ -32,6 +32,7 @@ import { CartEntry,
   WCPProductV2Dto,
   WProduct} from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
+import { addDays, startOfDay } from "date-fns";
 
 export const RootReducer = combineReducers({
   fulfillment: WFulfillmentReducer,
@@ -231,10 +232,40 @@ export const SelectOptionsForServicesAndDate = createSelector(
   (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, currentTime)
 )
 
-// export const SelectFirstAvailableDateAndTimeForService = createSelector(
-//   (s: RootState, service: number) => SelectHasOperatingHoursForService(s, service),
-//   (s: RootState, _ : number) => s.ws.
-// )
+// TODO: move to WCPShared
+export const GetNextAvailableServiceDateTimeForService = createSelector(
+  (s: RootState, service: number, _: Date | number) => SelectHasOperatingHoursForService(s, service),
+  (s: RootState, service: number, _: Date | number) => (testDate: Date|number) => SelectOptionsForServicesAndDate(s, testDate, { [service]: true }).filter(x=>x.disabled),
+  (_: RootState, __: number, now: Date|number) => now,
+  (operatingHoursForService, selectOptionsFunction, now) => {
+    const today = startOfDay(now);
+    if (operatingHoursForService) {
+      for (let i = 0; i < 7; ++i) {
+        const dateAttempted = addDays(today, i);
+        const options = selectOptionsFunction(addDays(today, i));
+        if (options.length > 0) {
+          return ComputeServiceDateTime(dateAttempted, options[0].value);
+      }
+    }    
+  }
+  return null;
+})
+
+// TODO: move to WCPShared
+// Note: this falls back to now if there's really nothing for the selected service or for dine-in
+export const GetNextAvailableServiceDateTime = createSelector(
+  (s: RootState, now: Date|number) => (service : number) => GetNextAvailableServiceDateTimeForService(s, service, now),
+  (s: RootState, _: Date|number) => s.fulfillment.selectedService,
+  (_: RootState, now: Date|number) => now,
+  (nextAvailableForServiceFunction, selectedService, now) => {
+  if (selectedService !== null) {
+    const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
+    if (nextAvailableForSelectedService) {
+      return nextAvailableForSelectedService;
+    }
+  }
+  return nextAvailableForServiceFunction(1) ?? now
+});
 
 export const SelectAmountCreditUsed = createSelector(
   (s: RootState) => SelectDiscountApplied(s),

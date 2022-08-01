@@ -123,7 +123,7 @@ export function WCheckoutStage() {
               </Grid>
             </Grid>
           </WarioToggleButton>
-        </Grid> 
+        </Grid>
       </Grid>
       <WCheckoutCart />
       <Box>
@@ -133,8 +133,12 @@ export function WCheckoutStage() {
           <Grid item xs={12}>
             {balance > 0 && (specialInstructions === null || specialInstructions.length < 4) ?
               <>
-                <CreditCard buttonProps={{
-                  isLoading: submitToWarioStatus === 'PENDING', css: SquareButtonCSS }}>
+                <CreditCard
+                  // @ts-ignore 
+                  focus={""}
+                  buttonProps={{
+                    isLoading: submitToWarioStatus === 'PENDING', css: SquareButtonCSS
+                  }}>
                   Submit Order
                 </CreditCard>
                 {/* <ApplePay>Pay with Apple Pay</ApplePay> */}

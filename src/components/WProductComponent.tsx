@@ -3,7 +3,9 @@ import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuM
 import { IProductInstancesSelectors } from '../app/store';
 import { useAppSelector } from '../app/useHooks';
 import { Box, BoxProps } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { Dots, ProductAdornment, AdornedSxProps, ProductDescription, ProductPrice, ProductTitle } from './styled/styled';
+
 interface WProductComponentProps {
   productMetadata: WProductMetadata;
   description?: boolean;
@@ -14,9 +16,7 @@ interface WProductComponentProps {
   price?: boolean;
 };
 
-
-
-export function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, sx, ...other }: WProductComponentProps & BoxProps) {
+function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, sx, ...other }: WProductComponentProps & BoxProps) {
   const productInstance = useAppSelector(s => IProductInstancesSelectors.selectById(s, productMetadata.pi[0]));
   const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.display_flags[displayContext].adornment ? productInstance.display_flags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
   const descriptionHTML = useMemo(() => description && productMetadata.description ? productMetadata.description : "", [description, productMetadata.description]);
@@ -48,23 +48,39 @@ export function WProductComponent({ productMetadata, description, allowAdornment
       ...AdornedSxProps
       } : { ...sx }} >
       {adornmentHTML ? <ProductAdornment dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
-      <ProductTitle sx={dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle>
+      <Box sx={{position: "relative", mr: '26px'}}><ProductTitle sx={dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle></Box>
       {price && <ProductPrice sx={dots ? { bgcolor: "#fff", float: 'right', zIndex: 9 } : { float: 'right'}}>{priceText}</ProductPrice>}
       {dots && <Dots />}
       {descriptionHTML &&
-        <ProductDescription>
-          <span dangerouslySetInnerHTML={{ __html: descriptionHTML }} />
-        </ProductDescription>}
+        <ProductDescription dangerouslySetInnerHTML={{ __html: descriptionHTML }} /> }
       {description && optionsSections && optionsSections.map((option_section, l) =>
         <ProductDescription key={l} >
-          <span>
+          <>
             {productMetadata.is_split ? <span ><strong>{option_section[0]}: </strong></span> : ""}
             <span>{option_section[1]}</span>
-          </span>
+          </>
         </ProductDescription>)}
 
     </Box>)
 };
+
+
+export const ProductDisplay = styled(WProductComponent)(() => ({
+  position: 'relative',
+}));
+
+export const ClickableProductDisplay = styled(ProductDisplay)(() => ({
+  cursor: "pointer",
+  "&:hover": {
+    color: "#c59d5f",
+    '& p': {
+      color: "#c59d5f"
+    }
+  },
+  '&  p': {
+    fontSize: "0.85em",
+  }
+}));
 
 
 

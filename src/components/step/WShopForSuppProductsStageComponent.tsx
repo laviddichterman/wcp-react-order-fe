@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
-import { WProductComponent } from '../WProductComponent';
+import { ClickableProductDisplay } from '../WProductComponent';
 import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { scrollToElementAfterDelay, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { ClickableProductDisplay, Separator, StageTitle } from '../styled/styled';
+import { Separator, StageTitle } from '../styled/styled';
 
 
 const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
@@ -67,16 +67,16 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
                   </Grid>}
                 {ProductsForCategoryFilteredAndSorted(catId).map((p: IProductInstance, j: number) =>
                   <Grid item xs={12} sx={{pt: 2.5, pb: 1, px: 0.25}} key={j}>
-                    <ClickableProductDisplay onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}>
-                      <WProductComponent
-                        productMetadata={menu!.product_instance_metadata[p.id]}
+                    <ClickableProductDisplay 
+                      onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}
+                      productMetadata={menu!.product_instance_metadata[p.id]}
                         allowAdornment
                         description
                         dots
                         price
                         menuModifiers={menu!.modifiers}
-                        displayContext="order" />
-                    </ClickableProductDisplay>
+                        displayContext="order"
+                      />
                   </Grid>)}
               </Grid>
             </AccordionDetails>

@@ -1,6 +1,5 @@
 
-import { Grid, Container, Box, Stepper, Step, StepLabel, useMediaQuery } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Box, Stepper, Step, StepLabel, useMediaQuery, useTheme } from '@mui/material';
 import { PaymentForm } from 'react-square-web-payments-sdk';
 import type * as Square from '@square/web-sdk';
 // import { useNavigate, useLocation } from "react-router-dom";
