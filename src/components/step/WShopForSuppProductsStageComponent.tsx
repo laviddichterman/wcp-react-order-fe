@@ -6,7 +6,7 @@ import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
-import { scrollToElementAfterDelay, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay } from '../../utils/shared';
+import { scrollToElementOffsetAfterDelay } from '../../utils/shared';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
 import { Separator, StageTitle } from '../styled/styled';
 
@@ -47,7 +47,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
       }
       setActivePanel(i);
       setIsExpanded(true);
-      scrollToIdOffsetAfterDelay(ref.id, 450, -100);
+      scrollToElementOffsetAfterDelay(ref, 450, 'start', -100);
     }, [activePanel, isExpanded]);
 
     return (

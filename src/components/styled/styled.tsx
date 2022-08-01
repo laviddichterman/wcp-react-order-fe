@@ -288,7 +288,6 @@ export const ProductDescription = styled('span')(() => ({
   fontFamily: "Cabin",
   letterSpacing: 'normal',
   margin: 0,
-  //left: 8,  
   position: 'relative',
   color: '#515150'
 }))
