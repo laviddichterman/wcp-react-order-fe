@@ -13,7 +13,7 @@ import { Separator } from '../styled/styled';
 function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; }) {
   const productClassSelector = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   return (
-    <Box sx={{pt: 0}}>
+    <Box sx={{ pt: 0 }}>
       {section.menu.sort((a, b) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k) => {
         const productClass = productClassSelector(product.product_id);
         return productClass &&
@@ -53,7 +53,13 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
       {hasNestedChildrenCategories ? (
         <TabContext value={active}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList TabIndicatorProps={{hidden: true}} scrollButtons={false} centered onChange={(_, v) => setActive(v)} aria-label={`${category.menu_name} tab navigation`}>
+            <TabList
+              TabIndicatorProps={{ hidden: true }}
+              scrollButtons={false}
+              centered
+              onChange={(_, v) => setActive(v)}
+              aria-label={`${category.menu_name} tab navigation`}
+            >
               {displayMenu.map((section, i) => (
                 <Tab wrapped key={i} label={<Typography variant='h6'>{menu.categories[section].menu_name}</Typography>} value={section} />
               ))}
@@ -61,9 +67,11 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
           </Box>
           {displayMenu.map((subSection) => {
             const subCategory = menu.categories[subSection];
-            console.log(subCategory)
             return (
-              <TabPanel sx={{p:0}} key={subSection} value={subSection}>
+              <TabPanel sx={{ p: 0 }} key={subSection} value={subSection}>
+                {subCategory.subtitle !== null &&
+                  <Typography variant="h6" dangerouslySetInnerHTML={{ __html: subCategory.subtitle }} />
+                }
                 <WTabbedMenu menu={menu} category={subCategory} />
               </TabPanel>);
           }
@@ -72,7 +80,7 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
         (category.children.map((subSection) => {
           const subCategory = menu.categories[subSection];
           return (
-            <Box sx={{pt:4}} key={subSection}>
+            <Box sx={{ pt: 4 }} key={subSection}>
               <Typography variant="h4" dangerouslySetInnerHTML={{ __html: subCategory.menu_name }} />
               {subCategory.subtitle !== null &&
                 <Typography variant="h6" dangerouslySetInnerHTML={{ __html: subCategory.subtitle }} />
