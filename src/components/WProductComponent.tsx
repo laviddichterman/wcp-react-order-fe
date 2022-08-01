@@ -73,11 +73,11 @@ export const ClickableProductDisplay = styled(ProductDisplay)(() => ({
   cursor: "pointer",
   "&:hover": {
     color: "#c59d5f",
-    '& p': {
+    '& span > span': {
       color: "#c59d5f"
     }
   },
-  '&  p': {
+  '& span > span': {
     fontSize: "0.85em",
   }
 }));
