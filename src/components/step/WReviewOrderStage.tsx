@@ -10,16 +10,17 @@ import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
 import { Separator, StageTitle, WarningResponseOutput } from '../styled/styled';
+import { SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan } from '../../app/store';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
-const REQUEST_HALF = "Please use the product customizations earlier in the ordering process to ";
-const REQUEST_SLICING = "In order to ensure the quality of our pizzas, we will not slice them. We'd recommend bringing anything from a bench scraper to a butter knife to slice the pizza. Slicing the whole pizza when it's hot inhibits the crust from properly setting, and can cause the crust to get soggy both during transit and as the pie is eaten. We want your pizza to be the best possible and bringing a tool with which to slice the pie will make a big difference. You will need to remove this request to continue with your order.";
-const REQUEST_VEGAN = "Our pizzas cannot be made vegan or without cheese. If you're looking for a vegan option, our Beets By Schrute salad can be made vegan by omitting the bleu cheese.";;
 const REQUEST_SOONER = "It looks like you're trying to ask us to make your pizza sooner. While we would love to do so, the times you were able to select represents our real-time availability. Please send us a text if you're looking for your pizza earlier and it's not a Friday, Saturday, or Sunday, otherwise, you'll need to remove this request to continue with your order.";
 
 export default function WReviewOrderStage() {
   const dispatch = useAppDispatch();
+  const REQUEST_HALF = useAppSelector(SelectMessageRequestHalf);
+  const REQUEST_SLICING = useAppSelector(SelectMessageRequestSlicing);
+  const REQUEST_VEGAN = useAppSelector(SelectMessageRequestVegan);
   const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
   const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);

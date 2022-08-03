@@ -1,7 +1,7 @@
 {
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3000/",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "dependencies": {
     "@date-io/date-fns": "^2.14.0",
     "@emotion/react": "^11.10.0",
