@@ -90,7 +90,7 @@ export default function WFulfillmentStageComponent() {
 
   return (<>
     <StageTitle>How and when would you like your order?</StageTitle>
-    <Separator sx={{pb: 3}}  />
+    <Separator sx={{ pb: 3 }} />
     <Grid container alignItems="center">
       <Grid item xs={12} xl={4} sx={{ pl: 3, pb: 5 }}><span>Requested Service:</span>
         <RadioGroup
@@ -117,7 +117,7 @@ export default function WFulfillmentStageComponent() {
             </>
             } />
         </Grid> : ""}
-      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6: 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }}>
+      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }}>
         <StaticDatePicker
           displayStaticWrapperAs="desktop"
           openTo="day"
@@ -128,29 +128,32 @@ export default function WFulfillmentStageComponent() {
           disableMaskedInput
           value={serviceDate}
           onChange={(v) => onSetServiceDate(v)}
-          renderInput={(params) => <TextField {...params}  error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null}  />}
+          renderInput={(params) => <TextField {...params} error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null} />}
         />
       </Grid>
-      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6: 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
-        <Autocomplete
-          sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300 }}
-          openOnFocus
-          disableClearable
-          noOptionsText="Select a valid service date first"
-          id="service-time"
-          options={Object.values(TimeOptions).map(x => x.value)}
-          getOptionDisabled={o => TimeOptions[o].disabled}
-          isOptionEqualToValue={(o, v) => o === v}
-          getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
-          // @ts-ignore
-          value={serviceTime || null}
-          //sx={{ width: 300 }}
-          onChange={(_, v) => onSetServiceTime(v)}
-          renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
-        />
-        {selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null ?
-          (<span>
+      <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
+        <Grid item xs={12}>
+          <Autocomplete
+            sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
+            openOnFocus
+            disableClearable
+            noOptionsText="Select a valid service date first"
+            id="service-time"
+            options={Object.values(TimeOptions).map(x => x.value)}
+            getOptionDisabled={o => TimeOptions[o].disabled}
+            isOptionEqualToValue={(o, v) => o === v}
+            getOptionLabel={o => o ? WDateUtils.MinutesToPrintTime(o) : ""}
+            // @ts-ignore
+            value={serviceTime || null}
+            //sx={{ width: 300 }}
+            onChange={(_, v) => onSetServiceTime(v)}
+            renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
+          />
+        </Grid>
+        {(selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null) &&
+          (<Grid item xs={12} sx={{ pt: 5, pb: 2 }}>
             <Autocomplete
+              sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
               disablePortal
               openOnFocus
               disableClearable
@@ -160,14 +163,15 @@ export default function WFulfillmentStageComponent() {
               getOptionLabel={o => String(o)}
               // @ts-ignore
               value={dineInInfo?.partySize ?? null}
-              sx={{ width: 300 }}
               onChange={(_, v) => onSetDineInInfo(v)}
               renderInput={(params) => <TextField {...params} label="Party Size" />}
             />
-          </span>) : ""
-        }
+          </Grid>)}
+        {(selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null) &&
+          <Grid item xs={12}>
+            <DeliveryInfoForm />
+          </Grid>}
       </Grid>
-      {selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null ? <Grid item xs={12}><DeliveryInfoForm /></Grid> : ""}
     </Grid>
     <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);

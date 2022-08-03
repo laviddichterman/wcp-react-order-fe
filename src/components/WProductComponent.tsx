@@ -46,13 +46,18 @@ function WProductComponent({ productMetadata, description, allowAdornment, dots,
     <Box component='div' {...other} sx={adornmentHTML ? {
       ...sx,
       ...AdornedSxProps
-      } : { ...sx }} >
+    } : { ...sx }} >
       {adornmentHTML ? <ProductAdornment dangerouslySetInnerHTML={{ __html: adornmentHTML }} /> : ""}
-      <Box sx={{position: "relative", mr: '26px'}}><ProductTitle sx={dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle></Box>
-      {price && <ProductPrice sx={dots ? { bgcolor: "#fff", float: 'right', zIndex: 9 } : { float: 'right'}}>{priceText}</ProductPrice>}
+      <Box sx={{ position: "relative", mr: '26px' }}><ProductTitle sx={dots ? { bgcolor: "#fff" } : {}}>{productMetadata.name}</ProductTitle></Box>
+      {price && <ProductPrice sx={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        zIndex: 1, float: 'right', ...(dots ? { bgcolor: "#fff", zIndex: 9 } : {})
+      }}>{priceText}</ProductPrice>}
       {dots && <Dots />}
       {descriptionHTML &&
-        <ProductDescription dangerouslySetInnerHTML={{ __html: descriptionHTML }} /> }
+        <ProductDescription dangerouslySetInnerHTML={{ __html: descriptionHTML }} />}
       {description && optionsSections && optionsSections.map((option_section, l) =>
         <ProductDescription key={l} >
           <>

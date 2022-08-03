@@ -16,7 +16,9 @@ export function WModifiersComponent({ product, menuModifiers }: { product: IProd
             <Grid xs={12} md={6} lg={4} key={j} sx={{ pl: 3, pt: 1 }}>
               <Box sx={{ position: 'relative' }}>
                 <ProductDescription>{opt.mo.item.display_name}</ProductDescription>
-                <ProductPrice>{opt.mo.item.price.amount ? (opt.mo.item.price.amount / 100) : "No Charge"}</ProductPrice>
+                <ProductPrice sx={{ position: 'absolute', top: 0, right: 0, zIndex: 1}}>
+                  {opt.mo.item.price.amount ? (opt.mo.item.price.amount / 100) : "No Charge"}
+                </ProductPrice>
               </Box>
             </Grid>)}
         </Grid>)}

@@ -104,24 +104,25 @@ ListeningMiddleware.startListening({
 });
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime),
+  matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const catalog = api.getState().ws.catalog;
     const currentTime = api.getState().metrics.currentTime;
     if (catalog !== null && currentTime !== 0) {
       const currentTime = api.getState().metrics.currentTime;
+      const service = api.getState().fulfillment.selectedService ?? 1;
       const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState(), currentTime);
-      const MENU = GenerateMenu(catalog, menuTime);
+      const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
-      if (customizerProduct !== null && (!DoesProductExistInMenu(MENU, customizerProduct.p) || !FilterWCPProduct(customizerProduct.p, MENU, menuTime))) {
+      if (customizerProduct !== null && (!DoesProductExistInMenu(MENU, customizerProduct.p) || !FilterWCPProduct(customizerProduct.p, catalog, MENU, menuTime, service))) {
         enqueueSnackbar(`${customizerProduct.m.name} as configured is no longer available. Please check availability and try again.`, { variant: 'warning' });
         api.dispatch(clearCustomizer());
       }
       const cart = getCart(api.getState().cart.cart);
       const deadCart = getDeadCart(api.getState().cart.deadCart);
-      const toKill = cart.filter(x => !DoesProductExistInMenu(MENU, x.product.p) || !FilterWCPProduct(x.product.p, MENU, menuTime))
-      const toRevive = deadCart.filter(x => DoesProductExistInMenu(MENU, x.product.p) && FilterWCPProduct(x.product.p, MENU, menuTime));
+      const toKill = cart.filter(x => !DoesProductExistInMenu(MENU, x.product.p) || !FilterWCPProduct(x.product.p, catalog, MENU, menuTime, service))
+      const toRevive = deadCart.filter(x => DoesProductExistInMenu(MENU, x.product.p) && FilterWCPProduct(x.product.p, catalog, MENU, menuTime, service));
 
       if (toKill.length > 0) {
         if (toKill.length < 4) {

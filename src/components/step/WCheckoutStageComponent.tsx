@@ -131,7 +131,7 @@ export function WCheckoutStage() {
         <Grid container>
           <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
           <Grid item xs={12}>
-            {balance > 0 && (specialInstructions === null || specialInstructions.length < 4) ?
+            {balance > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
               <>
                 <CreditCard
                   // @ts-ignore 

@@ -205,7 +205,7 @@ export const RootStyle = styled('div')(({ theme, sx }) => ({
 }));
 
 export const OkResponseOutput = styled('div')(() => ({
-  margin: '2em .5em 1em', padding: ".2em 1em", border: "2px solid red"
+  margin: '2em .5em 1em', padding: ".2em 1em", border: "2px solid blue"
 }));
 
 export const WarningResponseOutput = styled(OkResponseOutput)(() => ({
@@ -294,10 +294,6 @@ export const ProductDescription = styled('span')(() => ({
 
 export const ProductPrice = styled('span')(() => ({
   fontFamily: "Cabin",
-  position: 'absolute',
-  top: 0,
-  right: 0,
-  zIndex: 1,
   fontSize: '1.1875rem',
   lineHeight: 1.27316,
   fontWeight: 700,

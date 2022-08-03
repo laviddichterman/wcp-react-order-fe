@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata } from "@wcp/wcpshared";
+import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata, ICatalog } from "@wcp/wcpshared";
 
-function GenerateMetadata(menu: IMenu, product: WCPProduct, serviceTime: number) {
+function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillment: number) {
   const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
-  return WCPProductGenerateMetadata(product, productEntry, menu.modifiers, menu.product_instance_functions, new Date(serviceTime));
+  return WCPProductGenerateMetadata(product, productEntry, catalog, menu.modifiers, serviceTime, fulfillment);
 }
 
 export interface WCustomizerState {
@@ -67,7 +67,7 @@ export const WCustomizerSlice = createSlice({
       // todo: see if this can just be a shallow copy
       Object.assign(state, initialState);
     },
-    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, menu: IMenu, serviceTime: number }>) {
+    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, catalog: ICatalog, menu: IMenu, serviceTime: number, fulfillment: number }>) {
       if (state.selectedProduct !== null) {
         const newOptInstance = { ...action.payload.optionState, option_id: action.payload.mo.id };
         if (!Object.hasOwn(state.selectedProduct.p.modifiers, action.payload.mt.id)) {
@@ -92,15 +92,15 @@ export const WCustomizerSlice = createSlice({
           }
         }
         // regenerate metadata
-        state.selectedProduct.m = GenerateMetadata(action.payload.menu, state.selectedProduct.p, action.payload.serviceTime);
+        state.selectedProduct.m = GenerateMetadata(action.payload.catalog, action.payload.menu, state.selectedProduct.p, action.payload.serviceTime, action.payload.fulfillment);
       }
 
     },
-    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string, menu: IMenu, serviceTime: number }>) {
+    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string, catalog: ICatalog, menu: IMenu, serviceTime: number, fulfillment: number }>) {
       if (state.selectedProduct !== null) {
         state.selectedProduct.p.modifiers[action.payload.mtId] = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, option_id: action.payload.moId }];
         // regenerate metadata
-        state.selectedProduct.m = GenerateMetadata(action.payload.menu, state.selectedProduct.p, action.payload.serviceTime);
+        state.selectedProduct.m = GenerateMetadata(action.payload.catalog, action.payload.menu, state.selectedProduct.p, action.payload.serviceTime, action.payload.fulfillment);
       }
     }
   }
