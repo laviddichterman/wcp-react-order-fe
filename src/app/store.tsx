@@ -81,6 +81,10 @@ export const SelectDeliveryFeeSetting = (s: RootState) => s.ws.settings!.config.
 export const SelectDeliveryAreaLink = (s: RootState) => s.ws.settings!.config.DELIVERY_LINK as string;
 export const SelectTaxRate = (s: RootState) => s.ws.settings!.config.TAX_RATE as number;
 export const SelectAutoGratutityThreshold = (s: RootState) => s.ws.settings!.config.AUTOGRAT_THRESHOLD as number ?? 5;
+export const SelectMessageRequestVegan = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_VEGAN as string ?? "";
+export const SelectMessageRequestHalf = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_HALF as string ?? "";
+export const SelectMessageRequestWellDone = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_WELLDONE as string ?? "";
+export const SelectMessageRequestSlicing = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_SLICING as string ?? "";
 
 export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
