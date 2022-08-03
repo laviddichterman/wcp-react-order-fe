@@ -13,7 +13,7 @@ import WReviewOrderStage from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
 import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import { SelectBalanceAfterCredits } from '../app/store';
-import { submitToWario, setSquareTokenizationErrors, setSquareNonce } from '../app/slices/WPaymentSlice';
+import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
 import { StepperTitle } from './styled/styled';
 
@@ -55,8 +55,7 @@ export function WOrderingComponent() {
   const useStepper = useMediaQuery(theme.breakpoints.up('md'));
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
     if (props.token) {
-      dispatch(setSquareNonce(props.token));
-      dispatch(submitToWario());
+      dispatch(submitToWario(props.token));
     } else if (props.errors) {
       dispatch(setSquareTokenizationErrors(props.errors));
     }

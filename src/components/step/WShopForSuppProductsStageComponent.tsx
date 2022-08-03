@@ -41,13 +41,13 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
       if (activePanel === i) {
         if (isExpanded) {
           setIsExpanded(false);
-          scrollToElementOffsetAfterDelay(ref, 200, 'center', -100);
+          scrollToElementOffsetAfterDelay(ref, 200, 'center');
           return;
         }
       }
       setActivePanel(i);
       setIsExpanded(true);
-      scrollToElementOffsetAfterDelay(ref, 450, 'start', -100);
+      scrollToElementOffsetAfterDelay(ref, 450, 'start');
     }, [activePanel, isExpanded]);
 
     return (

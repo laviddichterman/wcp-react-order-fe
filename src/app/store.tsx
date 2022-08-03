@@ -287,12 +287,11 @@ export const SelectWarioSubmissionArguments = createSelector(
   (s: RootState) => s.payment.storeCreditValidation,
   (s: RootState) => s.payment.storeCreditInput,
   (s: RootState) => s.payment.specialInstructions,
-  (s: RootState) => s.payment.squareNonce,
   (s: RootState) => s.metrics,
   (s: RootState) => SelectBalanceAfterCredits(s),
   (s: RootState) => SelectAmountCreditUsed(s),
   (s: RootState) => SelectTipValue(s),
-  (fulfillment, customerInfo, cart, storeCredit, creditCode, specialInstructions, nonce, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
+  (fulfillment, customerInfo, cart, storeCredit, creditCode, specialInstructions, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
     const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } }) ) as CoreCartEntry<WCPProductV2Dto>[];
     return { 
     customerInfo,
@@ -300,7 +299,6 @@ export const SelectWarioSubmissionArguments = createSelector(
     special_instructions: specialInstructions ?? "",
     cart: cartDto,
     metrics,
-    nonce,
     store_credit: storeCredit !== null ? { validation: storeCredit, code: creditCode, amount_used: creditApplied } : null,
     sliced: false,
     totals: {

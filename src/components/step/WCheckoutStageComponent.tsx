@@ -53,7 +53,7 @@ export function WCheckoutStage() {
     dispatch(setTip(tip));
   }
   const submitNoBalanceDue = () => {
-    dispatch(submitToWario())
+    dispatch(submitToWario(null))
   }
 
   const resetCustomTip = () => {
@@ -63,10 +63,8 @@ export function WCheckoutStage() {
   }
 
   const setCustomTipAmountIntercept = (value: string) => {
-    setIsCustomTipSelected(true);
     const parsedValue = parseFloat(value);
     setCustomTipAmount(value);
-    dispatch(setTip({ value: parsedValue, isPercentage: false, isSuggestion: false }));
   }
 
   const onSelectSuggestedTip = (tip: TipSelection) => {
@@ -79,6 +77,7 @@ export function WCheckoutStage() {
   }
 
   const setCustomTipHandler = (value: string) => {
+    setIsCustomTipSelected(true);
     const numericValue = parseFloat(value);
     if (!isFinite(numericValue) || isNaN(numericValue) || numericValue < 0 || (autogratEnabled && numericValue < TwentyPercentTipValue)) {
       resetCustomTip();
@@ -105,7 +104,7 @@ export function WCheckoutStage() {
           </Grid>
         )}
         <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
-          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipAmountIntercept(customTipAmount)} >
+          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipHandler(customTipAmount)} >
             <Grid container>
               <Grid item xs={12}>
                 <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
@@ -120,7 +119,7 @@ export function WCheckoutStage() {
                     onChange={(e) => setCustomTipAmountIntercept(e.target.value)}
                     onBlur={(e) => setCustomTipHandler(e.target.value)}
                     type="number"
-                    inputProps={{ inputMode: 'decimal', min: 0, sx: { pt:0, textAlign: 'center', color: 'white' }, step: selectedTipAmount < 5 ? .01 : 1 }}
+                    inputProps={{ inputMode: 'decimal', min: 0, sx: { pt:0, textAlign: 'center', color: 'white' }, step: 1 }}
                   /> : " "}
               </Grid>
             </Grid>
@@ -167,7 +166,7 @@ export function WCheckoutStage() {
           submitToWarioResponse.result.payment.totalMoney?.amount &&
           <Grid item sx={{ pt: 1 }} xs={12}>
             <Typography variant="body2">
-              Payment of ${fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
+              Payment of {fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
               Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </Grid>
         }

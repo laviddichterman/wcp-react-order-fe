@@ -15,6 +15,7 @@ import axiosInstance from '../utils/axios';
 import { styled } from '@mui/system';
 import { ErrorResponseOutput, SquareButtonCSS } from './styled/styled';
 import { SelectSquareAppId, SelectSquareLocationId } from '../app/store';
+import { fCurrency } from '../utils/numbers';
 
 const CabinTypography = styled(Typography)({
   fontFamily: "Cabin",
@@ -289,22 +290,22 @@ export function WStoreCreditPurchase() {
         {purchaseStatus === 'SUCCESS' && purchaseResponse !== null &&
           <Grid container>
             <Grid item xs={12}>
-              <Typography variant="h3">Payment of {purchaseResponse.amount_money / 100} received
+              <Typography variant="h3">Payment of {fCurrency(purchaseResponse.amount_money / 100)} received
                 from card ending in: {purchaseResponse.last4}!</Typography>
               <Typography variant="body2">Here's your <Link href={purchaseResponse.receipt_url} target="_blank">receipt</Link>.</Typography>
             </Grid>
             <Grid item xs={12}>
               <Typography variant='h6'>Store credit details:</Typography>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} md={4}>
               <Typography variant="h4">Credit Amount: </Typography>
-              <span>{purchaseResponse.amount_money / 100}</span>
+              <span>{fCurrency(purchaseResponse.amount_money / 100)}</span>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} md={4}>
               <Typography variant="h4">Recipient: </Typography>
               <span>{getValues('recipientNameFirst')} {getValues('recipientNameFamily')}</span>
             </Grid>
-            <Grid item xs={4}>
+            <Grid item xs={12} md={4}>
               <Typography sx={{ fontWeight: 'bold' }}>Credit Code:</Typography>
               <span>{purchaseResponse.joint_credit_code}</span>
             </Grid>

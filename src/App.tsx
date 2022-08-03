@@ -18,15 +18,11 @@ const theme = createTheme(themeOptions);
  * 
  * TO LAUNCH CHECKLIST
  * 
- * ALLOW_SLICING
- * * order guide
  * change from react-hook-form to just put shit in the redux state
  * don't let people select a tip if they're not paying due to special instructions or whatever
  * fix the X scrolling in the checkout cart (hide some shit, make it smaller)
 \ * checkout cart formatting and handle the wario payment being processed
  * prevent selecting a service for which the selected options don't allow
-* state why something is disabled when hovered over via tooltip => PUSH TO NEXT VERSION
-* revalidate service time on submit
  */
 
 
@@ -53,7 +49,6 @@ const App = () => {
           <div id="WARIO_order">
             {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
             {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WStoreCreditPurchase />} */}
-            
             {!isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent />}
             {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WMenuComponent />} */}
           </div>
