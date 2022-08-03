@@ -57,7 +57,7 @@ function WProductComponent({ productMetadata, description, allowAdornment, dots,
       }}>{priceText}</ProductPrice>}
       {dots && <Dots />}
       {descriptionHTML &&
-        <ProductDescription dangerouslySetInnerHTML={{ __html: descriptionHTML }} />}
+        <span><ProductDescription dangerouslySetInnerHTML={{ __html: descriptionHTML }} /></span>}
       {description && optionsSections && optionsSections.map((option_section, l) =>
         <ProductDescription key={l} >
           <>

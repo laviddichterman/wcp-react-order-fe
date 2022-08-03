@@ -20,17 +20,17 @@ const FilterProductWrapper = function (menu: IMenu, order_time: Date | number) {
   return (item: IProductInstance) => FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time)
 };
 
-export const ProductsForCategoryFilteredAndSortedFxnGen = function(menu: IMenu | null, serviceDateTime: Date | null) {
-  return serviceDateTime !== null && menu !== null ? 
-    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime)).sort((p) => p.display_flags.order.ordinal)) : 
-    ((_: string) => []) 
+export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null) {
+  return serviceDateTime !== null && menu !== null ?
+    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime)).sort((p) => p.display_flags.order.ordinal)) :
+    ((_: string) => [])
 }
 export interface WShopForProductsStageProps {
   ProductsForCategoryFilteredAndSorted: (category: string) => IProductInstance[];
   onProductSelection: (returnToId: string, cid: string, pid: string) => void;
 }
 
-export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY' | 'SECONDARY' }) {
+export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY' | 'SECONDARY' }) {
   const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
   const menu = useAppSelector(s => s.ws.menu!);
@@ -41,8 +41,8 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const selectedProduct = useAppSelector(selectSelectedProduct);
   const dispatch = useAppDispatch();
-  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) => 
-    ProductsForCategoryFilteredAndSortedFxnGen(menu, serviceDateTime)(category), 
+  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) =>
+    ProductsForCategoryFilteredAndSortedFxnGen(menu, serviceDateTime)(category),
     [menu, serviceDateTime]);
 
 
@@ -60,7 +60,6 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });
             dispatch(updateCartQuantity({ id: matchInCart.id, newQuantity: matchInCart.quantity + 1 }));
-
           }
           else {
             // it's a new entry!
@@ -88,13 +87,13 @@ export function WShopForProductsContainer({productSet} : { productSet: 'PRIMARY'
   return (
     <div>
       {selectedProduct === null && (
-        productSet ==='PRIMARY' ? 
-          <WShopForPrimaryProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> : 
-          <WShopForSuppProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />)} 
+        productSet === 'PRIMARY' ?
+          <WShopForPrimaryProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
+          <WShopForSuppProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />)}
       {selectedProduct !== null && (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />)}
-      { cart.length > 0 && <Separator />}
+      {cart.length > 0 && <Separator />}
       <WOrderCart isProductEditDialogOpen={selectedProduct !== null} menu={menu!} setProductToEdit={setProductToEdit} />
-      {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={()=>dispatch(backStage())} handleNext={()=>dispatch(nextStage())} />}
+      {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={() => dispatch(backStage())} handleNext={() => dispatch(nextStage())} />}
     </div>
   );
 }

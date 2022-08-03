@@ -61,8 +61,8 @@ export default function WFulfillmentStageComponent() {
       dispatch(setService(serviceNum));
     }
   }
-  const onSetHasAgreedToTerms = () => {
-    dispatch(setHasAgreedToTerms(!hasAgreedToTerms));
+  const onSetHasAgreedToTerms = (checked : boolean) => {
+    dispatch(setHasAgreedToTerms(checked));
   }
   const onSetServiceDate = (v: Date | null) => {
     if (v !== null) {
@@ -87,7 +87,7 @@ export default function WFulfillmentStageComponent() {
   const onSetDineInInfo = (v: number) => {
     dispatch(setDineInInfo({ partySize: v }));
   }
-
+  
   return (<>
     <StageTitle>How and when would you like your order?</StageTitle>
     <Separator sx={{ pb: 3 }} />
@@ -108,7 +108,7 @@ export default function WFulfillmentStageComponent() {
       {serviceTerms.length > 0 ?
         <Grid item xs={12} xl={8}>
           <FormControlLabel control={
-            <><Checkbox value={hasAgreedToTerms} onClick={() => onSetHasAgreedToTerms()} />
+            <><Checkbox checked={hasAgreedToTerms} onChange={(_, checked) => onSetHasAgreedToTerms(checked)} />
             </>} label={<>
               REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
               <ul>
@@ -132,7 +132,7 @@ export default function WFulfillmentStageComponent() {
         />
       </Grid>
       <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
-        <Grid item xs={12}>
+        <Grid item xs={12} sx={{pb: 5}}>
           <Autocomplete
             sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
             openOnFocus
@@ -151,7 +151,7 @@ export default function WFulfillmentStageComponent() {
           />
         </Grid>
         {(selectedService === DINEIN_SERVICE && serviceDate !== null) &&
-          (<Grid item xs={12} sx={{ pt: 5, pb: 2 }}>
+          (<Grid item xs={12} sx={{ pb: 5 }}>
             <Autocomplete
               sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
               disablePortal

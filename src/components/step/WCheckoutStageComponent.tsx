@@ -167,7 +167,7 @@ export function WCheckoutStage() {
           <Grid item sx={{ pt: 1 }} xs={12}>
             <Typography variant="body2">
               Payment of {fCurrency(Number(submitToWarioResponse.result.payment.totalMoney.amount) / 100)} received {submitToWarioResponse.result.payment.cardDetails?.card ? ` from card ending in: ${submitToWarioResponse.result.payment.cardDetails.card.last4}!` : "!"}
-              Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
+              <br />Here's your <Link href={submitToWarioResponse.result.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </Grid>
         }
         {creditApplied > 0 && storeCreditValidation !== null && storeCreditValidation.valid &&

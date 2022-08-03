@@ -59,7 +59,11 @@ export default function WReviewOrderStage() {
   }
   const handleSetAcknowledgeInstructionsDialogue = (checked : boolean) => {
     setAcknowledgeInstructionsDialogue(checked);
-    setSpecialInstructionsIntermediate("");
+    if (checked) {
+      setSpecialInstructionsIntermediate("");
+    } else {
+      setSpecialInstructionsResponses([]);
+    }
   }
 
   if (selectedService === null || serviceDateTime === null) {

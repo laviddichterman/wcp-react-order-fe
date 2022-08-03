@@ -6,18 +6,19 @@ import { Done, Error } from '@mui/icons-material';
 import { CREDIT_REGEX } from '@wcp/wcpshared';
 import { validateStoreCredit, clearCreditCode } from '../app/slices/WPaymentSlice';
 import { ErrorResponseOutput } from './styled/styled';
+import { Box } from '@mui/system';
 
 
 
 export function StoreCreditSection() {
   const dispatch = useAppDispatch();
-  const [useCreditCheckbox, setUseCreditCheckbox] = useState(false);
   const creditValidationLoading = useAppSelector(s => s.payment.creditValidationLoading);
+  const [useCreditCheckbox, setUseCreditCheckbox] = useState(creditValidationLoading === 'SUCCEEDED');
   const storeCreditInput = useAppSelector(s => s.payment.storeCreditInput);
   const [localCreditCode, setLocalCreditCode] = useState(storeCreditInput);
   const setLocalCreditCodeAndAttemptToValidate = function (code: string) {
     setLocalCreditCode(code);
-    if (creditValidationLoading !== 'PENDING' && code.length === 19 && CREDIT_REGEX.test(code)) {
+    if (creditValidationLoading !== 'PENDING' && creditValidationLoading !== 'SUCCEEDED' && code.length === 19 && CREDIT_REGEX.test(code)) {
       dispatch(validateStoreCredit(code))
     }
   }
@@ -30,17 +31,17 @@ export function StoreCreditSection() {
   }
   return (
     <Grid container alignContent={'center'}>
-      <Grid sx={{pt:2}} item sm={useCreditCheckbox ? 6 : 12} xs={12}>
+      <Grid sx={{pt:2}} item xs={12} sm={useCreditCheckbox ? 6 : 12} >
         <FormControlLabel
           control={<Checkbox checked={useCreditCheckbox} onChange={(e) => handleSetUseCreditCheckbox(e.target.checked)} />}
           label="Use Digital Gift Card / Store Credit"
         />
       </Grid>
       {useCreditCheckbox &&
-        <Grid sx={{pl:2, justifyContent: 'flex-end'}} item xs={12} sm={6} container >
-          <Grid item xs={10} sx={{width: '100%'}}>
+        <Grid sx={{px:2}} item xs={12} sm={useCreditCheckbox ? 6 : 12} container >
           <StoreCreditInputComponent
             autoFocus
+            endAdornment={creditValidationLoading === "FAILED" ? <Error /> : (creditValidationLoading === "SUCCEEDED" ? <Done /> : undefined)}
             name="Credit Code"
             label="Code:"
             id="store_credit_code"
@@ -48,11 +49,6 @@ export function StoreCreditSection() {
             value={localCreditCode}
             onChange={(e) => setLocalCreditCodeAndAttemptToValidate(e.target.value)}
           />
-          </Grid>
-          <Grid item xs={1} sx={{p:2}}>
-          {creditValidationLoading === "FAILED" && <Error />}
-          {creditValidationLoading === "SUCCEEDED" && <Done />}
-          </Grid>
         </Grid>}
 
       {creditValidationLoading === "FAILED" && 

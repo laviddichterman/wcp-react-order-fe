@@ -72,7 +72,6 @@ export const GetSelectableModifiers = (mMap : MetadataModifierMap, menu: IMenu) 
 export const SelectSquareAppId = (s: RootState) => s.ws.settings?.config.SQUARE_APPLICATION_ID as string ?? "";
 export const SelectSquareLocationId = (s: RootState) => s.ws.settings?.config.SQUARE_LOCATION as string ?? "";
 export const SelectAllowAdvanced = (s: RootState) => s.ws.settings?.config.ALLOW_ADVANCED as boolean ?? false;
-export const SelectAllowSlicing = (s: RootState) => s.ws.settings?.config.ALLOW_SLICING as boolean ?? false;
 export const SelectMainCategoryId = (s: RootState) => s.ws.settings?.config.MAIN_CATID as string ?? "";
 export const SelectSupplementalCategoryId = (s: RootState) => s.ws.settings?.config.SUPP_CATID as string ?? "";
 export const SelectMenuCategoryId = (s: RootState) => s.ws.settings?.config.MENU_CATID as string ?? "";

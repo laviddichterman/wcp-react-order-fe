@@ -9,16 +9,15 @@ import React from 'react';
 interface CustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
   name: string;
-  // definitions: AnyMaskedOptions;
-  // mask: string;
 }
 
 
 const TextMaskCustom = React.forwardRef<HTMLElement, CustomProps>(
   function TextMaskCustom(props, ref) {
-    const { onChange, ...other } = props;
+    const { onChange, name, ...other } = props;
     return (
       <IMaskInput
+        name={name}
         {...other}
         mask="***-**-***-CCCCCCCC"
         definitions={{
@@ -26,7 +25,7 @@ const TextMaskCustom = React.forwardRef<HTMLElement, CustomProps>(
         }}
         // @ts-ignore
         inputRef={ref}
-        onAccept={(value: any) => onChange({ target: { name: props.name, value } })}
+        onAccept={(value: any) => onChange({ target: { name: name, value } })}
         overwrite
       />
     );
