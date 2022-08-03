@@ -6,7 +6,7 @@ import { TIP_PREAMBLE } from '../../config';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency, fCurrencyNoUnit } from '../../utils/numbers';
-import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis } from '../../app/store';
+import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
@@ -28,6 +28,7 @@ export function WCheckoutStage() {
   const tipBasis = useAppSelector(SelectTipBasis);
   const balance = useAppSelector(SelectBalanceAfterCredits);
   const creditApplied = useAppSelector(SelectAmountCreditUsed);
+  const selectedTipAmount = useAppSelector(SelectTipValue);
   const storeCreditValidation = useAppSelector(s => s.payment.storeCreditValidation);
   const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
@@ -35,6 +36,7 @@ export function WCheckoutStage() {
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
+  const TwentyPercentTipValue = useMemo(()=>ComputeTipValue(TIP_SUGGESTION_20, tipBasis), [tipBasis]);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
   const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
@@ -63,9 +65,6 @@ export function WCheckoutStage() {
   const setCustomTipAmountIntercept = (value: string) => {
     setIsCustomTipSelected(true);
     const parsedValue = parseFloat(value);
-    if (!isFinite(parsedValue) || !isNaN(parsedValue) || parsedValue < 0) {
-      resetCustomTip()
-    }
     setCustomTipAmount(value);
     dispatch(setTip({ value: parsedValue, isPercentage: false, isSuggestion: false }));
   }
@@ -81,7 +80,7 @@ export function WCheckoutStage() {
 
   const setCustomTipHandler = (value: string) => {
     const numericValue = parseFloat(value);
-    if (autogratEnabled || numericValue < 0) {
+    if (!isFinite(numericValue) || isNaN(numericValue) || numericValue < 0 || (autogratEnabled && numericValue < TwentyPercentTipValue)) {
       resetCustomTip();
     } else {
       setCustomTipAmount(numericValue.toFixed(2));
@@ -111,14 +110,17 @@ export function WCheckoutStage() {
               <Grid item xs={12}>
                 <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
               </Grid>
-              <Grid item xs={12} sx={{ height: '2.5em' }}>
+              <Grid item xs={12} sx={{ height: isCustomTipSelected ? '4em' : '2.5em' }}>
                 {isCustomTipSelected ?
                   <Input
+                  sx={{pt:0}}
+                  size='small'
+                  disableUnderline
                     value={customTipAmount}
                     onChange={(e) => setCustomTipAmountIntercept(e.target.value)}
                     onBlur={(e) => setCustomTipHandler(e.target.value)}
                     type="number"
-                    inputProps={{ min: 0, sx: { textAlign: 'center', color: 'white' } }}
+                    inputProps={{ inputMode: 'decimal', min: 0, sx: { pt:0, textAlign: 'center', color: 'white' }, step: selectedTipAmount < 5 ? .01 : 1 }}
                   /> : " "}
               </Grid>
             </Grid>

@@ -129,7 +129,6 @@ export const SelectSubtotalPreDiscount = createSelector(
   SelectCartSubTotal,
   SelectDeliveryFee,
   (cartSubTotal, deliveryFee) => {
-    console.log(cartSubTotal);
     return (cartSubTotal + deliveryFee);}
 );
 
@@ -170,7 +169,6 @@ export const SelectTotal = createSelector(
   SelectTaxAmount,
   SelectTipValue,
   (subtotalBeforeDiscount: number, discount: number, taxAmount: number, tipAmount: number) => {
-    console.log(subtotalBeforeDiscount) 
     return ComputeTotal(subtotalBeforeDiscount, discount, taxAmount, tipAmount);
   }
 );

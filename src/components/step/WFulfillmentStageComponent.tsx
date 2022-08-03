@@ -150,16 +150,17 @@ export default function WFulfillmentStageComponent() {
             renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
           />
         </Grid>
-        {(selectedService === DINEIN_SERVICE && serviceDate !== null && serviceTime !== null) &&
+        {(selectedService === DINEIN_SERVICE && serviceDate !== null) &&
           (<Grid item xs={12} sx={{ pt: 5, pb: 2 }}>
             <Autocomplete
               sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
               disablePortal
               openOnFocus
               disableClearable
+              disabled={serviceTime === null}
               className="guest-count"
               options={[...Array(MAX_PARTY_SIZE - 1)].map((_, i) => i + 1)}
-              getOptionDisabled={o => !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
+              getOptionDisabled={o => serviceTime === null || !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
               getOptionLabel={o => String(o)}
               // @ts-ignore
               value={dineInInfo?.partySize ?? null}
@@ -167,11 +168,11 @@ export default function WFulfillmentStageComponent() {
               renderInput={(params) => <TextField {...params} label="Party Size" />}
             />
           </Grid>)}
-        {(selectedService === DELIVERY_SERVICE && serviceDate !== null && serviceTime !== null) &&
+      </Grid>
+      {(selectedService === DELIVERY_SERVICE && serviceDate !== null) &&
           <Grid item xs={12}>
             <DeliveryInfoForm />
           </Grid>}
-      </Grid>
     </Grid>
     <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);

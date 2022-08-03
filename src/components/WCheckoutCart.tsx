@@ -52,11 +52,15 @@ export function WCheckoutCart() {
           {selectedService === DELIVERY_SERVICE && (
             <TableRow>
               <TableCell colSpan={2} >
-                Delivery Fee{deliveryFee === 0 && " (waived)"}
+                <ProductTitle>Delivery Fee{deliveryFee === 0 && " (waived)"}</ProductTitle>
               </TableCell>
-              <TableCell  />
+              <TableCell />
               <TableCell colSpan={2} align="right">
-                {deliveryFee === 0 ? <Typography sx={{ textDecoration: "line-through" }}>{fCurrencyNoUnit(5)}</Typography> : <>{fCurrencyNoUnit(deliveryFee)}</>}
+                <ProductPrice>
+                  {deliveryFee === 0 ?
+                    <Typography sx={{ textDecoration: "line-through" }}>{fCurrencyNoUnit(5)}</Typography> :
+                    <>{fCurrencyNoUnit(deliveryFee)}</>}
+                </ProductPrice>
               </TableCell>
             </TableRow>
           )}
@@ -70,7 +74,7 @@ export function WCheckoutCart() {
           {taxValue > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
-              <ProductTitle>Sales Tax ({fPercent(TAX_RATE)})</ProductTitle>
+                <ProductTitle>Sales Tax ({fPercent(TAX_RATE)})</ProductTitle>
               </TableCell>
               <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(taxValue)}</ProductPrice></TableCell>
             </TableRow>}
@@ -89,7 +93,7 @@ export function WCheckoutCart() {
               </TableCell>
               <TableCell colSpan={2} align="right">
                 <ProductPrice >-{fCurrencyNoUnit(giftCardApplied)}</ProductPrice>
-                </TableCell>
+              </TableCell>
             </TableRow>}
           <TableRow>
             <TableCell colSpan={3} >
