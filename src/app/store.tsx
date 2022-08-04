@@ -1,7 +1,7 @@
 import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
-import WFulfillmentReducer, { ComputeServiceDateTime } from './slices/WFulfillmentSlice';
+import WFulfillmentReducer from './slices/WFulfillmentSlice';
 import WMetricsReducer from './slices/WMetricsSlice';
 import WCustomerInfoReducer from "./slices/WCustomerInfoSlice";
 import StepperReducer from "./slices/StepperSlice";
@@ -30,7 +30,9 @@ import { CartEntry,
   ComputeBalanceAfterCredits, 
   CoreCartEntry,
   WCPProductV2Dto,
-  WProduct} from "@wcp/wcpshared";
+  WProduct,
+  ComputeSubtotalAfterDiscount,
+  ComputeSubtotalPreDiscount} from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { addDays, startOfDay } from "date-fns";
 
@@ -127,8 +129,7 @@ export const SelectDeliveryFee = createSelector(
 export const SelectSubtotalPreDiscount = createSelector(
   SelectCartSubTotal,
   SelectDeliveryFee,
-  (cartSubTotal, deliveryFee) => {
-    return (cartSubTotal + deliveryFee);}
+  ComputeSubtotalPreDiscount
 );
 
 export const SelectDiscountApplied = createSelector(
@@ -140,13 +141,12 @@ export const SelectDiscountApplied = createSelector(
 export const SelectSubtotalAfterDiscount = createSelector(
   SelectSubtotalPreDiscount,
   SelectDiscountApplied,
-  (subtotalPreDiscount, discountApplied) => subtotalPreDiscount - discountApplied
+  ComputeSubtotalAfterDiscount
 );
 
 export const SelectTaxAmount = createSelector(
-  SelectSubtotalPreDiscount,
+  SelectSubtotalAfterDiscount,
   SelectTaxRate,
-  SelectDiscountApplied,
   ComputeTaxAmount
 );
 
@@ -163,13 +163,10 @@ export const SelectTipValue = createSelector(
 );
 
 export const SelectTotal = createSelector(
-  SelectSubtotalPreDiscount,
-  SelectDiscountApplied,
+  SelectSubtotalAfterDiscount,
   SelectTaxAmount,
   SelectTipValue,
-  (subtotalBeforeDiscount: number, discount: number, taxAmount: number, tipAmount: number) => {
-    return ComputeTotal(subtotalBeforeDiscount, discount, taxAmount, tipAmount);
-  }
+  ComputeTotal
 );
 
 export const SelectGiftCardApplied = createSelector(
@@ -194,17 +191,16 @@ export const SelectMainProductCategoryCount = createSelector(
 export const SelectAutoGratutityEnabled = createSelector(
   SelectMainProductCategoryCount,
   SelectAutoGratutityThreshold,
+  (s: RootState) => s.fulfillment.dineInInfo,
   (s: RootState) => s.fulfillment.deliveryInfo,
-  (count, threshold, deliveryInfo) => deliveryInfo !== null || count >= threshold
+  (count, threshold, dineInInfo, deliveryInfo) => deliveryInfo !== null || dineInInfo !== null || count >= threshold
 );
 
 export const SelectHasOperatingHoursForService = createSelector(
   (s: RootState, _ : number) => s.ws.services!,
   (s: RootState, _ : number) => s.ws.settings!.operating_hours,
   (_: RootState, serviceNumber: number) => serviceNumber,
-  (services, operatingHours, serviceNumber) => Object.hasOwn(services, String(serviceNumber)) && 
-    serviceNumber < operatingHours.length && 
-    operatingHours[serviceNumber].reduce((acc, dayIntervals) => acc || dayIntervals.some(v => v[0] < v[1] && v[0] >= 0 && v[1] <= 1440), false)
+  WDateUtils.HasOperatingHoursForService
 );
 
 export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
@@ -245,7 +241,7 @@ export const GetNextAvailableServiceDateTimeForService = createSelector(
         const dateAttempted = addDays(today, i);
         const options = selectOptionsFunction(addDays(today, i));
         if (options.length > 0) {
-          return ComputeServiceDateTime(dateAttempted, options[0].value);
+          return WDateUtils.ComputeServiceDateTime(dateAttempted, options[0].value);
       }
     }    
   }

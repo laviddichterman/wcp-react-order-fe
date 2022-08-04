@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DELIVERY_SERVICE } from "../../config";
 import { getTermsForService } from "../../components/common";
-import { addDays, subMinutes } from "date-fns";
 import * as yup from "yup";
 import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
@@ -123,13 +122,10 @@ const WFulfillmentSlice = createSlice({
   },
 });
 
-// Todo: move to WCPShared
-export const ComputeServiceDateTime = (selectedDate: Date | number, selectedTime: number) => subMinutes(addDays(selectedDate, 1), 1440 - selectedTime);
-
 export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedDate,
   (s: WFulfillmentState) => s.selectedTime,
-  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? ComputeServiceDateTime(selectedDate, selectedTime) : null
+  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime(selectedDate, selectedTime) : null
 );
 
 export const SelectServiceTimeDisplayString = createSelector(
