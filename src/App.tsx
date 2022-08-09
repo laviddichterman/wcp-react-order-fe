@@ -1,16 +1,18 @@
+import { useEffect, useLayoutEffect } from 'react';
+import { SnackbarProvider } from 'notistack';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
-import { SnackbarProvider } from 'notistack';
-import { useEffect, useLayoutEffect } from 'react';
+
 import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import LoadingScreen from './components/LoadingScreen';
-import { WOrderingComponent } from './components/WOrderingComponent';
-import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
-import { scrollToIdOffsetAfterDelay } from './utils/shared';
-import { WMenuComponent } from './components/menu/WMenuComponent';
 import { themeOptions } from './components/styled/styled';
+import { scrollToIdOffsetAfterDelay } from './utils/shared';
+
+// import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
+// import { WMenuComponent } from './components/menu/WMenuComponent';
+import { WOrderingComponent } from './components/WOrderingComponent';
 
 const theme = createTheme(themeOptions);
 
@@ -49,8 +51,8 @@ const App = () => {
           <div id="WARIO_order">
             {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
             {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WStoreCreditPurchase />} */}
-            {!isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent />}
             {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WMenuComponent />} */}
+            {!isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent />}
           </div>
         </SnackbarProvider>
       </ThemeProvider>

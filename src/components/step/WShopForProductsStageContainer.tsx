@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useSnackbar } from 'notistack';
-import { CartEntry, CreateWCPProductFromPI, WProduct, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
+import { CartEntry, CreateWCPProductFromPI, WProduct, FilterProduct, IMenu, IProductInstance, FilterEmptyCategories } from '@wcp/wcpshared';
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
@@ -14,25 +14,37 @@ import { WOrderCart } from '../WOrderCartComponent';
 import { WShopForPrimaryProductsStage } from './WShopForPrimaryProductsStageComponent';
 import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent';
 import { Separator } from '../styled/styled';
+import { cloneDeep } from 'lodash';
 
+export interface OrderHideable { 
+  order: {
+    hide: boolean;
+  };
+}
 // NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
-const FilterProductWrapper = function (menu: IMenu, order_time: Date | number) {
-  return (item: IProductInstance) => FilterProduct(item, menu, function (x: any) { return x.order.hide; }, order_time)
+export const FilterProductWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentType: number) {
+  return (item: IProductInstance) => FilterProduct(item, menu, (x: T) => x.order.hide, order_time, fulfillmentType)
 };
 
-export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null) {
+export const FilterEmptyCategoriesWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentType: number) {
+  return FilterEmptyCategories(menu, (x: T) => x.order.hide, order_time, fulfillmentType);
+};
+
+export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null, fulfillmentType: number) {
   return serviceDateTime !== null && menu !== null ?
-    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime)).sort((p) => p.display_flags.order.ordinal)) :
+    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime, fulfillmentType)).sort((p) => p.display_flags.order.ordinal)) :
     ((_: string) => [])
 }
 export interface WShopForProductsStageProps {
   ProductsForCategoryFilteredAndSorted: (category: string) => IProductInstance[];
   onProductSelection: (returnToId: string, cid: string, pid: string) => void;
+  hidden: boolean;
 }
 
 export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY' | 'SECONDARY' }) {
   const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
+  const selectedService = useAppSelector(s=>s.fulfillment.selectedService!);
   const menu = useAppSelector(s => s.ws.menu!);
   const { enqueueSnackbar } = useSnackbar();
   const selectProductClassById = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
@@ -42,8 +54,8 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
   const selectedProduct = useAppSelector(selectSelectedProduct);
   const dispatch = useAppDispatch();
   const ProductsForCategoryFilteredAndSorted = useCallback((category: string) =>
-    ProductsForCategoryFilteredAndSortedFxnGen(menu, serviceDateTime)(category),
-    [menu, serviceDateTime]);
+    ProductsForCategoryFilteredAndSortedFxnGen(menu, serviceDateTime, selectedService)(category),
+    [menu, serviceDateTime, selectedService]);
 
 
   const onProductSelection = useCallback((returnToId: string, cid: string, pid: string) => {
@@ -53,7 +65,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
     if (productInstance) {
       const productClass = selectProductClassById(productInstance.product_id);
       if (productClass) {
-        const productCopy: WProduct = { p: CreateWCPProductFromPI(productClass, productInstance, menu.modifiers), m: structuredClone(menu!.product_instance_metadata[pid]) };
+        const productCopy: WProduct = { p: CreateWCPProductFromPI(productClass, productInstance, menu.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
         if ((productInstance.display_flags?.order.skip_customization) || !productHasSelectableModifiers) {
           const matchInCart = FindDuplicateInCart(cart, menu.modifiers, cid, productCopy);
@@ -86,10 +98,9 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
 
   return (
     <div>
-      {selectedProduct === null && (
-        productSet === 'PRIMARY' ?
-          <WShopForPrimaryProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
-          <WShopForSuppProductsStage onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />)}
+      { productSet === 'PRIMARY' ?
+          <WShopForPrimaryProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
+          <WShopForSuppProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />}
       {selectedProduct !== null && (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />)}
       {cart.length > 0 && <Separator />}
       <WOrderCart isProductEditDialogOpen={selectedProduct !== null} menu={menu!} setProductToEdit={setProductToEdit} />

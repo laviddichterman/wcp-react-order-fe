@@ -14,7 +14,7 @@ const initialState: MetricsDto = {
   timeToServiceTime: 0,
   // handled by the ListenerMiddleware
   timeToFirstProduct: 0,
-  timeToStage: Array(NUM_STAGES).fill(0),
+  timeToStage: Array(NUM_STAGES-1).fill(0),
   numTimeBumps: 0,
 }
 

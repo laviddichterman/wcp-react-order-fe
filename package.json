@@ -1,7 +1,7 @@
 {
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3000/",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "dependencies": {
     "@date-io/date-fns": "^2.14.0",
     "@emotion/react": "^11.10.0",
@@ -9,15 +9,16 @@
     "@hookform/error-message": "^2.0.0",
     "@hookform/resolvers": "^2.9.7",
     "@mui/icons-material": "^5.8.4",
-    "@mui/lab": "^5.0.0-alpha.93",
-    "@mui/x-date-pickers": "^5.0.0-beta.3",
+    "@mui/lab": "^5.0.0-alpha.94",
+    "@mui/x-date-pickers": "^5.0.0-beta.4",
     "@reduxjs/toolkit": "^1.8.3",
-    "@wcp/wcpshared": "^4.0.6",
+    "@wcp/wcpshared": "^4.0.12",
     "axios": "^0.27.2",
     "date-fns": "^2.29.1",
-    "framer-motion": "^6.5.1",
+    "framer-motion": "^7.0.0",
     "is-valid-domain": "^0.1.6",
     "libphonenumber-js": "^1.10.11",
+    "lodash": "^4.17.21",
     "mailcheck": "^1.1.1",
     "notistack": "^3.0.0-alpha.7",
     "numeral": "^2.0.6",
@@ -35,15 +36,15 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.3.0",
-    "@testing-library/user-event": "^14.4.1",
+    "@testing-library/user-event": "^14.4.3",
     "@types/jest": "^28.1.6",
     "@types/mailcheck": "^1.1.33",
-    "@types/node": "^18.6.3",
+    "@types/node": "^18.6.5",
     "@types/numeral": "^2.0.2",
     "@types/prop-types": "^15.7.5",
-    "@types/react": "^18.0.15",
+    "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@types/yup": "^0.29.14",
     "libphonenumber-metadata-generator": "^1.0.1",
@@ -58,7 +59,9 @@
     "eject": "react-scripts eject",
     "deploy:wmenu": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wmenu/build/",
     "deploy:worder": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/worder/build/",
-    "deploy:wcredit": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wcredit/build/"
+    "deploy:wcredit": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wcredit/build/",
+    "deploy:devwcp": "rsync -avzhe ssh --progress ./build/* lavid@wario.windycitypie.com:/var/www/wdev.windycitypie.com/"
+
   },
   "eslintConfig": {
     "extends": [

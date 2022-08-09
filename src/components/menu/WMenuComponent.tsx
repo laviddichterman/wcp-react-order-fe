@@ -8,6 +8,8 @@ import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu } fr
 import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectMenuCategoryId } from '../../app/store';
 import LoadingScreen from '../LoadingScreen';
 import { Separator } from '../styled/styled';
+import { cloneDeep } from 'lodash';
+
 
 
 function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; }) {
@@ -110,8 +112,8 @@ export function WMenuComponent() {
   const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s, currentTime));
   useEffect(() => {
     if (menu !== null && MENU_CATID) {
-      const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime);
-      const menuCopy = structuredClone(menu);
+      const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime, 1);
+      const menuCopy = cloneDeep(menu);
       FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime);
       setFilteredMenu(menuCopy);
       // const MENU_CATEGORIES = menuCopy.categories[MENU_CATID].children;

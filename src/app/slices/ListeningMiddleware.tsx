@@ -4,7 +4,7 @@ import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../stor
 import { SelectOptionsForServicesAndDate, SelectHasOperatingHoursForService } from '../store'
 import { SocketIoActions } from './SocketIoSlice';
 import { enqueueSnackbar } from 'notistack'
-import { DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
+import { CanThisBeOrderedAtThisTimeAndFulfillment, DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
 
 
 import { incrementTimeBumps, setCurrentTime, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
@@ -54,10 +54,11 @@ ListeningMiddleware.startListening({
     updateCartQuantity),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const originalState = api.getOriginalState();
+    const isConfirmed = originalState.payment.submitToWarioStatus === 'SUCCEEDED'; // omit because if it bumps it here, then the server will likely bump it too|| originalState.payment.submitToWarioStatus === 'PENDING';
     const previouslySelectedDate = originalState.fulfillment.selectedDate;
     const previouslySelectedTime = originalState.fulfillment.selectedTime;
     const selectedService = originalState.fulfillment.selectedService;
-    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null) {
+    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && !isConfirmed) {
       const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, { [String(selectedService)]: true });
       if (!newOptions.find(x => x.value === previouslySelectedTime)) {
         if (newOptions.length > 0) {
@@ -115,7 +116,7 @@ ListeningMiddleware.startListening({
       const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
-      if (customizerProduct !== null && (!DoesProductExistInMenu(MENU, customizerProduct.p) || !FilterWCPProduct(customizerProduct.p, catalog, MENU, menuTime, service))) {
+      if (customizerProduct !== null && !CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service)) {
         enqueueSnackbar(`${customizerProduct.m.name} as configured is no longer available. Please check availability and try again.`, { variant: 'warning' });
         api.dispatch(clearCustomizer());
       }

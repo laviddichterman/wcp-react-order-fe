@@ -28,13 +28,13 @@ export function WCheckoutStage() {
   const tipBasis = useAppSelector(SelectTipBasis);
   const balance = useAppSelector(SelectBalanceAfterCredits);
   const creditApplied = useAppSelector(SelectAmountCreditUsed);
-  const selectedTipAmount = useAppSelector(SelectTipValue);
+  //const selectedTipAmount = useAppSelector(SelectTipValue);
   const storeCreditValidation = useAppSelector(s => s.payment.storeCreditValidation);
   const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
 
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
-  const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
+  //const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const TwentyPercentTipValue = useMemo(()=>ComputeTipValue(TIP_SUGGESTION_20, tipBasis), [tipBasis]);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
@@ -161,6 +161,7 @@ export function WCheckoutStage() {
       <Separator sx={{ pb: 3 }} />
       <Typography variant='body1'>Please check your email for order confirmation.</Typography>
       <Grid container>
+        <>
         { // if paid with cc
           submitToWarioResponse?.result?.payment?.status === 'COMPLETED' &&
           submitToWarioResponse.result.payment.totalMoney?.amount &&
@@ -180,6 +181,7 @@ export function WCheckoutStage() {
         <Grid item xs={12} sx={{ py: 3 }}>
           <WCheckoutCart />
         </Grid>
+        </>
       </Grid>
     </Box>;
 }

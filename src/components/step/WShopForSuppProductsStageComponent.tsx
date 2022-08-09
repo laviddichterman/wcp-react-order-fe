@@ -2,22 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { ClickableProductDisplay } from '../WProductComponent';
-import { FilterEmptyCategories, IMenu, IProductInstance } from '@wcp/wcpshared';
+import { IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { scrollToElementOffsetAfterDelay } from '../../utils/shared';
-import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
+import { FilterEmptyCategoriesWrapper, WShopForProductsStageProps } from './WShopForProductsStageContainer';
 import { Separator, StageTitle } from '../styled/styled';
 
-
-const FilterEmptyCategoriesWrapper = function (menu: IMenu, order_time: Date | number) {
-  return FilterEmptyCategories(menu, function (x: any) { return x.order.hide; }, order_time);
-};
-
-export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection }: WShopForProductsStageProps) {
+export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
   const SUPP_CATID = useAppSelector(SelectSupplementalCategoryId);
   const menu = useAppSelector(s => s.ws.menu!);
+  const selectedService = useAppSelector(s=>s.fulfillment.selectedService);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -26,14 +22,14 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
 
   // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
-    if (serviceDateTime !== null) {
-      const extras = menu.categories[SUPP_CATID].children.length ? menu.categories[SUPP_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime)) : [];
+    if (serviceDateTime !== null && selectedService !== null) {
+      const extras = menu.categories[SUPP_CATID].children.length ? menu.categories[SUPP_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
       if (extras.length !== extrasCategories.length) {
         setActivePanel(0);
         setExtrasCategories(extras);
       }
     }
-  }, [SUPP_CATID, extrasCategories.length, serviceDateTime, menu]);
+  }, [SUPP_CATID, extrasCategories.length, serviceDateTime, menu, selectedService]);
 
   const toggleAccordion = useCallback((event: React.SyntheticEvent<Element, Event>, i: number) => {
     event.preventDefault();
@@ -51,7 +47,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
   }, [activePanel, isExpanded]);
 
   return (
-    <div>
+    <div hidden={hidden}>
       <StageTitle>Add small plates or beverages to your order.</StageTitle>
       <Separator sx={{ pb: 3 }} />
       {extrasCategories.map((catId, i) =>

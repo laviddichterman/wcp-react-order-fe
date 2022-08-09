@@ -1,7 +1,8 @@
 import { useAppSelector } from '../app/useHooks';
 import { useMemo } from 'react';
-import { OptionEnableState, WCPOption, DISABLE_REASON } from '@wcp/wcpshared';
+import { OptionEnableState, WCPOption, DISABLE_REASON, WFunctional } from '@wcp/wcpshared';
 import { Tooltip } from '@mui/material';
+import { getProductInstanceFunctionById } from '../app/slices/SocketIoSlice';
 
 interface ModifierOptionTooltipProps {
   enableState: OptionEnableState;
@@ -11,6 +12,10 @@ interface ModifierOptionTooltipProps {
 
 export function ModifierOptionTooltip({ enableState, option, children }: ModifierOptionTooltipProps) {
   const SERVICES = useAppSelector(s => s.ws.services!);
+  const selectedProduct = useAppSelector(s=>s.customizer.selectedProduct);
+  const catalog = useAppSelector(s=>s.ws.catalog!);
+  const pifGetter = useAppSelector(s=>(pifId : string)=> getProductInstanceFunctionById(s.ws.productInstanceFunctions, pifId));
+  
   const tooltipText = useMemo(() => {
     const displayName = option.mo.item.display_name;
     switch (enableState.enable) {
@@ -33,10 +38,15 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
       case DISABLE_REASON.DISABLED_MAXIMUM:
         return `Adding ${displayName} would exceed the maximum modifiers allowed of this type.`;
       case DISABLE_REASON.DISABLED_FUNCTION:
+        const PIF = pifGetter(enableState.functionId);
+        if (PIF && selectedProduct) {
+          const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(selectedProduct.p, PIF.expression, catalog);
+          return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalog.modifiers)}`;
+        }
         return `${displayName} is not available with the current combination of options.`;
     }
     //return displayName;
-  }, [enableState, option, SERVICES]);
+  }, [enableState, option, SERVICES, pifGetter, catalog, selectedProduct]);
   return enableState.enable === DISABLE_REASON.ENABLED ?
     <span>{children}</span> :
     <Tooltip arrow title={tooltipText}>

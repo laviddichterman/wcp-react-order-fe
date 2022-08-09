@@ -17,11 +17,7 @@ import { ErrorResponseOutput, SquareButtonCSS } from './styled/styled';
 import { SelectSquareAppId, SelectSquareLocationId } from '../app/store';
 import { fCurrency } from '../utils/numbers';
 
-const CabinTypography = styled(Typography)({
-  fontFamily: "Cabin",
-});
-
-const Title = styled(CabinTypography)({
+const Title = styled(Typography)({
   fontWeight: 500,
   fontSize: 19,
   textTransform: 'uppercase'
@@ -123,7 +119,7 @@ export function WStoreCreditPurchase() {
     }
   }, [isValid])
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
-    const formValues = structuredClone(getValues());
+    const formValues = {...getValues()};
     if (purchaseStatus !== 'PROCESSING') {
       setPurchaseStatus('PROCESSING');
       if (props.token) {
@@ -191,7 +187,7 @@ export function WStoreCreditPurchase() {
                   value={creditAmount.amount / 100}
                   onChange={(e) => setCreditAmount({ ...creditAmount, amount: e * 100 })}
                   parseFunction={parseFloat}
-                  inputProps={{ min: 2, max: 2000, sx: { fontFamily: "Cabin" } }} />
+                  inputProps={{ min: 2, max: 2000 }} />
               </Grid>
               <Grid item sx={{ p: 1 }} container xs={12}>
                 <Grid item xs={12}>
@@ -201,20 +197,18 @@ export function WStoreCreditPurchase() {
                   <RHFTextField
                     name="senderName"
                     autoComplete="full-name name"
-                    label="Sender's Name:"
+                    label="Sender's Name"
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
                 <Grid item sx={{ p: 1 }} xs={12}>
                   <RHFMailTextField
                     name="senderEmail"
                     autoComplete={"d"}
-                    label={!errors.senderName && senderName !== "" ? `${senderName}'s e-mail address:` : "Sender's e-mail address:"}
+                    label={!errors.senderName && senderName !== "" ? `${senderName}'s e-mail address` : "Sender's e-mail address"}
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
               </Grid>
@@ -226,20 +220,18 @@ export function WStoreCreditPurchase() {
                   <RHFTextField
                     name="recipientNameFirst"
                     autoComplete="given-name name"
-                    label={<CabinTypography>Recipient's first name:</CabinTypography>}
+                    label="Recipient's first name"
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
                 <Grid item sx={{ p: 1, pl: 1 }} xs={6}>
                   <RHFTextField
                     name="recipientNameFamily"
                     autoComplete="family-name"
-                    label={<CabinTypography>{!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s family name:` : "Recipient's family name:"}</CabinTypography>}
+                    label={!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s family name` : "Recipient's family name"}
                     fullWidth
                     readOnly={purchaseStatus === 'PROCESSING'}
-                    inputProps={{ sx: { fontFamily: "Cabin" } }}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -255,18 +247,16 @@ export function WStoreCreditPurchase() {
                       <RHFMailTextField
                         name="recipientEmail"
                         autoComplete=""
-                        label={<CabinTypography>{!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s e-mail address:` : "Recipient's e-mail address:"}</CabinTypography>}
+                        label={!errors.recipientNameFirst && recipientNameFirst !== "" ? `${recipientNameFirst}'s e-mail address` : "Recipient's e-mail address"}
                         fullWidth
                         readOnly={purchaseStatus === 'PROCESSING'}
-                        inputProps={{ sx: { fontFamily: "Cabin" } }}
                       />
                     </Grid>
                     <Grid item sx={{ p: 1 }} xs={12}>
                       <RHFTextField
                         name="recipientMessage"
                         multiline
-                        label={<CabinTypography>Additional message (optional):</CabinTypography>}
-                        inputProps={{ sx: { fontFamily: "Cabin" } }}
+                        label="Additional message (optional)"
                       />
                     </Grid>
                   </>

@@ -6,13 +6,13 @@ import { SelectMainCategoryId, SelectMainProductCategoryCount } from '../../app/
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
 import { Separator, StageTitle } from '../styled/styled';
 
-export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection }: WShopForProductsStageProps) {
+export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
   const MAIN_CATID = useAppSelector(SelectMainCategoryId);
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
   const menu = useAppSelector(s => s.ws.menu!);
 
   return (
-    <>
+    <div hidden={hidden}>
       <StageTitle>{numMainCategoryProducts > 0 ? "Click a pizza below or next to continue." : "Click a pizza below to get started."}</StageTitle>
       <Separator sx={{ pb: 3 }} />
       <Grid container>
@@ -31,6 +31,6 @@ export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSor
             />
           </Grid>)}
       </Grid>
-    </>
+    </div>
   );
 }

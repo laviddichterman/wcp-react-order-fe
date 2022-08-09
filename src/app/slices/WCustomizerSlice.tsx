@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata, ICatalog } from "@wcp/wcpshared";
+import { cloneDeep } from 'lodash';
 
 function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillment: number) {
   const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
@@ -40,13 +41,13 @@ export const WCustomizerSlice = createSlice({
       state.showAdvanced = action.payload.product.m.advanced_option_selected;
       state.cartId = action.payload.id;
       state.categoryId = action.payload.categoryId;
-      state.selectedProduct = structuredClone(action.payload.product);
+      state.selectedProduct = cloneDeep(action.payload.product);
     },
     customizeProduct(state, action: PayloadAction<{ product: WProduct, categoryId: string }>) {
       state.allowAdvanced = action.payload.product.m.advanced_option_eligible;
       state.showAdvanced = action.payload.product.m.advanced_option_selected;
       state.categoryId = action.payload.categoryId;
-      state.selectedProduct = structuredClone(action.payload.product);
+      state.selectedProduct = cloneDeep(action.payload.product);
     },
     setShowAdvanced(state, action: PayloadAction<boolean>) {
       state.showAdvanced = state.allowAdvanced && action.payload;
