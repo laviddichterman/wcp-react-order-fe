@@ -1,11 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WCPProduct, WCPProductGenerateMetadata, ICatalog } from "@wcp/wcpshared";
+import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WProductMetadata } from "@wcp/wcpshared";
 import { cloneDeep } from 'lodash';
 
-function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillment: number) {
-  const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
-  return WCPProductGenerateMetadata(product, productEntry, catalog, menu.modifiers, serviceTime, fulfillment);
-}
 
 export interface WCustomizerState {
   // allow the prompt to enable advanced options to appear (basically, this should be a memoized check on if there could be any advanced options)
@@ -68,7 +64,12 @@ export const WCustomizerSlice = createSlice({
       // todo: see if this can just be a shallow copy
       Object.assign(state, initialState);
     },
-    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, catalog: ICatalog, menu: IMenu, serviceTime: number, fulfillment: number }>) {
+    updateCustomizerProductMetadata(state, action: PayloadAction<WProductMetadata>) {
+      if (state.selectedProduct) {
+        state.selectedProduct.m = action.payload;
+      }
+    },
+    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, menu: IMenu }>) {
       if (state.selectedProduct !== null) {
         const newOptInstance = { ...action.payload.optionState, option_id: action.payload.mo.id };
         if (!Object.hasOwn(state.selectedProduct.p.modifiers, action.payload.mt.id)) {
@@ -92,21 +93,19 @@ export const WCustomizerSlice = createSlice({
             state.selectedProduct.p.modifiers[action.payload.mt.id][moIdX] = newOptInstance;
           }
         }
-        // regenerate metadata
-        state.selectedProduct.m = GenerateMetadata(action.payload.catalog, action.payload.menu, state.selectedProduct.p, action.payload.serviceTime, action.payload.fulfillment);
+        // regenerate metadata required after this call. handled by ListeningMiddleware
       }
 
     },
-    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string, catalog: ICatalog, menu: IMenu, serviceTime: number, fulfillment: number }>) {
+    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string }>) {
       if (state.selectedProduct !== null) {
         state.selectedProduct.p.modifiers[action.payload.mtId] = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, option_id: action.payload.moId }];
-        // regenerate metadata
-        state.selectedProduct.m = GenerateMetadata(action.payload.catalog, action.payload.menu, state.selectedProduct.p, action.payload.serviceTime, action.payload.fulfillment);
+        // regenerate metadata required after this call. handled by ListeningMiddleware
       }
     }
   }
 });
 
-export const { editCartEntry, customizeProduct, setShowAdvanced, clearCustomizer, setAdvancedModifierOption, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } = WCustomizerSlice.actions;
+export const { editCartEntry, customizeProduct, setShowAdvanced, clearCustomizer, setAdvancedModifierOption, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio, updateCustomizerProductMetadata } = WCustomizerSlice.actions;
 
 export default WCustomizerSlice.reducer;

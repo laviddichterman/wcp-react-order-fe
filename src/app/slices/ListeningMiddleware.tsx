@@ -1,19 +1,19 @@
 import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } from '@reduxjs/toolkit'
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
 import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../store'
-import { SelectOptionsForServicesAndDate, SelectHasOperatingHoursForService } from '../store'
+import { SelectOptionsForServicesAndDate } from '../store'
 import { SocketIoActions } from './SocketIoSlice';
 import { enqueueSnackbar } from 'notistack'
-import { CanThisBeOrderedAtThisTimeAndFulfillment, DoesProductExistInMenu, FilterWCPProduct, GenerateMenu, WDateUtils } from '@wcp/wcpshared';
+import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, ICatalog, IMenu, WCPProduct, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
 
 import { incrementTimeBumps, setCurrentTime, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
 import { STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL } from '../../config';
-import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity } from './WCartSlice';
+import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity, updateManyCartProducts } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
 import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
-import { clearCustomizer } from './WCustomizerSlice';
+import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
 
 
 export const ListeningMiddleware = createListenerMiddleware()
@@ -104,6 +104,24 @@ ListeningMiddleware.startListening({
   }
 });
 
+function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillment: number) {
+  const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
+  return WCPProductGenerateMetadata(product, productEntry, catalog, menu.modifiers, serviceTime, fulfillment);
+}
+
+ListeningMiddleware.startListening({
+  matcher: isAnyOf(updateModifierOptionStateToggleOrRadio, updateModifierOptionStateCheckbox),
+  effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
+    const s = api.getState(); 
+    const catalog = s.ws.catalog!;
+    const menu = s.ws.menu!;
+    const customizerProduct = s.customizer.selectedProduct!;
+    const service = api.getState().fulfillment.selectedService!;
+    const serviceTime = SelectServiceDateTime(api.getState().fulfillment)!;
+    api.dispatch(updateCustomizerProductMetadata(GenerateMetadata(catalog, menu, customizerProduct.p, serviceTime, service)));
+  }
+});
+
 ListeningMiddleware.startListening({
   matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
@@ -116,32 +134,50 @@ ListeningMiddleware.startListening({
       const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
-      if (customizerProduct !== null && !CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service)) {
-        enqueueSnackbar(`${customizerProduct.m.name} as configured is no longer available. Please check availability and try again.`, { variant: 'warning' });
-        api.dispatch(clearCustomizer());
+      const customizerCategoryId = api.getState().customizer.categoryId;
+      let regenerateCustomizerMetadata = false;
+      if (customizerProduct !== null) {
+        if (!CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service) ||
+          (customizerCategoryId !== null &&
+            (!Object.hasOwn(MENU.categories, customizerCategoryId) ||
+              MENU.categories[customizerCategoryId].serviceDisable.indexOf(service) !== -1))) {
+          enqueueSnackbar(`${customizerProduct.m.name} as configured is no longer available. Please check availability and try again.`, { variant: 'warning' });
+          api.dispatch(clearCustomizer());
+        }
+        else {
+          regenerateCustomizerMetadata = true;
+        }
       }
       const cart = getCart(api.getState().cart.cart);
       const deadCart = getDeadCart(api.getState().cart.deadCart);
-      const toKill = cart.filter(x => !DoesProductExistInMenu(MENU, x.product.p) || !FilterWCPProduct(x.product.p, catalog, MENU, menuTime, service))
-      const toRevive = deadCart.filter(x => DoesProductExistInMenu(MENU, x.product.p) && FilterWCPProduct(x.product.p, catalog, MENU, menuTime, service));
+      const toKill: CartEntry[] = [];
+      const toRefreshMetadata: CartEntry[] = [];
+      cart.forEach(x => !CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service) || !Object.hasOwn(MENU.categories, x.categoryId) || MENU.categories[x.categoryId].serviceDisable.indexOf(service) !== -1 ? toKill.push(x) : toRefreshMetadata.push(x));
+      const toRevive = deadCart.filter(x => CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service) && Object.hasOwn(MENU.categories, x.categoryId) && MENU.categories[x.categoryId].serviceDisable.indexOf(service) === -1);
 
       if (toKill.length > 0) {
         if (toKill.length < 4) {
-          toKill.forEach(x=>enqueueSnackbar(`${x.product.m.name} as configured is no longer available.`, { variant: 'warning' }));
+          toKill.forEach(x => enqueueSnackbar(`${x.product.m.name} as configured is no longer available.`, { variant: 'warning' }));
         } else {
-          enqueueSnackbar(`The ${toKill.map(x=>x.product.m.name).reduceRight((acc, prod, i) => i === 0 ? acc : (i === toKill.length-1 ? `${acc}, and ${prod}` : `${acc}, ${prod}`), "")} as configured are no longer available.`, { variant: 'warning' });
+          enqueueSnackbar(`The ${toKill.map(x => x.product.m.name).reduceRight((acc, prod, i) => i === 0 ? acc : (i === toKill.length - 1 ? `${acc}, and ${prod}` : `${acc}, ${prod}`), "")} as configured are no longer available.`, { variant: 'warning' });
         }
         api.dispatch(killAllCartEntries(toKill));
       }
+      api.dispatch(SocketIoActions.setMenu(MENU));
+      if (regenerateCustomizerMetadata) {
+        api.dispatch(updateCustomizerProductMetadata(GenerateMetadata(catalog, MENU, customizerProduct!.p, menuTime, service)));
+      }
+      if (toRefreshMetadata.length > 0) {
+        api.dispatch(updateManyCartProducts(toRefreshMetadata.map(x=>({id: x.id, product: {...x.product, m: GenerateMetadata(catalog, MENU, x.product.p, menuTime, service)}}))));
+      }
       if (toRevive.length > 0) {
         if (toRevive.length < 4) {
-          toRevive.forEach(x=>enqueueSnackbar(`${x.product.m.name} as configured is once again available and has been returned to your order.`, { variant: 'warning' }));
+          toRevive.forEach(x => enqueueSnackbar(`${x.product.m.name} as configured is once again available and has been returned to your order.`, { variant: 'warning' }));
         } else {
-          enqueueSnackbar(`The ${toRevive.map(x=>x.product.m.name).reduceRight((acc, prod, i) => i === 0 ? acc : (i === toRevive.length-1 ? `${acc}, and ${prod}` : `${acc}, ${prod}`), "")} as configured are once again available and returned to your order.`, { variant: 'warning' });
+          enqueueSnackbar(`The ${toRevive.map(x => x.product.m.name).reduceRight((acc, prod, i) => i === 0 ? acc : (i === toRevive.length - 1 ? `${acc}, and ${prod}` : `${acc}, ${prod}`), "")} as configured are once again available and returned to your order.`, { variant: 'warning' });
         }
-        api.dispatch(reviveAllCartEntries(toRevive));
+        api.dispatch(reviveAllCartEntries(toRevive.map(x=>({...x, product: {...x.product, m: GenerateMetadata(catalog, MENU, x.product.p, menuTime, service)}}))));
       }
-      api.dispatch(SocketIoActions.setMenu(MENU));
     }
     //api.getState().fulfillment 
   }

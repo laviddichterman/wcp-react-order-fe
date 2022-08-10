@@ -101,9 +101,9 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
       { productSet === 'PRIMARY' ?
           <WShopForPrimaryProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
           <WShopForSuppProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />}
-      {selectedProduct !== null && (<WProductCustomizerComponent menu={menu!} scrollToWhenDone={scrollToOnReturn} />)}
+      {selectedProduct !== null && (<WProductCustomizerComponent scrollToWhenDone={scrollToOnReturn} />)}
       {cart.length > 0 && <Separator />}
-      <WOrderCart isProductEditDialogOpen={selectedProduct !== null} menu={menu!} setProductToEdit={setProductToEdit} />
+      <WOrderCart isProductEditDialogOpen={selectedProduct !== null} setProductToEdit={setProductToEdit} />
       {selectedProduct === null && <Navigation canBack canNext={numMainCategoryProducts > 0} handleBack={() => dispatch(backStage())} handleNext={() => dispatch(nextStage())} />}
     </div>
   );

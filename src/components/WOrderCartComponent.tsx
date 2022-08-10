@@ -16,13 +16,13 @@ const RemoveFromCart = styled(Clear)(()=>({
 }))
 
 interface IOrderCart {
-  menu: IMenu;
   isProductEditDialogOpen: boolean;
   setProductToEdit: (entry: CartEntry) => void;
 }
 
-export function WOrderCart({ menu, isProductEditDialogOpen, setProductToEdit }: IOrderCart) {
+export function WOrderCart({ isProductEditDialogOpen, setProductToEdit }: IOrderCart) {
   const dispatch = useAppDispatch();
+  const menu = useAppSelector(s => s.ws.menu!);
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const selectSelectableModifiersForEntry = useAppSelector(s => (id: string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
   const productHasSelectableModifiers = useCallback((id: string, menu: IMenu) => Object.values(selectSelectableModifiersForEntry(id, menu)).length > 0, [selectSelectableModifiersForEntry]);

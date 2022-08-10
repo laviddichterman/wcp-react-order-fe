@@ -25,7 +25,7 @@ const WCartSlice = createSlice({
   name: 'cart',
   initialState: initialState,
   reducers: {
-    addToCart(state, action: PayloadAction<{ categoryId: string, product: WProduct } >) {
+    addToCart(state, action: PayloadAction<{ categoryId: string, product: WProduct }>) {
       // PRECONDITION: we've already checked for duplicates
       const id = Number(state.indexCounter++).toString(10);
       // should not need a deep copy here per customizer working on mutable data, but it might be not how redux works and this needs to be a deep copy
@@ -42,7 +42,10 @@ const WCartSlice = createSlice({
     },
     updateCartProduct(state, action: PayloadAction<{ id: string, product: WProduct }>) {
       // PRECONDITION: we've already checked for duplicates in other products
-      WCartAdapter.updateOne(state.cart, {id: action.payload.id, changes: { product: action.payload.product }});
+      WCartAdapter.updateOne(state.cart, { id: action.payload.id, changes: { product: action.payload.product } });
+    },
+    updateManyCartProducts(state, action: PayloadAction<{ id: string, product: WProduct }[]>) {
+      WCartAdapter.updateMany(state.cart, action.payload.map(x => ({ id: x.id, changes: { product: x.product } })));
     },
     lockCartEntry(state, action: PayloadAction<string>) {
       WCartAdapter.updateOne(state.cart, { id: action.payload, changes: { isLocked: true } });
@@ -52,17 +55,26 @@ const WCartSlice = createSlice({
     },
     killAllCartEntries(state, action: PayloadAction<CartEntry[]>) {
       DeadCartAdapter.addMany(state.deadCart, action.payload);
-      WCartAdapter.removeMany(state.cart, action.payload.map(x=>x.id));
+      WCartAdapter.removeMany(state.cart, action.payload.map(x => x.id));
     },
     reviveAllCartEntries(state, action: PayloadAction<CartEntry[]>) {
-      DeadCartAdapter.removeMany(state.deadCart, action.payload.map(x=>x.id));
+      DeadCartAdapter.removeMany(state.deadCart, action.payload.map(x => x.id));
       // unlock all entries before adding them
-      WCartAdapter.addMany(state.cart, action.payload.map(x=>({...x, isLocked: false})));
+      WCartAdapter.addMany(state.cart, action.payload.map(x => ({ ...x, isLocked: false })));
     }
   }
 });
 
-export const { addToCart, removeFromCart, lockCartEntry, unlockCartEntry, updateCartQuantity, updateCartProduct, killAllCartEntries, reviveAllCartEntries } = WCartSlice.actions;
+export const {
+  addToCart,
+  removeFromCart,
+  lockCartEntry,
+  unlockCartEntry,
+  updateCartQuantity,
+  updateCartProduct,
+  updateManyCartProducts,
+  killAllCartEntries,
+  reviveAllCartEntries } = WCartSlice.actions;
 
 /**
  * Looks through the cart for a duplicate product 
@@ -73,7 +85,7 @@ export const { addToCart, removeFromCart, lockCartEntry, unlockCartEntry, update
  * @param skipId the cart entry ID to ignore in a search for a match
  * @returns the CartEntry if a match is found for the product attempting to be added, otherwise null
  */
- export const FindDuplicateInCart = (cart : CartEntry[], menuModifiers : MenuModifiers, categoryId : string, product : WProduct, skipId : string | null = null) => {
+export const FindDuplicateInCart = (cart: CartEntry[], menuModifiers: MenuModifiers, categoryId: string, product: WProduct, skipId: string | null = null) => {
   for (let i = 0; i < cart.length; ++i) {
     const entry = cart[i];
     if (categoryId === entry.categoryId) {
