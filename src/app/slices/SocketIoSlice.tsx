@@ -9,7 +9,7 @@ export const IOptionsAdapter = createEntityAdapter<IOption>({selectId: entry => 
 export const ICategoriesAdapter = createEntityAdapter<ICategory>({selectId: entry => entry.id});
 
 export interface SocketIoState { 
-  serverTime: number | null;
+  serverTime: { time: string, tz: string } | null; // ISO formatted string
   catalog: ICatalog | null;
   modifiers: EntityState<IOptionType>;
   modifierOptions: EntityState<IOption>;
@@ -55,7 +55,7 @@ const SocketIoSlice = createSlice({
     setConnected(state) {
       state.status = 'CONNECTED';
     },
-    receiveServerTime(state, action : PayloadAction<number>) {
+    receiveServerTime(state, action : PayloadAction<{ time: string, tz: string }>) {
       state.serverTime = action.payload;
     },
     receiveCatalog(state, action : PayloadAction<ICatalog>) {

@@ -34,7 +34,7 @@ import { CartEntry,
   ComputeSubtotalAfterDiscount,
   ComputeSubtotalPreDiscount} from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
-import { addDays, startOfDay } from "date-fns";
+import { addDays, formatISO, startOfDay } from "date-fns";
 
 export const RootReducer = combineReducers({
   fulfillment: WFulfillmentReducer,
@@ -204,42 +204,42 @@ export const SelectHasOperatingHoursForService = createSelector(
 );
 
 export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
-  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.leadtime!,
-  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.blockedOff!,
-  (s: RootState, _: Date | number, __: ServicesEnableMap, ___: number) => s.ws.settings!,
-  (_: RootState, __: Date | number, ___: ServicesEnableMap, mainProductCount: number) => mainProductCount,
-  (_: RootState, selectedDate: Date | number, __: ServicesEnableMap) => selectedDate,
-  (_: RootState, __: Date | number, serviceSelection: ServicesEnableMap) => serviceSelection,
+  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.leadtime!,
+  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.blockedOff!,
+  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.settings!,
+  (_: RootState, __: string, ___: ServicesEnableMap, mainProductCount: number) => mainProductCount,
+  (_: RootState, selectedDate: string, __: ServicesEnableMap) => selectedDate,
+  (_: RootState, __: string, serviceSelection: ServicesEnableMap) => serviceSelection,
   (leadtime, blockedOff, settings, mainProductCount, selectedDate, serviceSelection) => 
     WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtime, selectedDate, serviceSelection, {cart_based_lead_time: 0, size: Math.max(mainProductCount, 1)})
 );
 
 export const SelectAvailabilityForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: Date | number, serviceSelection: ServicesEnableMap) => 
+  (s: RootState, selectedDate: string, serviceSelection: ServicesEnableMap) => 
     (mainProductCount : number) => 
       SelectAvailabilityForServicesDateAndProductCount(s, selectedDate, serviceSelection, mainProductCount),
-  (s: RootState, _: Date | number, __: ServicesEnableMap) => SelectMainProductCategoryCount(s),
+  (s: RootState, _: string, __: ServicesEnableMap) => SelectMainProductCategoryCount(s),
   (selector, mainProductCount) => selector(mainProductCount)
 );
 
 export const SelectOptionsForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: Date | number, serviceSelection: ServicesEnableMap) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
-  (s: RootState, _: Date | number, __: ServicesEnableMap) => s.metrics.currentTime!,
-  (_: RootState, selectedDate: Date | number, __: ServicesEnableMap) => selectedDate,
-  (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, currentTime)
+  (s: RootState, selectedDate: string, serviceSelection: ServicesEnableMap) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
+  (s: RootState, _: string, __: ServicesEnableMap) => s.metrics.currentTime!,
+  (_: RootState, selectedDate: string, __: ServicesEnableMap) => selectedDate,
+  (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, formatISO(currentTime))
 )
 
 // TODO: move to WCPShared
 export const GetNextAvailableServiceDateTimeForService = createSelector(
   (s: RootState, service: number, _: Date | number) => SelectHasOperatingHoursForService(s, service),
-  (s: RootState, service: number, _: Date | number) => (testDate: Date|number) => SelectOptionsForServicesAndDate(s, testDate, { [service]: true }).filter(x=>x.disabled),
-  (_: RootState, __: number, now: Date|number) => now,
+  (s: RootState, service: number, _: Date | number) => (testDate: string) => SelectOptionsForServicesAndDate(s, testDate, { [service]: true }).filter(x=>x.disabled),
+  (_: RootState, __: number, now: Date | number) => now,
   (operatingHoursForService, selectOptionsFunction, now) => {
-    const today = startOfDay(now);
     if (operatingHoursForService) {
+      const today = startOfDay(now);
       for (let i = 0; i < 7; ++i) {
-        const dateAttempted = addDays(today, i);
-        const options = selectOptionsFunction(addDays(today, i));
+        const dateAttempted = formatISO(addDays(today, i), { representation: 'date' });
+        const options = selectOptionsFunction(dateAttempted);
         if (options.length > 0) {
           return WDateUtils.ComputeServiceDateTime(dateAttempted, options[0].value);
       }
@@ -251,17 +251,17 @@ export const GetNextAvailableServiceDateTimeForService = createSelector(
 // TODO: move to WCPShared
 // Note: this falls back to now if there's really nothing for the selected service or for dine-in
 export const GetNextAvailableServiceDateTime = createSelector(
-  (s: RootState, now: Date|number) => (service : number) => GetNextAvailableServiceDateTimeForService(s, service, now),
-  (s: RootState, _: Date|number) => s.fulfillment.selectedService,
-  (_: RootState, now: Date|number) => now,
-  (nextAvailableForServiceFunction, selectedService, now) => {
+  (s: RootState) => (service : number) => GetNextAvailableServiceDateTimeForService(s, service, s.metrics.currentTime),
+  (s: RootState) => s.fulfillment.selectedService,
+  (s: RootState) => s.metrics.currentTime,
+  (nextAvailableForServiceFunction, selectedService, currentTime) => {
   if (selectedService !== null) {
     const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
     if (nextAvailableForSelectedService) {
       return nextAvailableForSelectedService;
     }
   }
-  return nextAvailableForServiceFunction(1) ?? now
+  return nextAvailableForServiceFunction(1) ?? currentTime;
 });
 
 export const SelectAmountCreditUsed = createSelector(

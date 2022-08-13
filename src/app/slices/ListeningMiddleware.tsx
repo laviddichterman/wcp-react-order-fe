@@ -7,13 +7,15 @@ import { enqueueSnackbar } from 'notistack'
 import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, ICatalog, IMenu, WCPProduct, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
 
-import { incrementTimeBumps, setCurrentTime, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
+import { incrementTimeBumps, setCurrentTimes, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
 import { STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity, updateManyCartProducts } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
 import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
+import { parseISO } from 'date-fns';
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 
 export const ListeningMiddleware = createListenerMiddleware()
@@ -24,26 +26,38 @@ export const startAppListening = ListeningMiddleware.startListening as AppStartL
 
 export const addAppListener = addListener as TypedAddListener<RootState, AppDispatch>;
 
-let interval;
+//let interval;
+export interface CurrentTimes {
+  loadTime: number;
+  currentLocalTime: number;
+}
+const computeCurrentTimes = (timeString: string) => { 
+  return { loadTime: parseISO(timeString).valueOf(),
+    currentLocalTime: Date.now()
+  }
+}
 
 ListeningMiddleware.startListening({
   actionCreator: SocketIoActions.receiveServerTime,// && previousState.ws.serverTime === null,
   effect: (action: ReturnType<typeof SocketIoActions.receiveServerTime>, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     if (api.getOriginalState().metrics.pageLoadTime === 0) {
-      api.dispatch(setPageLoadTime(action.payload));
-      api.dispatch(setCurrentTime(action.payload));
-      api.dispatch(setPageLoadTimeLocal(Date.now()));
+      const serverTimeString = action.payload.time;
+
+      const dt = parseISO(action.payload.time);//, { zone: action.payload.tz });
+      const localDate = new Date();
+      api.dispatch(setPageLoadTime(dt.valueOf()));
+      api.dispatch(setPageLoadTimeLocal(localDate.valueOf()));
       const checkTiming = () => {
-        api.dispatch(setCurrentTime(Date.now()));
+        api.dispatch(setCurrentTimes(computeCurrentTimes(serverTimeString)));
       }
-      interval = setInterval(checkTiming, TIMING_POLLING_INTERVAL);
+      setInterval(checkTiming, TIMING_POLLING_INTERVAL);
     }
     //return () => clearInterval(interval);    
   }
 });
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(setCurrentTime,
+  matcher: isAnyOf(setCurrentTimes,
     setService,
     SocketIoActions.receiveBlockedOff,
     SocketIoActions.receiveSettings,
@@ -128,9 +142,8 @@ ListeningMiddleware.startListening({
     const catalog = api.getState().ws.catalog;
     const currentTime = api.getState().metrics.currentTime;
     if (catalog !== null && currentTime !== 0) {
-      const currentTime = api.getState().metrics.currentTime;
       const service = api.getState().fulfillment.selectedService ?? 1;
-      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState(), currentTime);
+      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState());
       const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;

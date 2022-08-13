@@ -108,8 +108,7 @@ export function WMenuComponent() {
   const menu = useAppSelector(s => s.ws.menu);
   const [filteredMenu, setFilteredMenu] = useState<IMenu | null>(null);
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
-  const currentTime = useAppSelector(s => s.metrics.currentTime);
-  const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s, currentTime));
+  const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s));
   useEffect(() => {
     if (menu !== null && MENU_CATID) {
       const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime, 1);

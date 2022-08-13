@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { SnackbarProvider } from 'notistack';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 
 import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
 import { setUserAgent } from './app/slices/WMetricsSlice';
@@ -13,6 +14,7 @@ import { scrollToIdOffsetAfterDelay } from './utils/shared';
 // import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
 // import { WMenuComponent } from './components/menu/WMenuComponent';
 import { WOrderingComponent } from './components/WOrderingComponent';
+import { CurrentDateAndTzDateFnsUtils } from './utils/date-fns-tz-utils';
 
 const theme = createTheme(themeOptions);
 
@@ -24,7 +26,6 @@ const theme = createTheme(themeOptions);
  * don't let people select a tip if they're not paying due to special instructions or whatever
  * fix the X scrolling in the checkout cart (hide some shit, make it smaller)
 \ * checkout cart formatting and handle the wario payment being processed
- * prevent selecting a service for which the selected options don't allow
  */
 
 
@@ -32,6 +33,8 @@ const App = () => {
   const dispatch = useAppDispatch();
   const socketIoState = useAppSelector((s) => s.ws.status);
   const isSocketDataLoaded = useAppSelector(s => IsSocketDataLoaded(s.ws));
+  const currentTime = useAppSelector(s => s.metrics.currentTime);
+  const DateAdapter = useMemo(() => CurrentDateAndTzDateFnsUtils(currentTime), [currentTime]);
   useEffect(() => {
     if (socketIoState === 'NONE') {
       dispatch(SocketIoActions.startConnection());
@@ -40,20 +43,25 @@ const App = () => {
   }, [socketIoState, dispatch]);
 
   useLayoutEffect(() => {
-    if (isSocketDataLoaded) { 
+    if (isSocketDataLoaded && currentTime !== 0) {
       scrollToIdOffsetAfterDelay('WARIO_order', 100, -100);
     }
   }, [isSocketDataLoaded])
   return (
     <ScopedCssBaseline>
       <ThemeProvider theme={theme}>
-        <SnackbarProvider style={{zIndex: 2400}} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
-          <div id="WARIO_order">
-            {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
-            {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WStoreCreditPurchase />} */}
-            {/* {!isSocketDataLoaded ? <LoadingScreen /> : <WMenuComponent />} */}
-            {!isSocketDataLoaded ? <LoadingScreen /> : <WOrderingComponent />}
-          </div>
+        <SnackbarProvider style={{ zIndex: 999999 }} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
+          {!isSocketDataLoaded || currentTime === 0 ?
+            <LoadingScreen /> :
+            <LocalizationProvider dateAdapter={DateAdapter}>
+              <div id="WARIO_order">
+                {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
+                {/* { <WStoreCreditPurchase />} */}
+                {/* {<WMenuComponent />} */}
+                {<WOrderingComponent />}
+              </div>
+            </LocalizationProvider>
+          }
         </SnackbarProvider>
       </ThemeProvider>
     </ScopedCssBaseline>

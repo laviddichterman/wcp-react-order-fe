@@ -51,6 +51,7 @@ export function WOrderingComponent() {
   const squareLocationId = useAppSelector(s => s.ws.settings!.config.SQUARE_LOCATION as string);
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
+  const currentTime = useAppSelector(s => s.metrics.currentTime);
   const theme = useTheme();
   const useStepper = useMediaQuery(theme.breakpoints.up('md'));
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
@@ -70,24 +71,24 @@ export function WOrderingComponent() {
   }
 
   return (
-        <PaymentForm
-          applicationId={squareApplicationId}
-          locationId={squareLocationId}
-          createPaymentRequest={createPaymentRequest}
-          cardTokenizeResponseReceived={cardTokenizeResponseReceived}
-        >
-          {useStepper ?
-            <Stepper sx={{ px: 1, pt: 2, mx: 'auto' }} activeStep={stage} >
-              {STAGES.map((stg, i) => (
-                <Step key={i} id={`WARIO_step_${i}`} completed={stage > i || submitToWarioStatus === 'SUCCEEDED'}>
-                  <StepLabel><StepperTitle>{stg.stepperTitle}</StepperTitle></StepLabel>
-                </Step>))}
-            </Stepper> : <></>
-          }
-          <Box sx={{ mx: 'auto', pt: 1 }}>
-            {STAGES[stage].content}
-          </Box>
-        </PaymentForm>
+    <PaymentForm
+      applicationId={squareApplicationId}
+      locationId={squareLocationId}
+      createPaymentRequest={createPaymentRequest}
+      cardTokenizeResponseReceived={cardTokenizeResponseReceived}
+    >
+      {useStepper ?
+        <Stepper sx={{ px: 1, pt: 2, mx: 'auto' }} activeStep={stage} >
+          {STAGES.map((stg, i) => (
+            <Step key={i} id={`WARIO_step_${i}`} completed={stage > i || submitToWarioStatus === 'SUCCEEDED'}>
+              <StepLabel><StepperTitle>{stg.stepperTitle}</StepperTitle></StepLabel>
+            </Step>))}
+        </Stepper> : <></>
+      }
+      <Box sx={{ mx: 'auto', pt: 1 }}>
+        {STAGES[stage].content}
+      </Box>
+    </PaymentForm>
 
   );
 }

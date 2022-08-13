@@ -75,7 +75,7 @@ const WFulfillmentSlice = createSlice({
         state.selectedService = action.payload;
       }
     },
-    setDate(state, action: PayloadAction<number | null>) {
+    setDate(state, action: PayloadAction<string | null>) {
       state.selectedDate = action.payload;
       state.hasSelectedDateExpired = state.hasSelectedDateExpired && action.payload === null;
     },
@@ -125,7 +125,7 @@ const WFulfillmentSlice = createSlice({
 export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedDate,
   (s: WFulfillmentState) => s.selectedTime,
-  (selectedDate: number | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime(selectedDate, selectedTime) : null
+  (selectedDate: string | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime(selectedDate, selectedTime) : null
 );
 
 export const SelectServiceTimeDisplayString = createSelector(
