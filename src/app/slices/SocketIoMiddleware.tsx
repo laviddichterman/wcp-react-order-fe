@@ -1,6 +1,4 @@
 import { ICatalog, IWSettings, JSFEBlockedOff } from '@wcp/wcpshared';
-import { formatISO, formatRFC3339, parseISO } from 'date-fns';
-import { toDate } from 'date-fns-tz';
 import { Middleware } from 'redux'
 import { io, Socket } from "socket.io-client";
 import { SOCKETIO, HOST_API } from '../../config';
@@ -27,7 +25,6 @@ const SocketIoMiddleware: Middleware<{}, RootState> = store => {
         store.dispatch(SocketIoActions.receiveServices(data));
       });
       socket.on("WCP_SERVER_TIME", (data: { time: string; tz: string; }) => {
-        const parsedDate = parseISO(data.time);
         store.dispatch(SocketIoActions.receiveServerTime(data));
       });
       socket.on("WCP_BLOCKED_OFF", (data: JSFEBlockedOff) => {

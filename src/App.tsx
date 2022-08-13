@@ -46,7 +46,7 @@ const App = () => {
     if (isSocketDataLoaded && currentTime !== 0) {
       scrollToIdOffsetAfterDelay('WARIO_order', 100, -100);
     }
-  }, [isSocketDataLoaded])
+  }, [isSocketDataLoaded, currentTime])
   return (
     <ScopedCssBaseline>
       <ThemeProvider theme={theme}>
