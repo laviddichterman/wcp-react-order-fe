@@ -20,13 +20,10 @@ export const SOCKETIO = {
   ns: process.env.REACT_APP_SOCKETIO_NS,
 }
 
-export const ENABLE_DINE_IN = process.env.REACT_APP_ENABLE_DINE_IN;
-export const ENABLE_DINE_IN_PREPAYMENT = process.env.REACT_APP_ENABLE_DINE_IN_PREPAYMENT;
 export const TIP_PREAMBLE = "The Windy City Pie family is working hard to serve you, safely. All gratuity is shared with the entire staff. Everyone, from our team that makes the house-made dough, to the staff that handles your order appreciates your support!";
 export const MUI_LICENSE = process.env.REACT_APP_MUI_KEY;
 export const DELIVERY_SERVICE = 2;
 export const DINEIN_SERVICE = 1;
-export const DELIVERY_FEE = 5;
 
 // var WARIO_ENDPOINT = "https://wario.windycitypie.com/";
 // //var WARIO_ENDPOINT = "http://localhost:4001/";
