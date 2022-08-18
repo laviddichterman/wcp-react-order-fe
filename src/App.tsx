@@ -43,10 +43,10 @@ const App = () => {
   }, [socketIoState, dispatch]);
 
   useLayoutEffect(() => {
-    if (isSocketDataLoaded && currentTime !== 0) {
+    if (isSocketDataLoaded) {
       scrollToIdOffsetAfterDelay('WARIO_order', 100, -100);
     }
-  }, [isSocketDataLoaded, currentTime])
+  }, [isSocketDataLoaded])
   return (
     <ScopedCssBaseline>
       <ThemeProvider theme={theme}>
