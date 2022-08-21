@@ -8,6 +8,7 @@ import { getCart } from '../app/slices/WCartSlice';
 import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
 import { ProductPrice, ProductTitle } from './styled/styled';
 
+// TODO: group by category, sort by category ID ordinal
 
 export function WCheckoutCart() {
   const menu = useAppSelector(s => s.ws.menu);

@@ -1,13 +1,12 @@
 import React, { useCallback, useMemo } from 'react';
-import { ServicesEnableMap, WDateUtils } from '@wcp/wcpshared';
+import { FulfillmentType, WDateUtils } from '@wcp/wcpshared';
 import { Autocomplete, Grid, Checkbox, Radio, RadioGroup, TextField, FormControlLabel } from '@mui/material';
 import { StaticDatePicker } from '@mui/x-date-pickers';
-import { isValid, add, getTime, formatISO, parseISO, startOfDay } from 'date-fns';
-import { getTermsForService } from '../common';
+import { isValid, add, formatISO, parseISO, startOfDay } from 'date-fns';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
-import { SelectHasOperatingHoursForService, SelectMaxPartySize, SelectOptionsForServicesAndDate } from '../../app/store';
+import { SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
 import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
@@ -16,16 +15,15 @@ import { Separator, StageTitle } from '../styled/styled';
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();
-  const MAX_PARTY_SIZE = useAppSelector(SelectMaxPartySize);
-  const services = useAppSelector(s => s.ws.services!);
+  const fulfillments = useAppSelector(s => s.ws.fulfillments!);
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: string, orderTime: number) => true, []);
-  const HasOperatingHoursForService = useAppSelector(s => (serviceNumber: number) => SelectHasOperatingHoursForService(s, serviceNumber));
-  const OptionsForServicesAndDate = useAppSelector(s => (selectedDate: string, selectedServices: ServicesEnableMap) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
+  const HasOperatingHoursForService = useAppSelector(s => (fulfillmentId: string) => SelectHasOperatingHoursForService(s, fulfillmentId));
+  const OptionsForServicesAndDate = useAppSelector(s => (selectedDate: string, selectedServices: string[]) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
   const currentTime = useAppSelector(s=>s.metrics.currentTime);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDate = useAppSelector(s => s.fulfillment.selectedDate);
   const serviceTime = useAppSelector(s => s.fulfillment.selectedTime);
-  const serviceTerms = useMemo(() => selectedService !== null ? getTermsForService(selectedService) : [], [selectedService]);
+  const serviceTerms = useMemo(() => selectedService !== null ? fulfillments[selectedService].terms : [], [fulfillments, selectedService]);
   const hasAgreedToTerms = useAppSelector(s => s.fulfillment.hasAgreedToTerms);
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
@@ -34,40 +32,33 @@ export default function WFulfillmentStageComponent() {
   const valid = useMemo(() => {
     return selectedService !== null && serviceDate !== null && serviceTime !== null &&
       (serviceTerms.length === 0 || hasAgreedToTerms) &&
-      (selectedService !== DINEIN_SERVICE || dineInInfo !== null) &&
-      (selectedService !== DELIVERY_SERVICE || deliveryInfo !== null);
+      (fulfillments[selectedService].service !== FulfillmentType.DineIn || dineInInfo !== null) &&
+      (fulfillments[selectedService].service !== FulfillmentType.Delivery || deliveryInfo !== null);
   }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
 
   const OptionsForDate = useCallback((d: string | null) => {
     if (selectedService !== null && d !== null) {
       const parsedDate = parseISO(d);
       if (isValid(parsedDate)) {
-        return OptionsForServicesAndDate(d, { [String(selectedService)]: true });
+        return OptionsForServicesAndDate(d, [selectedService]);
       }
     }
     return [];
   }, [OptionsForServicesAndDate, selectedService]);
 
-  const canSelectService = useCallback((service: number) => true, []);
+  const canSelectService = useCallback((fId: string) => true, []);
 
   const TimeOptions = useMemo(() => serviceDate !== null ? OptionsForDate(serviceDate).reduce((acc: { [index: number]: { value: number, disabled: boolean } }, v) => ({ ...acc, [v.value]: v }), {}) : {}, [OptionsForDate, serviceDate]);
 
   const ServiceOptions = useMemo(() => {
-    return Object.entries(services).filter(([serviceNum, _]) =>
-      HasOperatingHoursForService(parseInt(serviceNum, 10))).map(([serviceNum, serviceName]) => {
-        const parsedNum = parseInt(serviceNum, 10);
-        return { label: serviceName, value: parsedNum, disabled: !canSelectService(parsedNum) };
+    return Object.values(fulfillments).filter((fulfillment) =>
+      HasOperatingHoursForService(fulfillment.id)).map((fulfillment) => {
+        return { label: fulfillment.displayName, value: fulfillment.id, disabled: !canSelectService(fulfillment.id) };
       });
-  }, [services, canSelectService, HasOperatingHoursForService]);
-  if (services === null || ServiceOptions.length === 0) {
-    return null;
-  }
+  }, [fulfillments, canSelectService, HasOperatingHoursForService]);
 
   const onChangeServiceSelection = (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
-    const serviceNum = parseInt(value, 10);
-    if (Number.isInteger(serviceNum)) {
-      dispatch(setService(serviceNum));
-    }
+    dispatch(setService(value));
   }
   const onSetHasAgreedToTerms = (checked: boolean) => {
     dispatch(setHasAgreedToTerms(checked));
@@ -163,7 +154,7 @@ export default function WFulfillmentStageComponent() {
             renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
           />
         </Grid>
-        {(selectedService === DINEIN_SERVICE && serviceDate !== null) &&
+        {(selectedService !== null && fulfillments[selectedService].service === FulfillmentType.DineIn && serviceDate !== null) &&
           (<Grid item xs={12} sx={{ pb: 5 }}>
             <Autocomplete
               sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
@@ -172,7 +163,7 @@ export default function WFulfillmentStageComponent() {
               disableClearable
               disabled={serviceTime === null}
               className="guest-count"
-              options={[...Array(MAX_PARTY_SIZE - 1)].map((_, i) => i + 1)}
+              options={[...Array((fulfillments[selectedService].maxGuests ?? 50) - 1)].map((_, i) => i + 1)}
               getOptionDisabled={o => serviceTime === null || !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
               getOptionLabel={o => String(o)}
               // @ts-ignore
@@ -182,7 +173,7 @@ export default function WFulfillmentStageComponent() {
             />
           </Grid>)}
       </Grid>
-      {(selectedService === DELIVERY_SERVICE && serviceDate !== null) &&
+      {(selectedService !== null && fulfillments[selectedService].service === FulfillmentType.Delivery && serviceDate !== null) &&
         <Grid item xs={12}>
           <DeliveryInfoForm />
         </Grid>}

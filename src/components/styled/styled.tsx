@@ -191,19 +191,6 @@ export const AdornedSxProps = {
   }
 };
 
-export const RootStyle = styled('div')(({ theme, sx }) => ({
-  right: 0,
-  bottom: 0,
-  zIndex: 99999,
-  width: '100%',
-  height: '100%',
-  position: 'fixed',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  backgroundColor: theme.palette.background.default,
-}));
-
 export const OkResponseOutput = styled('div')(() => ({
   margin: '2em .5em 1em', padding: ".2em 1em", border: "2px solid blue"
 }));

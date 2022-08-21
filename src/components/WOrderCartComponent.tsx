@@ -9,6 +9,8 @@ import { GetSelectableModifiersForCartEntry } from '../app/store';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
 import { styled } from '@mui/system';
 
+// TODO: group by category, sort by category ID ordinal
+
 const RemoveFromCart = styled(Clear)(()=>({
   border: '1px solid',
   borderRadius: 16,

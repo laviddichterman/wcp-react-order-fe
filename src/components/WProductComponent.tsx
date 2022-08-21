@@ -18,10 +18,10 @@ interface WProductComponentProps {
 
 function WProductComponent({ productMetadata, description, allowAdornment, dots, menuModifiers, displayContext, price, sx, ...other }: WProductComponentProps & BoxProps) {
   const productInstance = useAppSelector(s => IProductInstancesSelectors.selectById(s, productMetadata.pi[0]));
-  const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.display_flags[displayContext].adornment ? productInstance.display_flags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
+  const adornmentHTML = useMemo(() => allowAdornment && productInstance && productInstance.displayFlags[displayContext].adornment ? productInstance.displayFlags[displayContext].adornment : "", [allowAdornment, productInstance, displayContext]);
   const descriptionHTML = useMemo(() => description && productMetadata.description ? productMetadata.description : "", [description, productMetadata.description]);
   const optionsSections = useMemo(() => {
-    if (!description || !productInstance || productInstance.display_flags[displayContext].suppress_exhaustive_modifier_list) {
+    if (!description || !productInstance || productInstance.displayFlags[displayContext].suppress_exhaustive_modifier_list) {
       return [[]];
     }
     const options = WProductDisplayOptions(menuModifiers, productMetadata.exhaustive_modifiers);
@@ -29,7 +29,7 @@ function WProductComponent({ productMetadata, description, allowAdornment, dots,
   }, [description, displayContext, menuModifiers, productInstance, productMetadata.exhaustive_modifiers, productMetadata.name]);
   const priceText = useMemo(() => {
     if (productInstance && productMetadata.incomplete) {
-      switch (productInstance.display_flags[displayContext].price_display) {
+      switch (productInstance.displayFlags[displayContext].price_display) {
         case PriceDisplay.FROM_X: return `from ${productMetadata.price}`;
         case PriceDisplay.VARIES: return "MP";
         case PriceDisplay.MIN_TO_MAX: {

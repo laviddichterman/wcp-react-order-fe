@@ -42,8 +42,9 @@ export type WFulfillmentState = {
 export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoFormData>(
   'addressRequest/validate',
   async (req) => {
+    const request: DeliveryAddressValidateRequest = { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode };
     const response = await axiosInstance.get('/api/v1/addresses', {
-      params: { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode } as DeliveryAddressValidateRequest,
+      params: request,
     });
     return response.data;
   }
@@ -65,7 +66,7 @@ const WFulfillmentSlice = createSlice({
   name: 'fulfillment',
   initialState: initialState,
   reducers: {
-    setService(state, action: PayloadAction<number>) {
+    setService(state, action: PayloadAction<string>) {
       if (state.selectedService !== action.payload) {
         state.hasSelectedDateExpired = false;
         state.hasSelectedTimeExpired = false;
@@ -131,7 +132,7 @@ export const SelectServiceDateTime = createSelector(
 export const SelectServiceTimeDisplayString = createSelector(
   (s: WFulfillmentState) => s.selectedService,
   (s: WFulfillmentState) => s.selectedTime,
-  (service: number | null, selectedTime: number | null) => service !== null && selectedTime !== null ?
+  (service: string | null, selectedTime: number | null) => service !== null && selectedTime !== null ?
     (service === DELIVERY_SERVICE ? `${WDateUtils.MinutesToPrintTime(selectedTime)} to later` : WDateUtils.MinutesToPrintTime(selectedTime)) : "");
 
 export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms, setSelectedDateExpired, setSelectedTimeExpired } = WFulfillmentSlice.actions;

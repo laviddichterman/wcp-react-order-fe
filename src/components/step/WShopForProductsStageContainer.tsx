@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useSnackbar } from 'notistack';
-import { CartEntry, CreateWCPProductFromPI, WProduct, FilterProduct, IMenu, IProductInstance, FilterEmptyCategories } from '@wcp/wcpshared';
+import { CartEntry, WProduct, FilterProduct, IMenu, IProductInstance, FilterEmptyCategories, CreateWCPProduct } from '@wcp/wcpshared';
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
@@ -22,17 +22,17 @@ export interface OrderHideable {
   };
 }
 // NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
-export const FilterProductWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentType: number) {
-  return (item: IProductInstance) => FilterProduct(item, menu, (x: T) => x.order.hide, order_time, fulfillmentType)
+export const FilterProductWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentId: string) {
+  return (item: IProductInstance) => FilterProduct(item, menu, (x: T) => x.order.hide, order_time, fulfillmentId)
 };
 
-export const FilterEmptyCategoriesWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentType: number) {
-  return FilterEmptyCategories(menu, (x: T) => x.order.hide, order_time, fulfillmentType);
+export const FilterEmptyCategoriesWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentId: string) {
+  return FilterEmptyCategories(menu, (x: T) => x.order.hide, order_time, fulfillmentId);
 };
 
-export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null, fulfillmentType: number) {
+export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null, fulfillmentId: string) {
   return serviceDateTime !== null && menu !== null ?
-    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime, fulfillmentType)).sort((p) => p.display_flags.order.ordinal)) :
+    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime, fulfillmentId)).sort((p) => p.displayFlags.order.ordinal)) :
     ((_: string) => [])
 }
 export interface WShopForProductsStageProps {
@@ -63,11 +63,11 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
 
     const productInstance = selectProductInstanceById(pid);
     if (productInstance) {
-      const productClass = selectProductClassById(productInstance.product_id);
+      const productClass = selectProductClassById(productInstance.productId);
       if (productClass) {
-        const productCopy: WProduct = { p: CreateWCPProductFromPI(productClass, productInstance, menu.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
+        const productCopy: WProduct = { p: CreateWCPProduct(productClass, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
-        if ((productInstance.display_flags?.order.skip_customization) || !productHasSelectableModifiers) {
+        if ((productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
           const matchInCart = FindDuplicateInCart(cart, menu.modifiers, cid, productCopy);
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });

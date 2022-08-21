@@ -4,17 +4,16 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 
-import { SocketIoActions, IsSocketDataLoaded } from './app/slices/SocketIoSlice';
+import { LoadingScreen, AdapterCurrentTimeOverrideUtils, SocketIoActions, IsSocketDataLoaded } from '@wcp/wario-ux-shared';
+
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
-import LoadingScreen from './components/LoadingScreen';
 import { themeOptions } from './components/styled/styled';
 import { scrollToIdOffsetAfterDelay } from './utils/shared';
 
 // import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
 // import { WMenuComponent } from './components/menu/WMenuComponent';
 import { WOrderingComponent } from './components/WOrderingComponent';
-import { CurrentDateAndTzDateFnsUtils } from './utils/date-fns-tz-utils';
 
 const theme = createTheme(themeOptions);
 
@@ -34,7 +33,7 @@ const App = () => {
   const socketIoState = useAppSelector((s) => s.ws.status);
   const isSocketDataLoaded = useAppSelector(s => IsSocketDataLoaded(s.ws));
   const currentTime = useAppSelector(s => s.metrics.currentTime);
-  const DateAdapter = useMemo(() => CurrentDateAndTzDateFnsUtils(currentTime), [currentTime]);
+  const DateAdapter = useMemo(() => AdapterCurrentTimeOverrideUtils(currentTime), [currentTime]);
   useEffect(() => {
     if (socketIoState === 'NONE') {
       dispatch(SocketIoActions.startConnection());

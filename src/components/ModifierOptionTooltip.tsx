@@ -2,7 +2,7 @@ import { useAppSelector } from '../app/useHooks';
 import { useMemo } from 'react';
 import { OptionEnableState, WCPOption, DISABLE_REASON, WFunctional } from '@wcp/wcpshared';
 import { Tooltip } from '@mui/material';
-import { getProductInstanceFunctionById } from '../app/slices/SocketIoSlice';
+import { getProductInstanceFunctionById } from '@wcp/wario-ux-shared';
 
 interface ModifierOptionTooltipProps {
   enableState: OptionEnableState;
@@ -11,13 +11,13 @@ interface ModifierOptionTooltipProps {
 }
 
 export function ModifierOptionTooltip({ enableState, option, children }: ModifierOptionTooltipProps) {
-  const SERVICES = useAppSelector(s => s.ws.services!);
+  const SERVICES = useAppSelector(s => s.ws.fulfillments!);
   const selectedProduct = useAppSelector(s=>s.customizer.selectedProduct);
   const catalog = useAppSelector(s=>s.ws.catalog!);
   const pifGetter = useAppSelector(s=>(pifId : string)=> getProductInstanceFunctionById(s.ws.productInstanceFunctions, pifId));
   
   const tooltipText = useMemo(() => {
-    const displayName = option.mo.item.display_name;
+    const displayName = option.mo.displayName;
     switch (enableState.enable) {
       case DISABLE_REASON.ENABLED:
         return displayName;
@@ -30,7 +30,7 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
       case DISABLE_REASON.DISABLED_WEIGHT:
         return `Adding ${displayName} would exceed maximum weight.`;
       case DISABLE_REASON.DISABLED_FULFILLMENT_TYPE:
-        return `${displayName} is disabled for ${SERVICES[enableState.fulfillment]}.`;
+        return `${displayName} is disabled for ${SERVICES[enableState.fulfillment].displayName}.`;
       case DISABLE_REASON.DISABLED_NO_SPLITTING:
         return `${displayName} is disabled as a split modifier.`;
       case DISABLE_REASON.DISABLED_SPLIT_DIFFERENTIAL:

@@ -3,7 +3,7 @@ import { useSnackbar } from 'notistack';
 import { FormControl, FormControlProps, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone, Circle, CircleOutlined } from "@mui/icons-material";
 import { ProductDisplay } from './WProductComponent';
-import { getProductInstanceFunctionById } from '../app/slices/SocketIoSlice';
+import { getProductInstanceFunctionById, DialogContainer } from '@wcp/wario-ux-shared';
 import { WProduct, MenuModifiers, MetadataModifierMapEntry, WCPOption, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID, ICatalog, DISABLE_REASON, IProductInstanceFunction, WFunctional, WCPProduct } from '@wcp/wcpshared';
 import {
   clearCustomizer,
@@ -20,7 +20,6 @@ import {
   selectShowAdvanced
 } from '../app/store';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
-import DialogContainer from './dialog.container';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { scrollToIdOffsetAfterDelay } from '../utils/shared';
@@ -64,7 +63,7 @@ function WModifierOptionToggle({ toggleOptionChecked, toggleOptionUnchecked }: I
         disabled={(optionValue ? optionUncheckedState.enable_whole : optionUncheckedState.enable_whole).enable !== DISABLE_REASON.ENABLED}
         value={optionValue}
         onChange={toggleOption} />}
-      label={toggleOptionChecked.mo.item.display_name} />
+      label={toggleOptionChecked.mo.displayName} />
       </ModifierOptionTooltip>
   );
 }
@@ -94,7 +93,7 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
     <RadioGroup
       sx={{ width: '100%' }}
       onChange={onChange}
-      value={modifierOptionState.length === 1 ? modifierOptionState[0].option_id : null}
+      value={modifierOptionState.length === 1 ? modifierOptionState[0].optionId : null}
       aria-labelledby={`modifier_control_${options[0].mt.id}`}>
       <Grid container>
         {options.map((opt, i) => {
@@ -111,7 +110,7 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
                   disableTouchRipple
                   disabled={optionState.enable_whole.enable !== DISABLE_REASON.ENABLED}
                 />}
-                label={opt.mo.item.display_name} />
+                label={opt.mo.displayName} />
             </ModifierOptionTooltip>
           </Grid>)
         })}
@@ -217,7 +216,7 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
           //   console.log(optionState)
 
           // }}
-          label={option.mo.item.display_name} />
+          label={option.mo.displayName} />
         {showAdvanced ? <IconButton onClick={onClickAdvanced} name={`${option.mo.id}_advanced`} aria-label={`${option.mo.id}_advanced`} size="small">
           <SettingsTwoTone fontSize="inherit" />
         </IconButton> : null}
@@ -308,10 +307,10 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
 
   return (
     <DialogContainer
-      title={`${option.mo.item.display_name} options`}
+      title={`${option.mo.displayName} options`}
       onClose={onCancelCallback} // TODO: handle the clicking outside the container but we've made changes in the modal case
       open={option !== null}
-      inner_component={
+      innerComponent={
         <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12}>Placement:</Grid>
           <Grid item>
@@ -368,7 +367,7 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
 const FilterModifiersCurry = function (menuModifiers: MenuModifiers) {
   return function ([mtid, entry]: [string, MetadataModifierMapEntry]) {
     const modifier_entry = menuModifiers[mtid];
-    const disp_flags = modifier_entry.modifier_type.display_flags;
+    const disp_flags = modifier_entry.modifier_type.displayFlags;
     const omit_section_if_no_available_options = disp_flags.omit_section_if_no_available_options;
     const hidden = disp_flags.hidden;
     // cases to not show:
@@ -413,10 +412,10 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
   const showAdvanced = useAppSelector(s => selectShowAdvanced(s));
   const hasAdvancedOptionSelected = useMemo(() => selectedProduct?.m.advanced_option_selected ?? false, [selectedProduct?.m.advanced_option_selected]);
   const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
-  const customizerTitle = useMemo(() => selectedProduct !== null && selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun ? `your ${selectedProduct.p.PRODUCT_CLASS.display_flags.singular_noun}` : "it", [selectedProduct]);
+  const customizerTitle = useMemo(() => selectedProduct !== null && selectedProduct.p.PRODUCT_CLASS.displayFlags.singular_noun ? `your ${selectedProduct.p.PRODUCT_CLASS.displayFlags.singular_noun}` : "it", [selectedProduct]);
   const filteredModifiers = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).filter(FilterModifiersCurry(menu.modifiers)) : [], [selectedProduct, menu.modifiers]);
-  const orderGuideMessages = useMemo(() => suppressGuide || selectedProduct === null ? [] : ProcessOrderGuide({ catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.display_flags.order_guide.suggestions, pifGetter: SelectProductInstanceFunctionById}), [catalog, selectedProduct, suppressGuide, SelectProductInstanceFunctionById]);
-  const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.display_flags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById}), [catalog, selectedProduct, SelectProductInstanceFunctionById]);
+  const orderGuideMessages = useMemo(() => suppressGuide || selectedProduct === null ? [] : ProcessOrderGuide({ catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.displayFlags.order_guide.suggestions, pifGetter: SelectProductInstanceFunctionById}), [catalog, selectedProduct, suppressGuide, SelectProductInstanceFunctionById]);
+  const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.displayFlags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById}), [catalog, selectedProduct, SelectProductInstanceFunctionById]);
   const orderGuideErrors = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).reduce(
     (msgs, [mtId, v]) => v.meets_minimum ? msgs :
       [...msgs, `Please select your choice of ${String(menu.modifiers[mtId].modifier_type.display_name || menu.modifiers[mtId].modifier_type.name).toLowerCase()}`], [] as String[]) : [], [selectedProduct, menu.modifiers]);

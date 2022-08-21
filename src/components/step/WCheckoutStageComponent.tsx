@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
+import { LoadingScreen } from '@wcp/wario-ux-shared';
+import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { TIP_PREAMBLE } from '../../config';
@@ -8,12 +10,10 @@ import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency, fCurrencyNoUnit } from '../../utils/numbers';
 import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
-import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue } from '@wcp/wcpshared';
-import LoadingScreen from '../LoadingScreen';
 import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton } from '../styled/styled';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };

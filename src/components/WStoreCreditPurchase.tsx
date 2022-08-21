@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Link, Typography, Grid, FormLabel } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { MoneyInput } from './MoneyInput';
-import { CURRENCY, IMoney, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
+import { CURRENCY, IMoney, PurchaseStoreCreditRequest, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import * as yup from "yup";
 import { YupValidateEmail } from './hook-form/RHFMailTextField';
 import { useForm } from "react-hook-form";
@@ -86,18 +86,20 @@ interface PurchaseResponseFailure {
   result: null;
 }
 
-const makeRequest = (token: string, amount: number, values: CreditPurchaseInfo) => {
-  return axiosInstance.post('api/v1/payments/storecredit/stopgap', {
+const makeRequest = (token: string, amount: IMoney, values: CreditPurchaseInfo) => {
+  const typedBody: PurchaseStoreCreditRequest & { nonce: string } = {
     nonce: token,
-    credit_amount: amount / 100,
-    sender_name: values.senderName,
-    recipient_name_first: values.recipientNameFirst,
-    recipient_name_last: values.recipientNameFamily,
-    sender_email_address: values.senderEmail,
-    send_email_to_recipient: values.sendEmailToRecipient,
-    recipient_email_address: values.recipientEmail,
-    recipient_message: values.recipientMessage
-  });
+    amount,
+    senderName: values.senderName,
+    addedBy: "WebUI Purchase",
+    recipientNameFirst: values.recipientNameFirst,
+    recipientNameLast: values.recipientNameFamily,
+    senderEmail: values.senderEmail,
+    sendEmailToRecipient: values.sendEmailToRecipient,
+    recipientEmail: values.recipientEmail,
+    recipientMessage: values.recipientMessage
+  };
+  return axiosInstance.post('api/v1/payments/storecredit/stopgap', typedBody);
 }
 
 export function WStoreCreditPurchase() {
@@ -123,7 +125,7 @@ export function WStoreCreditPurchase() {
     if (purchaseStatus !== 'PROCESSING') {
       setPurchaseStatus('PROCESSING');
       if (props.token) {
-        await makeRequest(props.token, creditAmount.amount, formValues).then((response) => {
+        await makeRequest(props.token, creditAmount, formValues).then((response) => {
           setPurchaseResponse(response.data);
           setPurchaseStatus('SUCCESS');
         }).catch((reason: any) => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TextField, Checkbox, FormControlLabel, Table, TableBody, TableContainer, TableRow, TableCell, Paper } from '@mui/material';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { SERVICE_DATE_DISPLAY_FORMAT } from '@wcp/wcpshared';
+import { WDateUtils } from '@wcp/wcpshared';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
 import { format } from 'date-fns';
@@ -21,7 +21,7 @@ export default function WReviewOrderStage() {
   const REQUEST_HALF = useAppSelector(SelectMessageRequestHalf);
   const REQUEST_SLICING = useAppSelector(SelectMessageRequestSlicing);
   const REQUEST_VEGAN = useAppSelector(SelectMessageRequestVegan);
-  const services = useAppSelector(s => s.ws.services) as { [i: string]: string };
+  const fulfillments = useAppSelector(s => s.ws.fulfillments!);
   const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
@@ -90,7 +90,7 @@ export default function WReviewOrderStage() {
             </TableRow>
             <TableRow>
               <TableCell>Service</TableCell>
-              <TableCell>{services[selectedService]} on {format(serviceDateTime, SERVICE_DATE_DISPLAY_FORMAT)} at {serviceTimeDisplayString}</TableCell>
+              <TableCell>{fulfillments[selectedService].displayName} on {format(serviceDateTime, WDateUtils.ServiceDateDisplayFormat)} at {serviceTimeDisplayString}</TableCell>
             </TableRow>
             {dineInInfo &&
               <TableRow>

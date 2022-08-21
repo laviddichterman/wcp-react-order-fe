@@ -1,38 +1,42 @@
 import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
+import {
+  SocketIoReducer, 
+  ICategoriesAdapter,
+  IOptionTypesAdapter,
+  IOptionsAdapter,
+  IProductInstancesAdapter,
+  IProductsAdapter,
+  ProductInstanceFunctionsAdapter
+} from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
 import WFulfillmentReducer from './slices/WFulfillmentSlice';
 import WMetricsReducer from './slices/WMetricsSlice';
 import WCustomerInfoReducer from "./slices/WCustomerInfoSlice";
 import StepperReducer from "./slices/StepperSlice";
-import SocketIoReducer, { ICategoriesAdapter, 
-  IOptionTypesAdapter, 
-  IOptionsAdapter, 
-  IProductInstancesAdapter, 
-  IProductsAdapter, 
-  ProductInstanceFunctionsAdapter } from './slices/SocketIoSlice';
-import SocketIoMiddleware from "./slices/SocketIoMiddleware";
+import { SocketIoMiddleware } from "./slices/SocketIoMiddleware";
 import ListeningMiddleware from "./slices/ListeningMiddleware";
-import { CartEntry, 
+import {
+  CartEntry,
   ComputeCartSubTotal,
-  IMenu, 
-  ComputeTipBasis, 
-  ComputeTipValue, 
-  ComputeMainProductCategoryCount, 
-  ComputeDiscountApplied, 
-  ComputeTotal, 
-  MetadataModifierMap, 
-  ServicesEnableMap, 
-  WDateUtils, 
+  IMenu,
+  ComputeTipBasis,
+  ComputeTipValue,
+  ComputeMainProductCategoryCount,
+  ComputeDiscountApplied,
+  ComputeTotal,
+  MetadataModifierMap,
+  WDateUtils,
   ComputeTaxAmount,
-  CreateOrderRequestV2, 
-  ComputeGiftCardApplied, 
-  ComputeBalanceAfterCredits, 
+  CreateOrderRequestV2,
+  ComputeGiftCardApplied,
+  ComputeBalanceAfterCredits,
   CoreCartEntry,
   WCPProductV2Dto,
   WProduct,
   ComputeSubtotalAfterDiscount,
-  ComputeSubtotalPreDiscount} from "@wcp/wcpshared";
+  ComputeSubtotalPreDiscount
+} from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { addDays, formatISO, startOfDay } from "date-fns";
 
@@ -64,10 +68,10 @@ export const IProductInstancesSelectors = IProductInstancesAdapter.getSelectors(
 export const IProductsSelectors = IProductsAdapter.getSelectors((state: RootState) => state.ws.products);
 export const ProductInstanceFunctionsSelectors = ProductInstanceFunctionsAdapter.getSelectors((state: RootState) => state.ws.productInstanceFunctions);
 
-export const GetSelectableModifiers = (mMap : MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {
+export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {
   const modifierEntry = menu.modifiers[k];
-  const omit_section_if_no_available_options = modifierEntry.modifier_type.display_flags.omit_section_if_no_available_options;
-  const hidden = modifierEntry.modifier_type.display_flags.hidden;
+  const omit_section_if_no_available_options = modifierEntry.modifier_type.displayFlags.omit_section_if_no_available_options;
+  const hidden = modifierEntry.modifier_type.displayFlags.hidden;
   return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
 }, {} as MetadataModifierMap);
 
@@ -113,7 +117,7 @@ export const GetSelectableModifiersForCartEntry = createSelector(
   (s: RootState, cartEntryId: EntityId, _: IMenu) => getCartEntry(s.cart.cart, cartEntryId),
   (_: RootState, __: EntityId, menu: IMenu) => menu,
   (entry: CartEntry | undefined, menu) =>
-    entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu): {}
+    entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu) : {}
 );
 export const SelectCartSubTotal = createSelector(
   (s: RootState) => getCart(s.cart.cart),
@@ -197,43 +201,40 @@ export const SelectAutoGratutityEnabled = createSelector(
 );
 
 export const SelectHasOperatingHoursForService = createSelector(
-  (s: RootState, _ : number) => s.ws.services!,
-  (s: RootState, _ : number) => s.ws.settings!.operating_hours,
-  (_: RootState, serviceNumber: number) => serviceNumber,
-  WDateUtils.HasOperatingHoursForService
+  (s: RootState, _: string) => s.ws.fulfillments!,
+  (_: RootState, fulfillmentId: string) => fulfillmentId,
+  (fulfillments, fulfillmentId) => WDateUtils.HasOperatingHours(fulfillments[fulfillmentId].operatingHours)
 );
 
 export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
-  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.leadtime!,
-  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.blockedOff!,
-  (s: RootState, _: string, __: ServicesEnableMap, ___: number) => s.ws.settings!,
-  (_: RootState, __: string, ___: ServicesEnableMap, mainProductCount: number) => mainProductCount,
-  (_: RootState, selectedDate: string, __: ServicesEnableMap) => selectedDate,
-  (_: RootState, __: string, serviceSelection: ServicesEnableMap) => serviceSelection,
-  (leadtime, blockedOff, settings, mainProductCount, selectedDate, serviceSelection) => 
-    WDateUtils.GetInfoMapForAvailabilityComputation(blockedOff, settings, leadtime, selectedDate, serviceSelection, {cart_based_lead_time: 0, size: Math.max(mainProductCount, 1)})
+  (s: RootState, _: string, __: string[], ___: number) => s.ws.fulfillments!,
+  (_: RootState, __: string, ___: string[], mainProductCount: number) => mainProductCount,
+  (_: RootState, selectedDate: string, __: string[]) => selectedDate,
+  (_: RootState, __: string, serviceSelection: string[]) => serviceSelection,
+  (fulfillments, mainProductCount, selectedDate, serviceSelection) =>
+    WDateUtils.GetInfoMapForAvailabilityComputation(serviceSelection.map(x=>fulfillments[x]), selectedDate, { cart_based_lead_time: 0, size: Math.max(mainProductCount, 1) })
 );
 
 export const SelectAvailabilityForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: string, serviceSelection: ServicesEnableMap) => 
-    (mainProductCount : number) => 
+  (s: RootState, selectedDate: string, serviceSelection: string[]) =>
+    (mainProductCount: number) =>
       SelectAvailabilityForServicesDateAndProductCount(s, selectedDate, serviceSelection, mainProductCount),
-  (s: RootState, _: string, __: ServicesEnableMap) => SelectMainProductCategoryCount(s),
+  (s: RootState, _: string, __: string[]) => SelectMainProductCategoryCount(s),
   (selector, mainProductCount) => selector(mainProductCount)
 );
 
 export const SelectOptionsForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: string, serviceSelection: ServicesEnableMap) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
-  (s: RootState, _: string, __: ServicesEnableMap) => s.metrics.currentTime!,
-  (_: RootState, selectedDate: string, __: ServicesEnableMap) => selectedDate,
+  (s: RootState, selectedDate: string, serviceSelection: string[]) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
+  (s: RootState, _: string, __: string[]) => s.metrics.currentTime!,
+  (_: RootState, selectedDate: string, __: string[]) => selectedDate,
   (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, formatISO(currentTime))
 )
 
 // TODO: move to WCPShared
 export const GetNextAvailableServiceDateTimeForService = createSelector(
-  (s: RootState, service: number, _: Date | number) => SelectHasOperatingHoursForService(s, service),
-  (s: RootState, service: number, _: Date | number) => (testDate: string) => SelectOptionsForServicesAndDate(s, testDate, { [service]: true }).filter(x=>x.disabled),
-  (_: RootState, __: number, now: Date | number) => now,
+  (s: RootState, service: string, _: Date | number) => SelectHasOperatingHoursForService(s, service),
+  (s: RootState, service: string, _: Date | number) => (testDate: string) => SelectOptionsForServicesAndDate(s, testDate, [service]).filter(x => x.disabled),
+  (_: RootState, __: string, now: Date | number) => now,
   (operatingHoursForService, selectOptionsFunction, now) => {
     if (operatingHoursForService) {
       const today = startOfDay(now);
@@ -242,37 +243,37 @@ export const GetNextAvailableServiceDateTimeForService = createSelector(
         const options = selectOptionsFunction(dateAttempted);
         if (options.length > 0) {
           return WDateUtils.ComputeServiceDateTime(dateAttempted, options[0].value);
+        }
       }
-    }    
-  }
-  return null;
-})
+    }
+    return null;
+  })
 
 // TODO: move to WCPShared
 // Note: this falls back to now if there's really nothing for the selected service or for dine-in
 export const GetNextAvailableServiceDateTime = createSelector(
-  (s: RootState) => (service : number) => GetNextAvailableServiceDateTimeForService(s, service, s.metrics.currentTime),
+  (s: RootState) => (service: string) => GetNextAvailableServiceDateTimeForService(s, service, s.metrics.currentTime),
   (s: RootState) => s.fulfillment.selectedService,
   (s: RootState) => s.metrics.currentTime,
   (nextAvailableForServiceFunction, selectedService, currentTime) => {
-  if (selectedService !== null) {
-    const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
-    if (nextAvailableForSelectedService) {
-      return nextAvailableForSelectedService;
+    if (selectedService !== null) {
+      const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
+      if (nextAvailableForSelectedService) {
+        return nextAvailableForSelectedService;
+      }
     }
-  }
-  return nextAvailableForServiceFunction(1) ?? currentTime;
-});
+    return nextAvailableForServiceFunction() ?? currentTime;
+  });
 
 export const SelectAmountCreditUsed = createSelector(
   (s: RootState) => SelectDiscountApplied(s),
   (s: RootState) => SelectGiftCardApplied(s),
-  (discountCreditApplied, moneyCreditApplied) => Math.max(discountCreditApplied, moneyCreditApplied) 
+  (discountCreditApplied, moneyCreditApplied) => Math.max(discountCreditApplied, moneyCreditApplied)
 )
 
 export const SelectHasSpaceForPartyOf = createSelector(
   (_: RootState) => true,
-  (hasSpace)=> hasSpace
+  (hasSpace) => hasSpace
 );
 
 export const SelectWarioSubmissionArguments = createSelector(
@@ -286,19 +287,19 @@ export const SelectWarioSubmissionArguments = createSelector(
   (s: RootState) => SelectBalanceAfterCredits(s),
   (s: RootState) => SelectAmountCreditUsed(s),
   (s: RootState) => SelectTipValue(s),
-  (fulfillment, customerInfo, cart, storeCredit, creditCode, specialInstructions, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
-    const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } }) ) as CoreCartEntry<WCPProductV2Dto>[];
-    return { 
-    customerInfo,
-    fulfillmentDto: fulfillment,
-    special_instructions: specialInstructions ?? "",
-    cart: cartDto,
-    metrics,
-    store_credit: storeCredit !== null ? { validation: storeCredit, code: creditCode, amount_used: creditApplied } : null,
-    sliced: false,
-    totals: {
-      balance: balanceAfterCredits,
-      tip: tipAmount,
-    } } as CreateOrderRequestV2;
+  (fulfillmentInfo, customerInfo, cart, storeCredit, creditCode, specialInstructions, metrics, balanceAfterCredits, creditApplied, tipAmount) => {
+    const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[];
+    return {
+      customerInfo,
+      fulfillment: fulfillmentInfo,
+      specialInstructions: specialInstructions ?? "",
+      cart: cartDto,
+      metrics,
+      creditValidations: storeCredit !== null ? { validation: storeCredit, code: creditCode, amount_used: creditApplied } : null,
+      sliced: false,
+      totals: {
+        balance: balanceAfterCredits,
+        tip: tipAmount,
+      }
+    } as CreateOrderRequestV2;
   })
-          

@@ -71,23 +71,23 @@ export const WCustomizerSlice = createSlice({
     },
     updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, menu: IMenu }>) {
       if (state.selectedProduct !== null) {
-        const newOptInstance = { ...action.payload.optionState, option_id: action.payload.mo.id };
+        const newOptInstance = { ...action.payload.optionState, optionId: action.payload.mo.id };
         if (!Object.hasOwn(state.selectedProduct.p.modifiers, action.payload.mt.id)) {
           state.selectedProduct.p.modifiers[action.payload.mt.id] = [];
         }
         if (action.payload.optionState.placement === OptionPlacement.NONE) {
-          state.selectedProduct.p.modifiers[action.payload.mt.id] = state.selectedProduct.p.modifiers[action.payload.mt.id].filter(x => x.option_id !== action.payload.mo.id);
+          state.selectedProduct.p.modifiers[action.payload.mt.id] = state.selectedProduct.p.modifiers[action.payload.mt.id].filter(x => x.optionId !== action.payload.mo.id);
         }
         else {
           if (action.payload.mt.min_selected === 0 && action.payload.mt.max_selected === 1) {
             // checkbox that requires we unselect any other values since it kinda functions like a radio
             state.selectedProduct.p.modifiers[action.payload.mt.id] = [];
           }
-          const moIdX = state.selectedProduct.p.modifiers[action.payload.mt.id].findIndex(x => x.option_id === action.payload.mo.id);
+          const moIdX = state.selectedProduct.p.modifiers[action.payload.mt.id].findIndex(x => x.optionId === action.payload.mo.id);
           if (moIdX === -1) {
             const modifierOptions = action.payload.menu.modifiers[action.payload.mt.id].options;
             state.selectedProduct.p.modifiers[action.payload.mt.id].push(newOptInstance);
-            state.selectedProduct.p.modifiers[action.payload.mt.id].sort((a, b) => modifierOptions[a.option_id].index - modifierOptions[b.option_id].index);
+            state.selectedProduct.p.modifiers[action.payload.mt.id].sort((a, b) => modifierOptions[a.optionId].index - modifierOptions[b.optionId].index);
           }
           else {
             state.selectedProduct.p.modifiers[action.payload.mt.id][moIdX] = newOptInstance;
@@ -99,7 +99,7 @@ export const WCustomizerSlice = createSlice({
     },
     updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string }>) {
       if (state.selectedProduct !== null) {
-        state.selectedProduct.p.modifiers[action.payload.mtId] = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, option_id: action.payload.moId }];
+        state.selectedProduct.p.modifiers[action.payload.mtId] = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, optionId: action.payload.moId }];
         // regenerate metadata required after this call. handled by ListeningMiddleware
       }
     }
