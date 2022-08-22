@@ -4,7 +4,6 @@ import { Autocomplete, Grid, Checkbox, Radio, RadioGroup, TextField, FormControl
 import { StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, formatISO, parseISO, startOfDay } from 'date-fns';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { DELIVERY_SERVICE, DINEIN_SERVICE } from '../../config';
 import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
 import { SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
 import { Navigation } from '../Navigation';
@@ -19,7 +18,7 @@ export default function WFulfillmentStageComponent() {
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: string, orderTime: number) => true, []);
   const HasOperatingHoursForService = useAppSelector(s => (fulfillmentId: string) => SelectHasOperatingHoursForService(s, fulfillmentId));
   const OptionsForServicesAndDate = useAppSelector(s => (selectedDate: string, selectedServices: string[]) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
-  const currentTime = useAppSelector(s=>s.metrics.currentTime);
+  const currentTime = useAppSelector(s=>s.ws.currentTime);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDate = useAppSelector(s => s.fulfillment.selectedDate);
   const serviceTime = useAppSelector(s => s.fulfillment.selectedTime);

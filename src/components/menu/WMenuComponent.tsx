@@ -6,7 +6,7 @@ import { Box, Tab, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
 import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu } from '@wcp/wcpshared';
 import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectMenuCategoryId } from '../../app/store';
-import LoadingScreen from '../LoadingScreen';
+import { LoadingScreen } from '@wcp/wario-ux-shared';
 import { Separator } from '../styled/styled';
 import { cloneDeep } from 'lodash';
 
@@ -16,8 +16,8 @@ function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; 
   const productClassSelector = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
   return (
     <Box sx={{ pt: 0 }}>
-      {section.menu.sort((a, b) => a.display_flags.menu.ordinal - b.display_flags.menu.ordinal).map((product, k) => {
-        const productClass = productClassSelector(product.product_id);
+      {section.menu.sort((a, b) => a.displayFlags.menu.ordinal - b.displayFlags.menu.ordinal).map((product, k) => {
+        const productClass = productClassSelector(product.productId);
         return productClass &&
           <Box key={k} sx={{ pt: 4 }}>
             <ProductDisplay
@@ -29,7 +29,7 @@ function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; 
               price
               productMetadata={menu.product_instance_metadata[product.id]}
             />
-            {product.display_flags.menu.show_modifier_options && productClass.modifiers.length &&
+            {product.displayFlags.menu.show_modifier_options && productClass.modifiers.length &&
               <WModifiersComponent product={productClass} menuModifiers={menu.modifiers} />}
           </Box>
       })}
@@ -115,15 +115,6 @@ export function WMenuComponent() {
       const menuCopy = cloneDeep(menu);
       FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime);
       setFilteredMenu(menuCopy);
-      // const MENU_CATEGORIES = menuCopy.categories[MENU_CATID].children;
-      // e.g.: [FOOD: [SMALL PLATES, PIZZAS], COCKTAILS: [], WINE: [BUBBLES, WHITE, RED, PINK]]
-      // create a menu from the filtered categories and products.
-      // const newDisplayMenu = is_tabbed_menu ? MENU_CATEGORIES : [MENU_CATID];
-      // if (newDisplayMenu.length > 0 && (!active || displayMenu.indexOf(active) === -1)) {
-      //   console.log(`active was ${active} is going to be set to ${newDisplayMenu[0]}`)
-      //   setActive(newDisplayMenu[0]);
-      // }
-      // setDisplayMenu(newDisplayMenu);
 
     }
   }, [menu, nextAvailableTime, MENU_CATID]);

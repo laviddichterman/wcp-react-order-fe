@@ -237,16 +237,16 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const menu = useAppSelector(s => s.ws.menu!);
   const visibleOptions = useMemo(() => {
-    const filterUnavailable = menu.modifiers[mtid].modifier_type.display_flags.omit_options_if_not_available;
+    const filterUnavailable = menu.modifiers[mtid].modifier_type.displayFlags.omit_options_if_not_available;
     const mmEntry = product.m.modifier_map[mtid];
-    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.item.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo.id))) : [];
+    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo.id))) : [];
   }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
   const modifierOptionsHtml = useMemo(() => {
     const mEntry = menu.modifiers[mtid];
     const mt = mEntry.modifier_type
     if (mt.max_selected === 1) {
       if (mt.min_selected === 1) {
-        if (mt.display_flags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
+        if (mt.displayFlags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
           const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS.id];
           const basePI = pcEntry.instances[pcEntry.base_id];
           const mtIdX = basePI.modifiers.findIndex(x => x.modifier_type_id === mtid);
@@ -276,7 +276,7 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
   return (
     <FormControl fullWidth {...other}>
       <FormLabel id={`modifier_control_${mtid}`}>
-        {menu.modifiers[mtid].modifier_type.display_name ? menu.modifiers[mtid].modifier_type.display_name : menu.modifiers[mtid].modifier_type.name}:
+        {menu.modifiers[mtid].modifier_type.displayName ? menu.modifiers[mtid].modifier_type.displayName : menu.modifiers[mtid].modifier_type.name}:
       </FormLabel>
       {modifierOptionsHtml}
     </FormControl>);
@@ -418,7 +418,7 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
   const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.displayFlags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById}), [catalog, selectedProduct, SelectProductInstanceFunctionById]);
   const orderGuideErrors = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).reduce(
     (msgs, [mtId, v]) => v.meets_minimum ? msgs :
-      [...msgs, `Please select your choice of ${String(menu.modifiers[mtId].modifier_type.display_name || menu.modifiers[mtId].modifier_type.name).toLowerCase()}`], [] as String[]) : [], [selectedProduct, menu.modifiers]);
+      [...msgs, `Please select your choice of ${String(menu.modifiers[mtId].modifier_type.displayName || menu.modifiers[mtId].modifier_type.name).toLowerCase()}`], [] as String[]) : [], [selectedProduct, menu.modifiers]);
   if (categoryId === null || selectedProduct === null) {
     return null;
   }
