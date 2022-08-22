@@ -7,14 +7,13 @@ import { enqueueSnackbar } from 'notistack'
 import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, ICatalog, IMenu, WCPProduct, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
 
-import { incrementTimeBumps, setCurrentTimes, setPageLoadTime, setPageLoadTimeLocal, setTimeToStage } from './WMetricsSlice';
-import { STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL } from '../../config';
+import { incrementTimeBumps, setTimeToStage } from './WMetricsSlice';
+import { STEPPER_STAGE_ENUM } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity, updateManyCartProducts } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
 import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
-import { parseISO } from 'date-fns';
 
 
 export const ListeningMiddleware = createListenerMiddleware()
@@ -25,38 +24,8 @@ export const startAppListening = ListeningMiddleware.startListening as AppStartL
 
 export const addAppListener = addListener as TypedAddListener<RootState, AppDispatch>;
 
-//let interval;
-export interface CurrentTimes {
-  loadTime: number;
-  currentLocalTime: number;
-}
-const computeCurrentTimes = (timeString: string) => { 
-  return { loadTime: parseISO(timeString).valueOf(),
-    currentLocalTime: Date.now()
-  }
-}
-
 ListeningMiddleware.startListening({
-  actionCreator: SocketIoActions.receiveServerTime,// && previousState.ws.serverTime === null,
-  effect: (action: ReturnType<typeof SocketIoActions.receiveServerTime>, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    if (api.getOriginalState().metrics.pageLoadTime === 0) {
-      const serverTimeString = action.payload.time;
-
-      const dt = parseISO(action.payload.time);//, { zone: action.payload.tz });
-      const localDate = new Date();
-      api.dispatch(setPageLoadTime(dt.valueOf()));
-      api.dispatch(setPageLoadTimeLocal(localDate.valueOf()));
-      const checkTiming = () => {
-        api.dispatch(setCurrentTimes(computeCurrentTimes(serverTimeString)));
-      }
-      setInterval(checkTiming, TIMING_POLLING_INTERVAL);
-    }
-    //return () => clearInterval(interval);    
-  }
-});
-
-ListeningMiddleware.startListening({
-  matcher: isAnyOf(setCurrentTimes,
+  matcher: isAnyOf(SocketIoActions.setCurrentTime,
     setService,
     SocketIoActions.receiveFulfillments,
     SocketIoActions.receiveSettings,
@@ -66,12 +35,13 @@ ListeningMiddleware.startListening({
     updateCartQuantity),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const originalState = api.getOriginalState();
+    const fulfillments = api.getState().ws.fulfillments!;
     const isConfirmed = originalState.payment.submitToWarioStatus === 'SUCCEEDED'; // omit because if it bumps it here, then the server will likely bump it too|| originalState.payment.submitToWarioStatus === 'PENDING';
     const previouslySelectedDate = originalState.fulfillment.selectedDate;
     const previouslySelectedTime = originalState.fulfillment.selectedTime;
     const selectedService = originalState.fulfillment.selectedService;
-    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && !isConfirmed) {
-      const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, { [String(selectedService)]: true });
+    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && Object.hasOwn(fulfillments, selectedService) && !isConfirmed) {
+      const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, [selectedService]);
       if (!newOptions.find(x => x.value === previouslySelectedTime)) {
         if (newOptions.length > 0) {
           const earlierOptions = newOptions.filter(x => x.value < previouslySelectedTime);
@@ -116,9 +86,9 @@ ListeningMiddleware.startListening({
   }
 });
 
-function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillment: number) {
+function GenerateMetadata(catalog: ICatalog, menu: IMenu, product: WCPProduct, serviceTime: Date | number, fulfillmentId: string) {
   const productEntry = menu.product_classes[product.PRODUCT_CLASS.id];
-  return WCPProductGenerateMetadata(product, productEntry, catalog, menu.modifiers, serviceTime, fulfillment);
+  return WCPProductGenerateMetadata(product, productEntry, catalog, menu.modifiers, serviceTime, fulfillmentId);
 }
 
 ListeningMiddleware.startListening({
@@ -138,9 +108,10 @@ ListeningMiddleware.startListening({
   matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const catalog = api.getState().ws.catalog;
-    const currentTime = api.getState().metrics.currentTime;
-    if (catalog !== null && currentTime !== 0) {
-      const service = api.getState().fulfillment.selectedService ?? 1;
+    const currentTime = api.getState().ws.currentTime;
+    const fulfillments = api.getState().ws.fulfillments;
+    if (catalog !== null && currentTime !== 0 && fulfillments !== null) {
+      const service = api.getState().fulfillment.selectedService ?? Object.keys(fulfillments)[0];
       const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState());
       const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly

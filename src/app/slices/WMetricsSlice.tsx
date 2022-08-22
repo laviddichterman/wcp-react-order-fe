@@ -1,20 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MetricsDto } from "@wcp/wcpshared";
-import { NUM_STAGES, STEPPER_STAGE_ENUM, TIMING_POLLING_INTERVAL} from "../../config";
+import { Metrics } from "@wcp/wcpshared";
+import { NUM_STAGES, STEPPER_STAGE_ENUM } from "../../config";
 import PACKAGE_INFO from '../../../package.json'
-import type { CurrentTimes } from "./ListeningMiddleware";
 
-const initialState: MetricsDto = {
-  pageLoadTime: 0,
-  pageLoadTimeLocal: 0,
+const initialState: Omit<Metrics, 'pageLoadTime'> = {
   submitTime: 0,
-  roughTicksSinceLoad: 0,
-  currentTime: 0,
-  currentLocalTime: 0,
   useragent: "",
   timeToServiceDate: 0,
   timeToServiceTime: 0,
-  // handled by the ListenerMiddleware
   timeToFirstProduct: 0,
   timeToStage: Array(NUM_STAGES-1).fill(0),
   numTimeBumps: 0,
@@ -26,21 +19,6 @@ const WMetricsSlice = createSlice({
   name: 'metrics',
   initialState: initialState,
   reducers: {
-    setPageLoadTime(state, action: PayloadAction<number>) {
-      state.pageLoadTime = action.payload;
-      state.currentTime = action.payload;
-    },
-    setPageLoadTimeLocal(state, action: PayloadAction<number>) {
-      state.pageLoadTimeLocal = action.payload;
-      state.currentLocalTime = action.payload;
-    },
-    // handled by ListeningMiddleware
-    setCurrentTimes(state, action: PayloadAction<CurrentTimes>) {
-      const ticks = Math.max(state.roughTicksSinceLoad + TIMING_POLLING_INTERVAL, action.payload.currentLocalTime - state.pageLoadTimeLocal);
-      state.currentLocalTime = Math.max(action.payload.currentLocalTime, state.pageLoadTimeLocal + ticks);
-      state.currentTime = action.payload.loadTime + ticks;
-      state.roughTicksSinceLoad = ticks;
-    },
     // handled by ListenerMiddleware
     incrementTimeBumps(state) {
       state.numTimeBumps = state.numTimeBumps + 1;
@@ -53,16 +31,19 @@ const WMetricsSlice = createSlice({
     },
     // handled by ListenerMiddleware
     setTimeToStage(state, action: PayloadAction<{ stage: STEPPER_STAGE_ENUM, ticks: number }>) {
-      state.timeToStage![action.payload.stage] = action.payload.ticks - state.pageLoadTimeLocal;
+      state.timeToStage![action.payload.stage] = action.payload.ticks;
     },
+    // handled by the ListenerMiddleware
     setTimeToServiceDate(state, action: PayloadAction<number>) {
-      state.timeToServiceDate = action.payload - state.pageLoadTimeLocal;
+      state.timeToServiceDate = action.payload;
     },
+    // handled by the ListenerMiddleware
     setTimeToServiceTime(state, action: PayloadAction<number>) {
-      state.timeToServiceTime = action.payload - state.pageLoadTimeLocal;
+      state.timeToServiceTime = action.payload;
     },
+    // handled by the ListenerMiddleware
     setSubmitTime(state, action: PayloadAction<number>) {
-      state.submitTime = action.payload - state.pageLoadTimeLocal;
+      state.submitTime = action.payload;
     },
     // handled by App.tsx
     setUserAgent(state, action: PayloadAction<string>) {
@@ -72,10 +53,7 @@ const WMetricsSlice = createSlice({
 });
 
 export const { 
-  setCurrentTimes, 
-  setPageLoadTime, 
   setUserAgent, 
-  setPageLoadTimeLocal, 
   setTimeToStage, 
   incrementTimeBumps, 
   incrementTipAdjusts, 

@@ -1,8 +1,6 @@
 import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DELIVERY_SERVICE } from "../../config";
-import { getTermsForService } from "../../components/common";
 import * as yup from "yup";
-import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
+import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentConfig, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
 
 export const deliveryAddressSchema = yup.object().shape({
@@ -19,18 +17,21 @@ export const dineInSchema = yup.object().shape({
   partySize: yup.number().integer().min(1).required("Please specify the size of your party.")
 });
 
-export const fulfillmentSchemaInstance = yup.object().shape({
-  serviceNum: yup.string().ensure().required("Please select a service."),
-  serviceDate: yup.date().required("Please select a service date."),
-  serviceTime: yup.number().integer().min(0).max(1439).required(),
-  hasAgreedToTerms: yup.bool().when('serviceNum', (serviceNum, s) => {
-    return serviceNum && getTermsForService(parseInt(serviceNum)).length > 0 ?
-      s.test('hasAgreedToTerms', "Please accept the terms of service.", (v: boolean | undefined) => v === true) :
-      s
-  })
-});
+// export const fulfillmentSchemaInstance = (fulfillments: Record<string, FulfillmentConfig>) =>
+//   yup.object().shape({
+//     serviceNum: yup.string().ensure().required("Please select a service."),
+//     serviceDate: yup.date().required("Please select a service date."),
+//     serviceTime: yup.number().integer().min(0).max(1439).required(),
+//     hasAgreedToTerms: yup.bool().when('serviceNum', (serviceNum, s) => {
+//       return serviceNum && 
+//         Object.hasOwn(fulfillments, serviceNum) && 
+//         fulfillments[serviceNum].terms.length > 0 ?
+//         s.test('hasAgreedToTerms', "Please accept the terms of service.", (v: boolean | undefined) => v === true) :
+//         s
+//     })
+//   });
 
-export type DeliveryInfoFormData = Omit<DeliveryInfoDto, "validation">;
+export type DeliveryInfoFormData = Omit<DeliveryInfoDto, "validation"> & { fulfillmentId: string; };
 
 export type WFulfillmentState = {
   hasSelectedTimeExpired: boolean;
@@ -42,7 +43,13 @@ export type WFulfillmentState = {
 export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoFormData>(
   'addressRequest/validate',
   async (req) => {
-    const request: DeliveryAddressValidateRequest = { address: req.address, city: "Seattle", state: "WA", zipcode: req.zipcode };
+    const request: DeliveryAddressValidateRequest = {
+      fulfillmentId: req.fulfillmentId,
+      address: req.address,
+      city: "Seattle",
+      state: "WA",
+      zipcode: req.zipcode
+    };
     const response = await axiosInstance.get('/api/v1/addresses', {
       params: request,
     });
@@ -128,12 +135,6 @@ export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedTime,
   (selectedDate: string | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime(selectedDate, selectedTime) : null
 );
-
-export const SelectServiceTimeDisplayString = createSelector(
-  (s: WFulfillmentState) => s.selectedService,
-  (s: WFulfillmentState) => s.selectedTime,
-  (service: string | null, selectedTime: number | null) => service !== null && selectedTime !== null ?
-    (service === DELIVERY_SERVICE ? `${WDateUtils.MinutesToPrintTime(selectedTime)} to later` : WDateUtils.MinutesToPrintTime(selectedTime)) : "");
 
 export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms, setSelectedDateExpired, setSelectedTimeExpired } = WFulfillmentSlice.actions;
 

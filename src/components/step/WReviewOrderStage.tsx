@@ -4,13 +4,13 @@ import { TextField, Checkbox, FormControlLabel, Table, TableBody, TableContainer
 import { WCheckoutCart } from '../WCheckoutCart';
 import { WDateUtils } from '@wcp/wcpshared';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { SelectServiceDateTime, SelectServiceTimeDisplayString } from '../../app/slices/WFulfillmentSlice';
+import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
 import { Separator, StageTitle, WarningResponseOutput } from '../styled/styled';
-import { SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan } from '../../app/store';
+import { SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan, SelectServiceTimeDisplayString } from '../../app/store';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";
@@ -24,7 +24,7 @@ export default function WReviewOrderStage() {
   const fulfillments = useAppSelector(s => s.ws.fulfillments!);
   const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
-  const serviceTimeDisplayString = useAppSelector(s => SelectServiceTimeDisplayString(s.fulfillment));
+  const serviceTimeDisplayString = useAppSelector(SelectServiceTimeDisplayString);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);

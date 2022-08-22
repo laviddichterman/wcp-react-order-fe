@@ -1,16 +1,13 @@
 import { IMaskInput } from 'react-imask';
-// import {AnyMaskedOptions} from 'imask';
-import _ from 'lodash';
+import { uniqueId } from 'lodash';
 
 import { FormControl, Input, InputProps, InputLabel } from '@mui/material';
 import React from 'react';
-
 
 interface CustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
   name: string;
 }
-
 
 const TextMaskCustom = React.forwardRef<HTMLElement, CustomProps>(
   function TextMaskCustom(props, ref) {
@@ -42,12 +39,12 @@ export interface StoreCreditInputComponentProps {
   value: unknown;
 }
 
-export function StoreCreditInputComponent({ 
-  name, 
-  label, 
-  onChange, 
-  id = _.uniqueId('sci-'), 
-  value, 
+export function StoreCreditInputComponent({
+  name,
+  label,
+  onChange,
+  id = uniqueId('sci-'),
+  value,
   ...others }: StoreCreditInputComponentProps & InputProps) {
   return (<FormControl variant="standard">
     <InputLabel htmlFor={id}>{label}</InputLabel>

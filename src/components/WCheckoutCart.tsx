@@ -1,28 +1,24 @@
 import { Typography, Table, TableBody, TableContainer, TableRow, TableHead, TableCell, Paper } from '@mui/material';
 import { ProductDisplay } from './WProductComponent';
-import { CartEntry } from '@wcp/wcpshared';
-import { fCurrencyNoUnit, fPercent } from '../utils/numbers';
-import { DELIVERY_SERVICE } from '../config';
+import { CartEntry, MoneyToDisplayString } from '@wcp/wcpshared';
+import { fPercent } from '../utils/numbers';
 import { useAppSelector } from '../app/useHooks';
-import { getCart } from '../app/slices/WCartSlice';
-import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
+import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, selectGroupedAndOrderedCart, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
 import { ProductPrice, ProductTitle } from './styled/styled';
-
-// TODO: group by category, sort by category ID ordinal
 
 export function WCheckoutCart() {
   const menu = useAppSelector(s => s.ws.menu);
-  const cart = useAppSelector(s => getCart(s.cart.cart));
+  const cart = useAppSelector(selectGroupedAndOrderedCart);
   const TAX_RATE = useAppSelector(SelectTaxRate);
   const discountApplied = useAppSelector(SelectDiscountApplied);
-  const deliveryFee = useAppSelector(SelectDeliveryFee);
+  // const deliveryFee = useAppSelector(SelectDeliveryFee);
   const tipValue = useAppSelector(SelectTipValue);
   const taxValue = useAppSelector(SelectTaxAmount);
   const giftCardApplied = useAppSelector(SelectGiftCardApplied);
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
   const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
 
-  const selectedService = useAppSelector(s => s.fulfillment.selectedService) as number;
+  const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   if (menu === null || selectedService === null) {
     return null;
   }
@@ -38,19 +34,19 @@ export function WCheckoutCart() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {cart.map((cartEntry: CartEntry, i: number) => (
-            <TableRow key={i}>
+          {cart.map(x=>x[1].map((cartEntry: CartEntry, i: number) => (
+            <TableRow key={cartEntry.id}>
               <TableCell>
                 <ProductDisplay productMetadata={cartEntry.product.m} menuModifiers={menu.modifiers} description displayContext="order" />
               </TableCell>
               <TableCell><ProductPrice>{cartEntry.quantity}</ProductPrice></TableCell>
               <TableCell><ProductPrice>×</ProductPrice></TableCell>
-              <TableCell align="right"><ProductPrice>{cartEntry.product.m.price}</ProductPrice></TableCell>
-              <TableCell align="right"><ProductPrice>{cartEntry.product.m.price * cartEntry.quantity}</ProductPrice></TableCell>
+              <TableCell align="right"><ProductPrice>{MoneyToDisplayString(cartEntry.product.m.price, false)}</ProductPrice></TableCell>
+              <TableCell align="right"><ProductPrice>{MoneyToDisplayString({ currency: cartEntry.product.m.price.currency, amount: Math.round(cartEntry.product.m.price.amount * cartEntry.quantity) }, false)}</ProductPrice></TableCell>
             </TableRow>
-          ))}
+          ))).flat()}
           <TableRow />
-          {selectedService === DELIVERY_SERVICE && (
+          {/* {selectedService === DELIVERY_SERVICE && (
             <TableRow>
               <TableCell colSpan={2} >
                 <ProductTitle>Delivery Fee{deliveryFee === 0 && " (waived)"}</ProductTitle>
@@ -64,43 +60,43 @@ export function WCheckoutCart() {
                 </ProductPrice>
               </TableCell>
             </TableRow>
-          )}
-          {discountApplied !== 0 &&
+          )} */}
+          {discountApplied.amount > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
                 <ProductTitle>Discount Code Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
               </TableCell>
-              <TableCell colSpan={2} align="right"><ProductPrice>-{fCurrencyNoUnit(discountApplied)}</ProductPrice></TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>-{MoneyToDisplayString(discountApplied, false)}</ProductPrice></TableCell>
             </TableRow>}
-          {taxValue > 0 &&
+          {taxValue.amount > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
                 <ProductTitle>Sales Tax ({fPercent(TAX_RATE)})</ProductTitle>
               </TableCell>
-              <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(taxValue)}</ProductPrice></TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>{MoneyToDisplayString(taxValue, false)}</ProductPrice></TableCell>
             </TableRow>}
-          {tipValue > 0 &&
+          {tipValue.amount > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
                 <ProductTitle>Gratuity*</ProductTitle>
                 <div>Gratuity is distributed in its entirety to non-owner staff working on the day of your order.</div>
               </TableCell>
-              <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(tipValue)}</ProductPrice></TableCell>
+              <TableCell colSpan={2} align="right"><ProductPrice>{MoneyToDisplayString(tipValue, false)}</ProductPrice></TableCell>
             </TableRow>}
-          {giftCardApplied > 0 &&
+          {giftCardApplied.amount > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
                 <ProductTitle>Digital Gift Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
               </TableCell>
               <TableCell colSpan={2} align="right">
-                <ProductPrice >-{fCurrencyNoUnit(giftCardApplied)}</ProductPrice>
+                <ProductPrice >-{MoneyToDisplayString(giftCardApplied, false)}</ProductPrice>
               </TableCell>
             </TableRow>}
           <TableRow>
             <TableCell colSpan={3} >
               <ProductTitle>Total</ProductTitle>
             </TableCell>
-            <TableCell colSpan={2} align="right"><ProductPrice>{fCurrencyNoUnit(balanceAfterCredits)}</ProductPrice></TableCell>
+            <TableCell colSpan={2} align="right"><ProductPrice>{MoneyToDisplayString(balanceAfterCredits, false)}</ProductPrice></TableCell>
           </TableRow>
         </TableBody>
       </Table>
