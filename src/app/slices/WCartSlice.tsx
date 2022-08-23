@@ -98,13 +98,6 @@ export const FindDuplicateInCart = (cart: CartEntry[], menuModifiers: MenuModifi
   return null;
 }
 
-/*
-selectIds: (state: V) => EntityId[];
-    selectEntities: (state: V) => Dictionary<T>;
-    selectAll: (state: V) => T[];
-    selectTotal: (state: V) => number;
-    selectById: (state: V, id: EntityId) => T | undefined;
-*/
 export const { selectAll: getCart, selectById: getCartEntry } =
   WCartAdapter.getSelectors();
 

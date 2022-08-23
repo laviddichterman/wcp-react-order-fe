@@ -1,19 +1,12 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
-import { TipSelection, CreateOrderResponse, ValidateAndLockCreditResponse } from "@wcp/wcpshared";
+import { CreateValidateStoreCreditThunk } from "@wcp/wario-ux-shared";
+import { TipSelection, CreateOrderResponse, JSFECreditV2 } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
 import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
 import { setSubmitTime } from "./WMetricsSlice";
 
-export const validateStoreCredit = createAsyncThunk<ValidateAndLockCreditResponse, string>(
-  'credit/validate',
-  async (code) => {
-    const response = await axiosInstance.get('/api/v1/payments/storecredit/validate', {
-      params: { code },
-    });
-    return response.data;
-  }
-);
+export const validateStoreCredit = CreateValidateStoreCreditThunk(axiosInstance);
 
 export const submitToWario = createAsyncThunk<CreateOrderResponse, string|null, {dispatch: AppDispatch; state: RootState}>(
   'order',
@@ -37,7 +30,7 @@ export const submitToWario = createAsyncThunk<CreateOrderResponse, string|null, 
 );
 
 export interface WPaymentState {
-  storeCreditValidation: ValidateAndLockCreditResponse | null;
+  storeCreditValidations: Omit<JSFECreditV2, 'amount_used'>[];
   warioResponse: CreateOrderResponse | null;
   selectedTip: TipSelection | null;
   specialInstructions: string | null;
@@ -49,7 +42,7 @@ export interface WPaymentState {
 }
 
 const initialState: WPaymentState = {
-  storeCreditValidation: null,
+  storeCreditValidations: [],
   warioResponse: null,
   squareTokenErrors: [],
   orderSubmitErrors: [],
@@ -70,7 +63,7 @@ const WPaymentSlice = createSlice({
     clearCreditCode(state) {
       state.creditValidationLoading = 'IDLE';
       state.storeCreditInput = "";
-      state.storeCreditValidation = null;
+      state.storeCreditValidations = [];
     },
     setSquareTokenizationErrors(state, action: PayloadAction<Square.TokenError[]>) {
       state.squareTokenErrors = action.payload;
@@ -83,14 +76,16 @@ const WPaymentSlice = createSlice({
     }
   },
   extraReducers: (builder) => {
-    // Add reducers for additional action types here, and handle loading state as needed
     builder
     .addCase(validateStoreCredit.fulfilled, (state, action) => {
-      state.storeCreditValidation = action.payload;
-      state.creditValidationLoading = action.payload.valid ? 'SUCCEEDED' : 'FAILED';
+      if (action.payload.valid) {
+        state.storeCreditValidations = [...state.storeCreditValidations, { validation: action.payload, code: action.meta.arg } ];
+        state.creditValidationLoading = 'SUCCEEDED';
+      } else {
+        state.creditValidationLoading = 'FAILED';
+      }
     })
     .addCase(validateStoreCredit.pending, (state, action) => {
-      state.storeCreditValidation = null;
       state.storeCreditInput = action.meta.arg;
       state.creditValidationLoading = 'PENDING';
     })

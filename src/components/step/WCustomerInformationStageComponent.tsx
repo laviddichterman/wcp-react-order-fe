@@ -54,14 +54,14 @@ export function WCustomerInformationStage() {
             <RHFTextField
               name="givenName"
               autoComplete="given-name name"
-              label={<label className="customer-name-text">First name:</label>}
+              label={"First name:"}
             />
           </Grid>
           <Grid item sx={{ p: 1 }} xs={6}>
             <RHFTextField
               name="familyName"
               autoComplete="family-name"
-              label={<label className="customer-name-text">Family name:</label>}
+              label={"Family name:"}
             />
           </Grid>
           <Grid item xs={12} sx={{ p: 1 }}>
@@ -70,7 +70,7 @@ export function WCustomerInformationStage() {
               fullWidth
               name="mobileNumRaw"
               error={errors.mobileNumRaw}
-              label={<label className="phone-number-text">Mobile Phone Number:</label>}
+              label={"Mobile Phone Number:"}
               control={cIForm.control}
             />
           </Grid>
@@ -78,13 +78,13 @@ export function WCustomerInformationStage() {
             <RHFMailTextField
               name="email"
               autoComplete="email"
-              label={<label className="customer-email-text">E-Mail Address:</label>}
+              label={"E-Mail Address:"}
             />
           </Grid>
           <Grid item xs={12} sx={{ px: 1, pt: 1 }}>
             <RHFTextField
               name="referral"
-              label={<label className="referral-info">Referral (optional):</label>}
+              label={"Referral (optional):"}
             />
           </Grid>
         </Grid>

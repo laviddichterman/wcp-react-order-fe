@@ -189,7 +189,6 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableRipple
                   disableFocusRipple
                   disableTouchRipple
-                  //className={`input-whole`}
                   disabled={optionState.enable_whole.enable !== DISABLE_REASON.ENABLED}
                   checked={isWhole}
                   onClick={() => onClickWhole(serviceDateTime)} />}
@@ -198,7 +197,6 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableRipple
                   disableFocusRipple
                   disableTouchRipple
-                  //className={`input-left`}
                   disabled={optionState.enable_left.enable !== DISABLE_REASON.ENABLED}
                   checked={isLeft}
                   onClick={() => onClickLeft(serviceDateTime)} />}
@@ -207,7 +205,6 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableRipple
                   disableFocusRipple
                   disableTouchRipple
-                  //className={`input-right`}
                   disabled={optionState.enable_right.enable !== DISABLE_REASON.ENABLED}
                   checked={isRight}
                   onClick={() => onClickRight(serviceDateTime)} />}
@@ -239,7 +236,7 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
   const visibleOptions = useMemo(() => {
     const filterUnavailable = menu.modifiers[mtid].modifier_type.displayFlags.omit_options_if_not_available;
     const mmEntry = product.m.modifier_map[mtid];
-    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.disabled, new Date(serviceDateTime)) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo.id))) : [];
+    return serviceDateTime !== null ? menu.modifiers[mtid].options_list.filter((o) => DisableDataCheck(o.mo.disabled, serviceDateTime) && (!filterUnavailable || FilterUnselectable(mmEntry, o.mo.id))) : [];
   }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
   const modifierOptionsHtml = useMemo(() => {
     const mEntry = menu.modifiers[mtid];
@@ -249,10 +246,9 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
         if (mt.displayFlags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
           const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS.id];
           const basePI = pcEntry.instances[pcEntry.base_id];
-          const mtIdX = basePI.modifiers.findIndex(x => x.modifier_type_id === mtid);
           // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
-          if (mtIdX !== -1 && basePI.modifiers[mtIdX].options.length === 1) {
-            const baseOptionIndex = visibleOptions.findIndex(x => x.mo.id === basePI.modifiers[mtIdX].options[0].option_id);
+          if (Object.hasOwn(basePI.modifiers, mtid) && basePI.modifiers[mtid].length === 1) {
+            const baseOptionIndex = visibleOptions.findIndex(x => x.mo.id === basePI.modifiers[mtid][0].optionId);
             if (baseOptionIndex !== -1) {
               // we togglin'!
               // since there are only two visible options, the base option is either at index 1 or 0

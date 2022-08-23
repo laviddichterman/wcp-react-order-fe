@@ -11,6 +11,7 @@ import { FilterEmptyCategoriesWrapper, WShopForProductsStageProps } from './WSho
 import { Separator, StageTitle } from '../styled/styled';
 
 export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
+  // TODO: we need to handle if this is null by choice. how to we bypass this stage?
   const SUPP_CATID = useAppSelector(SelectSupplementalCategoryId);
   const menu = useAppSelector(s => s.ws.menu!);
   const selectedService = useAppSelector(s=>s.fulfillment.selectedService);
@@ -22,7 +23,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
 
   // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
-    if (serviceDateTime !== null && selectedService !== null) {
+    if (serviceDateTime !== null && selectedService !== null && SUPP_CATID !== null) {
       const extras = menu.categories[SUPP_CATID].children.length ? menu.categories[SUPP_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
       if (extras.length !== extrasCategories.length) {
         setActivePanel(0);

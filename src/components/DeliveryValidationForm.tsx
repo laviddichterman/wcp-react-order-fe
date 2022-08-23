@@ -103,12 +103,12 @@ export default function DeliveryInfoForm() {
         </ErrorResponseOutput>
       }
 
-      <span className="flexbox" ng-show="orderCtrl.s.service_type == orderCtrl.CONFIG.DELIVERY">
+      <span className="flexbox">
         <span className="flexbox__item one-whole">
           <label htmlFor="delivery-instructions-text">
             <span className="delivery-instructions-text">Delivery Instructions (optional):</span>
           </label>
-          <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} ng-model="orderCtrl.s.delivery_instructions" ng-change="orderCtrl.ChangedEscapableInfo()" />
+          <input type="text" id="delivery-instructions-text" name="delivery_instructions" size={40} />
         </span>
       </span>
       <Button type="submit" disabled={!isValid || deliveryValidationLoading === 'PENDING'} className="btn" onClick={() => handleSubmit((e) => setDeliveryInfoAndAttemptToValidate(e))()}>Validate Delivery Address</Button>

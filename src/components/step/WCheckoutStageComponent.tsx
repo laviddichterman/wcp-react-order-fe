@@ -4,11 +4,10 @@ import { LoadingScreen } from '@wcp/wario-ux-shared';
 import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
-import { TIP_PREAMBLE } from '../../config';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { fCurrency } from '../../utils/numbers';
-import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectTipValue } from '../../app/store';
+import { SelectAmountCreditUsed, SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectTipBasis, SelectTipPreamble, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
@@ -29,13 +28,14 @@ export function WCheckoutStage() {
   const balance = useAppSelector(SelectBalanceAfterCredits);
   const creditApplied = useAppSelector(SelectAmountCreditUsed);
   //const selectedTipAmount = useAppSelector(SelectTipValue);
-  const storeCreditValidation = useAppSelector(s => s.payment.storeCreditValidation);
+  const storeCreditValidations = useAppSelector(s => s.payment.storeCreditValidations);
   const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
 
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   //const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
+  const TIP_PREAMBLE = useAppSelector(SelectTipPreamble);
   const TwentyPercentTipValue = useMemo(()=>ComputeTipValue(TIP_SUGGESTION_20, tipBasis), [tipBasis]);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
@@ -132,7 +132,7 @@ export function WCheckoutStage() {
         <Grid container>
           <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
           <Grid item xs={12}>
-            {balance > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
+            {balance.amount > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
               <>
                 <CreditCard
                   // @ts-ignore 

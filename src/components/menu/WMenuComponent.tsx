@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ProductDisplay } from '../WProductComponent';
 import { WModifiersComponent } from './WModifiersComponent';
-import { useAppSelector } from "../../app/useHooks";
+import { useAppDispatch, useAppSelector } from "../../app/useHooks";
 import { Box, Tab, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
 import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu } from '@wcp/wcpshared';
-import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectMenuCategoryId } from '../../app/store';
+import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectDefaultFulfillmentId, SelectMenuCategoryId } from '../../app/store';
 import { LoadingScreen } from '@wcp/wario-ux-shared';
 import { Separator } from '../styled/styled';
 import { cloneDeep } from 'lodash';
-
-
+import { setService } from '../../app/slices/WFulfillmentSlice';
 
 function WMenuSection({ menu, section }: { menu: IMenu; section: CategoryEntry; }) {
   const productClassSelector = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
@@ -104,20 +103,28 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
 }
 
 export function WMenuComponent() {
-
+  const dispatch = useAppDispatch();
   const menu = useAppSelector(s => s.ws.menu);
+
   const [filteredMenu, setFilteredMenu] = useState<IMenu | null>(null);
+  const FulfillmentId = useAppSelector(SelectDefaultFulfillmentId);
+  // NOTE THIS WILL BE NULL UNTIL WE ASSIGN A FULFILLMENT
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
   const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s));
+
+  useEffect(() => {
+    dispatch(setService(FulfillmentId));
+  }, [FulfillmentId]);
+
   useEffect(() => {
     if (menu !== null && MENU_CATID) {
-      const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime, 1);
+      const FilterProdsFxn = (item: IProductInstance) => FilterProduct(item, menu, (x) => x.menu.hide, nextAvailableTime, FulfillmentId);
       const menuCopy = cloneDeep(menu);
-      FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime);
+      FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime, FulfillmentId);
       setFilteredMenu(menuCopy);
 
     }
-  }, [menu, nextAvailableTime, MENU_CATID]);
+  }, [menu, nextAvailableTime, MENU_CATID, FulfillmentId]);
   if (filteredMenu === null) {
     return <LoadingScreen />;
   }
