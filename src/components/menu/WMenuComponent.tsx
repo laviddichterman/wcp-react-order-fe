@@ -4,7 +4,7 @@ import { WModifiersComponent } from './WModifiersComponent';
 import { useAppDispatch, useAppSelector } from "../../app/useHooks";
 import { Box, Tab, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
-import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu } from '@wcp/wcpshared';
+import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu, WDateUtils } from '@wcp/wcpshared';
 import { GetNextAvailableServiceDateTime, IProductsSelectors, SelectDefaultFulfillmentId, SelectMenuCategoryId } from '../../app/store';
 import { LoadingScreen } from '@wcp/wario-ux-shared';
 import { Separator } from '../styled/styled';
@@ -110,7 +110,7 @@ export function WMenuComponent() {
   const FulfillmentId = useAppSelector(SelectDefaultFulfillmentId);
   // NOTE THIS WILL BE NULL UNTIL WE ASSIGN A FULFILLMENT
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
-  const nextAvailableTime = useAppSelector(s => GetNextAvailableServiceDateTime(s));
+  const nextAvailableTime = useAppSelector(s => WDateUtils.ComputeServiceDateTime(...GetNextAvailableServiceDateTime(s)));
 
   useEffect(() => {
     dispatch(setService(FulfillmentId));

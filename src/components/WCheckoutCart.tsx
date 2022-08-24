@@ -3,20 +3,19 @@ import { ProductDisplay } from './WProductComponent';
 import { CartEntry, MoneyToDisplayString } from '@wcp/wcpshared';
 import { fPercent } from '../utils/numbers';
 import { useAppSelector } from '../app/useHooks';
-import { SelectBalanceAfterCredits, SelectDeliveryFee, SelectDiscountApplied, SelectGiftCardApplied, selectGroupedAndOrderedCart, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
+import { SelectBalanceAfterCredits, SelectServiceFee, SelectDiscountCreditValidationsWithAmounts, SelectGiftCardValidationsWithAmounts, selectGroupedAndOrderedCart, SelectTaxAmount, SelectTaxRate, SelectTipValue } from '../app/store';
 import { ProductPrice, ProductTitle } from './styled/styled';
 
 export function WCheckoutCart() {
   const menu = useAppSelector(s => s.ws.menu);
   const cart = useAppSelector(selectGroupedAndOrderedCart);
   const TAX_RATE = useAppSelector(SelectTaxRate);
-  const discountApplied = useAppSelector(SelectDiscountApplied);
   // const deliveryFee = useAppSelector(SelectDeliveryFee);
   const tipValue = useAppSelector(SelectTipValue);
   const taxValue = useAppSelector(SelectTaxAmount);
-  const giftCardApplied = useAppSelector(SelectGiftCardApplied);
+  const discountCreditsApplied = useAppSelector(SelectDiscountCreditValidationsWithAmounts);
+  const giftCreditsApplied = useAppSelector(SelectGiftCardValidationsWithAmounts);
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
-  const storeCreditCode = useAppSelector(s => s.payment.storeCreditInput);
 
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   if (menu === null || selectedService === null) {
@@ -61,13 +60,13 @@ export function WCheckoutCart() {
               </TableCell>
             </TableRow>
           )} */}
-          {discountApplied.amount > 0 &&
-            <TableRow>
+          {discountCreditsApplied.map(credit => 
+            <TableRow key={credit.code}>
               <TableCell colSpan={3} >
-                <ProductTitle>Discount Code Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
+                <ProductTitle>Discount Code Applied <Typography sx={{ textTransform: "none" }}>({credit.code})</Typography></ProductTitle>
               </TableCell>
-              <TableCell colSpan={2} align="right"><ProductPrice>-{MoneyToDisplayString(discountApplied, false)}</ProductPrice></TableCell>
-            </TableRow>}
+              <TableCell colSpan={2} align="right"><ProductPrice>-{MoneyToDisplayString(credit.amount_used, false)}</ProductPrice></TableCell>
+            </TableRow>)}
           {taxValue.amount > 0 &&
             <TableRow>
               <TableCell colSpan={3} >
@@ -83,15 +82,15 @@ export function WCheckoutCart() {
               </TableCell>
               <TableCell colSpan={2} align="right"><ProductPrice>{MoneyToDisplayString(tipValue, false)}</ProductPrice></TableCell>
             </TableRow>}
-          {giftCardApplied.amount > 0 &&
-            <TableRow>
+          {giftCreditsApplied.map(credit =>
+            <TableRow key={credit.code}>
               <TableCell colSpan={3} >
-                <ProductTitle>Digital Gift Applied <Typography sx={{ textTransform: "none" }}>({storeCreditCode})</Typography></ProductTitle>
+                <ProductTitle>Digital Gift Applied <Typography sx={{ textTransform: "none" }}>({credit.code})</Typography></ProductTitle>
               </TableCell>
               <TableCell colSpan={2} align="right">
-                <ProductPrice >-{MoneyToDisplayString(giftCardApplied, false)}</ProductPrice>
+                <ProductPrice >-{MoneyToDisplayString(credit.amount_used, false)}</ProductPrice>
               </TableCell>
-            </TableRow>}
+            </TableRow>)}
           <TableRow>
             <TableCell colSpan={3} >
               <ProductTitle>Total</ProductTitle>

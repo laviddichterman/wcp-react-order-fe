@@ -1,7 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WProductMetadata } from "@wcp/wcpshared";
+import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WProductMetadata, ProductModifierEntry } from "@wcp/wcpshared";
 import { cloneDeep } from 'lodash';
 
+
+const SortProductModifierEntries = (mods: ProductModifierEntry[], menu: IMenu) => 
+  mods.sort((a, b) => menu.modifiers[a.modifierTypeId].modifier_type.ordinal - menu.modifiers[b.modifierTypeId].modifier_type.ordinal);
+
+
+
+// TODO: move product modification into a shared library so backend and FE can use it.
 
 export interface WCustomizerState {
   // allow the prompt to enable advanced options to appear (basically, this should be a memoized check on if there could be any advanced options)
@@ -72,34 +79,49 @@ export const WCustomizerSlice = createSlice({
     updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, menu: IMenu }>) {
       if (state.selectedProduct !== null) {
         const newOptInstance = { ...action.payload.optionState, optionId: action.payload.mo.id };
-        if (!Object.hasOwn(state.selectedProduct.p.modifiers, action.payload.mt.id)) {
-          state.selectedProduct.p.modifiers[action.payload.mt.id] = [];
-        }
+        const modifierEntryIndex = state.selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === action.payload.mt.id);
+        let newModifierOptions = modifierEntryIndex !== -1 ? state.selectedProduct.p.modifiers[modifierEntryIndex].options : [];
         if (action.payload.optionState.placement === OptionPlacement.NONE) {
-          state.selectedProduct.p.modifiers[action.payload.mt.id] = state.selectedProduct.p.modifiers[action.payload.mt.id].filter(x => x.optionId !== action.payload.mo.id);
-        }
-        else {
+          newModifierOptions = newModifierOptions.filter(x => x.optionId !== action.payload.mo.id);
+        } else {
           if (action.payload.mt.min_selected === 0 && action.payload.mt.max_selected === 1) {
             // checkbox that requires we unselect any other values since it kinda functions like a radio
-            state.selectedProduct.p.modifiers[action.payload.mt.id] = [];
+            newModifierOptions = [];
           }
-          const moIdX = state.selectedProduct.p.modifiers[action.payload.mt.id].findIndex(x => x.optionId === action.payload.mo.id);
+          const moIdX = newModifierOptions.findIndex(x => x.optionId === action.payload.mo.id);
           if (moIdX === -1) {
             const modifierOptions = action.payload.menu.modifiers[action.payload.mt.id].options;
-            state.selectedProduct.p.modifiers[action.payload.mt.id].push(newOptInstance);
-            state.selectedProduct.p.modifiers[action.payload.mt.id].sort((a, b) => modifierOptions[a.optionId].index - modifierOptions[b.optionId].index);
+            newModifierOptions.push(newOptInstance);
+            newModifierOptions.sort((a, b) => modifierOptions[a.optionId].index - modifierOptions[b.optionId].index);
           }
           else {
-            state.selectedProduct.p.modifiers[action.payload.mt.id][moIdX] = newOptInstance;
+            newModifierOptions[moIdX] = newOptInstance;
+          }
+        }
+        if (modifierEntryIndex === -1 && newModifierOptions.length > 0) {
+          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mo.id, options: newModifierOptions });
+          SortProductModifierEntries(state.selectedProduct.p.modifiers, action.payload.menu);
+        } else {
+          if (newModifierOptions.length > 0) {
+            state.selectedProduct.p.modifiers[modifierEntryIndex].options = newModifierOptions;
+          } else {
+            state.selectedProduct.p.modifiers.splice(modifierEntryIndex, 1);
           }
         }
         // regenerate metadata required after this call. handled by ListeningMiddleware
       }
 
     },
-    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string }>) {
+    updateModifierOptionStateToggleOrRadio(state, action: PayloadAction<{ mtId: string, moId: string, menu: IMenu }>) {
       if (state.selectedProduct !== null) {
-        state.selectedProduct.p.modifiers[action.payload.mtId] = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, optionId: action.payload.moId }];
+        const newModifierOptions = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, optionId: action.payload.moId }];
+        const modifierEntryIndex = state.selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === action.payload.mtId);
+        if (modifierEntryIndex === -1) {
+          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mtId, options: newModifierOptions });
+          SortProductModifierEntries(state.selectedProduct.p.modifiers, action.payload.menu);
+        } else {
+          state.selectedProduct.p.modifiers[modifierEntryIndex].options = newModifierOptions;
+        }
         // regenerate metadata required after this call. handled by ListeningMiddleware
       }
     }

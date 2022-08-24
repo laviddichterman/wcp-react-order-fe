@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuModifiers, PriceDisplay } from '@wcp/wcpshared';
+import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, MenuModifiers, PriceDisplay, MoneyToDisplayString } from '@wcp/wcpshared';
 import { IProductInstancesSelectors } from '../app/store';
 import { useAppSelector } from '../app/useHooks';
 import { Box, BoxProps } from '@mui/material';
@@ -30,17 +30,17 @@ function WProductComponent({ productMetadata, description, allowAdornment, dots,
   const priceText = useMemo(() => {
     if (productInstance && productMetadata.incomplete) {
       switch (productInstance.displayFlags[displayContext].price_display) {
-        case PriceDisplay.FROM_X: return `from ${productMetadata.price}`;
+        case PriceDisplay.FROM_X: return `from ${MoneyToDisplayString(productMetadata.price, false)}`;
         case PriceDisplay.VARIES: return "MP";
         case PriceDisplay.MIN_TO_MAX: {
           const prices = ComputePotentialPrices(productMetadata, menuModifiers);
-          return prices.length > 1 && prices[0] !== prices[prices.length - 1] ? `from ${prices[0]} to ${prices[prices.length - 1]}` : `${prices[0]}`;
+          return prices.length > 1 && prices[0] !== prices[prices.length - 1] ? `from ${MoneyToDisplayString(prices[0], false)} to ${MoneyToDisplayString(prices[prices.length - 1], false)}` : `${prices[0]}`;
         }
-        case PriceDisplay.LIST: return ComputePotentialPrices(productMetadata, menuModifiers).join("/");
-        case PriceDisplay.ALWAYS: default: return `${productMetadata.price}`;
+        case PriceDisplay.LIST: return ComputePotentialPrices(productMetadata, menuModifiers).map(x=>MoneyToDisplayString(x, false)).join("/");
+        case PriceDisplay.ALWAYS: default: return `${MoneyToDisplayString(productMetadata.price, false)}`;
       }
     }
-    return `${productMetadata.price}`;
+    return MoneyToDisplayString(productMetadata.price, false);
   }, [productInstance, productMetadata, displayContext, menuModifiers]);
   return (
     <Box component='div' {...other} sx={adornmentHTML ? {

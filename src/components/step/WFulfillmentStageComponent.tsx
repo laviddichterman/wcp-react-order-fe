@@ -33,7 +33,7 @@ export default function WFulfillmentStageComponent() {
       (serviceTerms.length === 0 || hasAgreedToTerms) &&
       (fulfillments[selectedService].service !== FulfillmentType.DineIn || dineInInfo !== null) &&
       (fulfillments[selectedService].service !== FulfillmentType.Delivery || deliveryInfo !== null);
-  }, [selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
+  }, [fulfillments, selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
 
   const OptionsForDate = useCallback((d: string | null) => {
     if (selectedService !== null && d !== null) {

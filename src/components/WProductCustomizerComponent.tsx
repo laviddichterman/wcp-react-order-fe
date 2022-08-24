@@ -33,6 +33,7 @@ interface IModifierOptionToggle {
 
 function WModifierOptionToggle({ toggleOptionChecked, toggleOptionUnchecked }: IModifierOptionToggle) {
   const dispatch = useAppDispatch();
+  const menu = useAppSelector(s => s.ws.menu!);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.mt.id, toggleOptionUnchecked.mo.id);
   const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.mt.id, toggleOptionChecked.mo.id);
@@ -45,7 +46,8 @@ function WModifierOptionToggle({ toggleOptionChecked, toggleOptionUnchecked }: I
     //dispatch(set appropriate option value)
     dispatch(updateModifierOptionStateToggleOrRadio({
       mtId: toggleOptionChecked.mt.id,
-      moId: e.target.checked ? toggleOptionChecked.mo.id : toggleOptionUnchecked.mo.id
+      moId: e.target.checked ? toggleOptionChecked.mo.id : toggleOptionUnchecked.mo.id,
+      menu
     }));
   }
   return (
@@ -74,9 +76,10 @@ interface IModifierRadioCustomizerComponent {
 
 export function WModifierRadioComponent({ options }: IModifierRadioCustomizerComponent) {
   const dispatch = useAppDispatch();
+  const menu = useAppSelector(s => s.ws.menu!);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const getObjectStateSelector = useAppSelector(selectOptionState);
-  const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers[options[0].mt.id] ?? [])
+  const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers.find(x=>x.modifierTypeId === options[0].mt.id)?.options ?? [])
   const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].mt.id, moId), [options, getObjectStateSelector]);
   if (!serviceDateTime) {
     return null;
@@ -86,7 +89,8 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
     e.preventDefault();
     dispatch(updateModifierOptionStateToggleOrRadio({
       mtId: options[0].mt.id,
-      moId: e.target.value
+      moId: e.target.value,
+      menu
     }));
   }
   return (
@@ -247,8 +251,9 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
           const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS.id];
           const basePI = pcEntry.instances[pcEntry.base_id];
           // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
-          if (Object.hasOwn(basePI.modifiers, mtid) && basePI.modifiers[mtid].length === 1) {
-            const baseOptionIndex = visibleOptions.findIndex(x => x.mo.id === basePI.modifiers[mtid][0].optionId);
+          const mtidx = basePI.modifiers.findIndex(x=>x.modifierTypeId === mtid);
+          if (mtidx !== -1 && basePI.modifiers[mtidx].options.length === 1) {
+            const baseOptionIndex = visibleOptions.findIndex(x => x.mo.id === basePI.modifiers[mtidx].options[0].optionId);
             if (baseOptionIndex !== -1) {
               // we togglin'!
               // since there are only two visible options, the base option is either at index 1 or 0

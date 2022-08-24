@@ -35,11 +35,11 @@ ListeningMiddleware.startListening({
     updateCartQuantity),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const originalState = api.getOriginalState();
-    const fulfillments = api.getState().ws.fulfillments!;
     const isConfirmed = originalState.payment.submitToWarioStatus === 'SUCCEEDED'; // omit because if it bumps it here, then the server will likely bump it too|| originalState.payment.submitToWarioStatus === 'PENDING';
     const previouslySelectedDate = originalState.fulfillment.selectedDate;
     const previouslySelectedTime = originalState.fulfillment.selectedTime;
-    const selectedService = originalState.fulfillment.selectedService;
+    const selectedService = api.getState().fulfillment.selectedService;
+    const fulfillments = api.getState().ws.fulfillments!;
     if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && Object.hasOwn(fulfillments, selectedService) && !isConfirmed) {
       const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, [selectedService]);
       if (!newOptions.find(x => x.value === previouslySelectedTime)) {
@@ -112,7 +112,7 @@ ListeningMiddleware.startListening({
     const fulfillments = api.getState().ws.fulfillments;
     if (catalog !== null && currentTime !== 0 && fulfillments !== null) {
       const service = api.getState().fulfillment.selectedService ?? Object.keys(fulfillments)[0];
-      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? GetNextAvailableServiceDateTime(api.getState());
+      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? WDateUtils.ComputeServiceDateTime(...GetNextAvailableServiceDateTime(api.getState()));
       const MENU = GenerateMenu(catalog, menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
