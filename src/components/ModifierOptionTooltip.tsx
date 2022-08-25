@@ -41,7 +41,7 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
         const PIF = pifGetter(enableState.functionId);
         if (PIF && selectedProduct) {
           const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(selectedProduct.p, PIF.expression, catalog);
-          return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalog.modifiers)}`;
+          return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalog)}`;
         }
         return `${displayName} is not available with the current combination of options.`;
     }

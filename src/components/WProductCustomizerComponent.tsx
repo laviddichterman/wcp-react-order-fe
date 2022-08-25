@@ -249,7 +249,7 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
       if (mt.min_selected === 1) {
         if (mt.displayFlags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
           const pcEntry = menu.product_classes[product.p.PRODUCT_CLASS.id];
-          const basePI = pcEntry.instances[pcEntry.base_id];
+          const basePI = pcEntry.instances[pcEntry.baseId];
           // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
           const mtidx = basePI.modifiers.findIndex(x=>x.modifierTypeId === mtid);
           if (mtidx !== -1 && basePI.modifiers[mtidx].options.length === 1) {

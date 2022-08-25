@@ -56,15 +56,15 @@ export function WCheckoutStage() {
         return (
           <>
             <Typography variant="body2">
-              Payment of {MoneyToDisplayString(payment.amount, true)} received {payment.last4 ? ` from card ending in: ${payment.last4}!` : "!"}
-              <br />Here's your <Link href={payment.receiptUrl} target="_blank">receipt</Link></Typography>
+              Payment of {MoneyToDisplayString(payment.amount, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
+              <br />Here's your <Link href={payment.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </>);
       case PaymentMethod.StoreCredit:
-        const validation = giftCreditsApplied.find(x => x.code === payment.code)!;
+        const validation = giftCreditsApplied.find(x => x.code === payment.payment.code)!;
         const balance = { amount: validation.validation.amount.amount - payment.amount.amount, currency: payment.amount.currency };
         return (
           <>
-            <Typography variant='h6'>Digital Gift Card number {payment.code} debited {MoneyToDisplayString(payment.amount, true)}.</Typography>
+            <Typography variant='h6'>Digital Gift Card number {payment.payment.code} debited {MoneyToDisplayString(payment.amount, true)}.</Typography>
             <Typography variant="body2">
               {balance.amount === 0 ? "No balance remains." : `Balance of ${MoneyToDisplayString(balance, true)} remains.`}
             </Typography>
