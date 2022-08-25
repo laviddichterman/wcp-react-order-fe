@@ -13,7 +13,7 @@ export function WModifiersComponent({ product, menuModifiers }: { product: IProd
             </ProductTitle>
           </Grid>
           {menuModifiers[mod_def.mtid].options_list.map((opt, j) =>
-            <Grid xs={12} md={6} lg={4} key={j} sx={{ pl: 3, pt: 1 }}>
+            <Grid item xs={12} md={6} lg={4} key={j} sx={{ pl: 3, pt: 1 }}>
               <Box sx={{ position: 'relative' }}>
                 <ProductDescription>{opt.mo.displayName}</ProductDescription>
                 <ProductPrice sx={{ position: 'absolute', top: 0, right: 0, zIndex: 1}}>

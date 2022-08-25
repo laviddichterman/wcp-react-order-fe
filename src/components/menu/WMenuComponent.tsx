@@ -50,7 +50,6 @@ function WTabbedMenu({ menu, category }: { menu: IMenu; category: CategoryEntry;
   }, [menu, category]);
   return (
     <Box>
-
       {hasNestedChildrenCategories ? (
         <TabContext value={active}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -114,7 +113,7 @@ export function WMenuComponent() {
 
   useEffect(() => {
     dispatch(setService(FulfillmentId));
-  }, [FulfillmentId]);
+  }, [dispatch, FulfillmentId]);
 
   useEffect(() => {
     if (menu !== null && MENU_CATID) {
@@ -122,9 +121,8 @@ export function WMenuComponent() {
       const menuCopy = cloneDeep(menu);
       FilterWMenu(menuCopy, FilterProdsFxn, nextAvailableTime, FulfillmentId);
       setFilteredMenu(menuCopy);
-
     }
-  }, [menu, nextAvailableTime, MENU_CATID, FulfillmentId]);
+  }, [menu, MENU_CATID]);
   if (filteredMenu === null) {
     return <LoadingScreen />;
   }

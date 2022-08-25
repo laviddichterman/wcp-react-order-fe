@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Link, Typography, Grid, FormLabel } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { MoneyInput } from './MoneyInput';
-import { CURRENCY, IMoney, PurchaseStoreCreditRequest, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
+import { CURRENCY, IMoney, MoneyToDisplayString, PurchaseStoreCreditRequest, PurchaseStoreCreditResponse, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import * as yup from "yup";
 import { YupValidateEmail } from './hook-form/RHFMailTextField';
 import { useForm } from "react-hook-form";
@@ -15,7 +15,6 @@ import axiosInstance from '../utils/axios';
 import { styled } from '@mui/system';
 import { ErrorResponseOutput, SquareButtonCSS } from './styled/styled';
 import { SelectSquareAppId, SelectSquareLocationId } from '../app/store';
-import { fCurrency } from '../utils/numbers';
 
 const Title = styled(Typography)({
   fontWeight: 500,
@@ -71,21 +70,6 @@ function useCPForm() {
 
 type PurchaseStatus = 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'FAILED_UNKNOWN' | 'INVALID_DATA';
 
-interface PurchaseResponse {
-  reference_id: string;
-  joint_credit_code: string;
-  square_order_id: string;
-  amount_money: number;
-  last4: string;
-  receipt_url: string;
-}
-
-interface PurchaseResponseFailure {
-  error: Square.SquareApiError[],
-  success: false;
-  result: null;
-}
-
 const makeRequest = (token: string, amount: IMoney, values: CreditPurchaseInfo) => {
   const typedBody: PurchaseStoreCreditRequest & { nonce: string } = {
     nonce: token,
@@ -113,7 +97,7 @@ export function WStoreCreditPurchase() {
   const [creditAmount, setCreditAmount] = useState<IMoney>({ currency: CURRENCY.USD, amount: 5000 });
   const [purchaseStatus, setPurchaseStatus] = useState<PurchaseStatus>('IDLE');
   const [displayPaymentForm, setDisplayPaymentForm] = useState(false);
-  const [purchaseResponse, setPurchaseResponse] = useState<PurchaseResponse | null>(null);
+  const [purchaseResponse, setPurchaseResponse] = useState<PurchaseStoreCreditResponse | null>(null);
   const [paymentErrors, setPaymentErrors] = useState<string[]>([]);
   useEffect(() => {
     if (isValid) {
@@ -130,9 +114,10 @@ export function WStoreCreditPurchase() {
           setPurchaseStatus('SUCCESS');
         }).catch((reason: any) => {
           if (reason && reason.error) {
+
             console.log(reason.error);
             setPurchaseStatus('INVALID_DATA');
-            setPaymentErrors((reason as PurchaseResponseFailure).error.map(x => x.detail ?? x.code));
+            setPaymentErrors((reason as PurchaseStoreCreditResponse).error.map(x => x.detail ?? x.code));
           }
           else {
             setPurchaseStatus('FAILED_UNKNOWN');
@@ -279,27 +264,27 @@ export function WStoreCreditPurchase() {
             </Grid>
           </FormProvider>
         }
-        {purchaseStatus === 'SUCCESS' && purchaseResponse !== null &&
+        {purchaseStatus === 'SUCCESS' && purchaseResponse !== null && purchaseResponse.success === true && 
           <Grid container>
             <Grid item xs={12}>
-              <Typography variant="h3">Payment of {fCurrency(purchaseResponse.amount_money / 100)} received
-                from card ending in: {purchaseResponse.last4}!</Typography>
-              <Typography variant="body2">Here's your <Link href={purchaseResponse.receipt_url} target="_blank">receipt</Link>.</Typography>
+              <Typography variant="h3">Payment of {MoneyToDisplayString(purchaseResponse.result.amount, true)} received
+                from card ending in: {purchaseResponse.result.last4}!</Typography>
+              <Typography variant="body2">Here's your <Link href={purchaseResponse.result.receiptUrl} target="_blank">receipt</Link>.</Typography>
             </Grid>
             <Grid item xs={12}>
               <Typography variant='h6'>Store credit details:</Typography>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="h4">Credit Amount: </Typography>
-              <span>{fCurrency(purchaseResponse.amount_money / 100)}</span>
+              <Typography variant="h4">Credit Amount:</Typography>
+              <span>{MoneyToDisplayString(purchaseResponse.result.amount, true)}</span>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="h4">Recipient: </Typography>
+              <Typography variant="h4">Recipient:</Typography>
               <span>{getValues('recipientNameFirst')} {getValues('recipientNameFamily')}</span>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography sx={{ fontWeight: 'bold' }}>Credit Code:</Typography>
-              <span>{purchaseResponse.joint_credit_code}</span>
+              <Typography variant="h4">Credit Code:</Typography>
+              <span>{purchaseResponse.result.code}</span>
             </Grid>
           </Grid>}
       </PaymentForm>

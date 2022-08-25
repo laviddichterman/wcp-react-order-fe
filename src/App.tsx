@@ -11,8 +11,8 @@ import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import { themeOptions } from './components/styled/styled';
 import { scrollToIdOffsetAfterDelay } from './utils/shared';
 
-// import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
-// import { WMenuComponent } from './components/menu/WMenuComponent';
+import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
+import { WMenuComponent } from './components/menu/WMenuComponent';
 import { WOrderingComponent } from './components/WOrderingComponent';
 
 const theme = createTheme(themeOptions);
@@ -55,9 +55,9 @@ const App = () => {
             <LocalizationProvider dateAdapter={DateAdapter}>
               <div id="WARIO_order">
                 {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
-                {/* { <WStoreCreditPurchase />} */}
+                { <WStoreCreditPurchase />}
                 {/* {<WMenuComponent />} */}
-                {<WOrderingComponent />}
+                {/* {<WOrderingComponent />} */}
               </div>
             </LocalizationProvider>
           }
