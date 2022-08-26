@@ -50,14 +50,14 @@ export function WCustomerInformationStage() {
       <Typography>All information is used solely to facilitate the getting of your pizza to you. We don't sell or share customer information, ever.<br />By filling out this information, you agree to receive text messages relating to your order.</Typography>
       <FormProvider methods={cIForm}>
         <Grid sx={{ p: 2 }} container>
-          <Grid item sx={{ p: 1 }} xs={6}>
+          <Grid item sx={{ p: 1 }} xs={12} sm={6} >
             <RHFTextField
               name="givenName"
               autoComplete="given-name name"
               label={"First name:"}
             />
           </Grid>
-          <Grid item sx={{ p: 1 }} xs={6}>
+          <Grid item sx={{ p: 1 }} xs={12} sm={6} >
             <RHFTextField
               name="familyName"
               autoComplete="family-name"

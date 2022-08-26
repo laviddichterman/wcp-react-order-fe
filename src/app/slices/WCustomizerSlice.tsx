@@ -3,7 +3,7 @@ import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MO
 import { cloneDeep } from 'lodash';
 
 
-const SortProductModifierEntries = (mods: ProductModifierEntry[], menu: IMenu) => 
+const SortProductModifierEntries = (mods: ProductModifierEntry[], menu: IMenu) =>
   mods.sort((a, b) => menu.modifiers[a.modifierTypeId].modifier_type.ordinal - menu.modifiers[b.modifierTypeId].modifier_type.ordinal);
 
 
@@ -99,7 +99,7 @@ export const WCustomizerSlice = createSlice({
           }
         }
         if (modifierEntryIndex === -1 && newModifierOptions.length > 0) {
-          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mo.id, options: newModifierOptions });
+          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mt.id, options: newModifierOptions });
           SortProductModifierEntries(state.selectedProduct.p.modifiers, action.payload.menu);
         } else {
           if (newModifierOptions.length > 0) {
