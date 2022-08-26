@@ -1,7 +1,7 @@
 {
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3000/",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "dependencies": {
     "@date-io/date-fns": "^2.15.0",
     "@emotion/react": "^11.10.0",
@@ -13,7 +13,7 @@
     "@mui/x-date-pickers": "^5.0.0-beta.7",
     "@reduxjs/toolkit": "^1.8.5",
     "@wcp/wario-ux-shared": "^0.0.10",
-    "@wcp/wcpshared": "^4.1.22",
+    "@wcp/wcpshared": "^4.1.24",
     "axios": "^0.27.2",
     "date-fns": "^2.29.2",
     "date-fns-tz": "^1.3.6",
@@ -59,11 +59,13 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "deploy:btpmenu": "rsync -avzhe ssh --progress ./build/* breezytown@breezytownpizza.com:~/breezytownpizza.com/wp-content/reactpress/apps/wmenu/build/",
+    "deploy:btporder": "rsync -avzhe ssh --progress ./build/* breezytown@breezytownpizza.com:~/breezytownpizza.com/wp-content/reactpress/apps/worder/build/",
+    "deploy:btpcredit": "rsync -avzhe ssh --progress ./build/* breezytown@breezytownpizza.com:~/breezytownpizza.com/wp-content/reactpress/apps/wcredit/build/",
     "deploy:wmenu": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wmenu/build/",
     "deploy:worder": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/worder/build/",
-    "deploy:wordertest": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wordertest/build/",
     "deploy:wcredit": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wcredit/build/",
-    "deploy:devwcp": "rsync -avzhe ssh --progress ./build/* lavid@wario.windycitypie.com:/var/www/wdev.windycitypie.com/"
+    "deploy:wordertest": "rsync -avzhe ssh --progress ./build/* windycitypie@windycitypie.com:/home/windycitypie/windycitypie.com/wp-content/reactpress/apps/wordertest/build/"
   },
   "eslintConfig": {
     "extends": [

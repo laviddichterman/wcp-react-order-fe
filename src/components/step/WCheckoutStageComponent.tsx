@@ -6,7 +6,6 @@ import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { fCurrency } from '../../utils/numbers';
 import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectGiftCardValidationsWithAmounts, SelectTipBasis, SelectTipPreamble, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { useEffect } from 'react';
@@ -64,7 +63,7 @@ export function WCheckoutStage() {
         const balance = { amount: validation.validation.amount.amount - payment.amount.amount, currency: payment.amount.currency };
         return (
           <>
-            <Typography variant='h6'>Digital Gift Card number {payment.payment.code} debited {MoneyToDisplayString(payment.amount, true)}.</Typography>
+            <Typography variant='h6'>Digital Gift Card number <Typography sx={{ textTransform: "none" }}>{payment.payment.code}</Typography> debited {MoneyToDisplayString(payment.amount, true)}.</Typography>
             <Typography variant="body2">
               {balance.amount === 0 ? "No balance remains." : `Balance of ${MoneyToDisplayString(balance, true)} remains.`}
             </Typography>
