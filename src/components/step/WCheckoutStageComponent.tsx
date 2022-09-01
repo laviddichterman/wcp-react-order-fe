@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
 import { LoadingScreen } from '@wcp/wario-ux-shared';
-import { CreditCard, ApplePay } from 'react-square-web-payments-sdk';
+import { CreditCard } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
@@ -33,18 +33,19 @@ export function WCheckoutStage() {
   //const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const TIP_PREAMBLE = useAppSelector(SelectTipPreamble);
+  const selectedTipValue = useAppSelector(SelectTipValue);
   const TwentyPercentTipValue = useMemo(() => ComputeTipValue(TIP_SUGGESTION_20, tipBasis), [tipBasis]);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
-  const [isCustomTipSelected, setIsCustomTipSelected] = useState(currentTipSelection?.isSuggestion === false || false);
+  const isCustomTipSelected = useMemo(() => currentTipSelection?.isSuggestion === false ?? false, [currentTipSelection]);
   const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis));
   const squareTokenErrors = useAppSelector(s => s.payment.squareTokenErrors);
   const orderSubmitErrors = useAppSelector(s => s.payment.orderSubmitErrors);
   useEffect(() => {
-    if (currentTipSelection === null) {
+    if (currentTipSelection === null || (autogratEnabled && TwentyPercentTipValue.amount > selectedTipValue.amount)) {
       dispatch(setTip(TIP_SUGGESTION_20));
     }
-  }, [currentTipSelection, dispatch])
+  }, [currentTipSelection, autogratEnabled, TwentyPercentTipValue, selectedTipValue, dispatch])
 
   const generatePaymentHtml = useCallback((payment: OrderPayment) => {
     switch (payment.t) {
@@ -89,7 +90,6 @@ export function WCheckoutStage() {
   }
 
   const onSelectSuggestedTip = (tip: TipSelection) => {
-    setIsCustomTipSelected(false);
     onChangeSelectedTip(tip);
     const newTipCashValue = ComputeTipValue(tip, tipBasis);
     if (customTipAmount.amount < newTipCashValue.amount) {
@@ -99,7 +99,6 @@ export function WCheckoutStage() {
 
   const setCustomTipHandler = (value: string) => {
     dispatch(incrementTipAdjusts());
-    setIsCustomTipSelected(true);
     const numericValue = parseFloat(value);
     if (!isFinite(numericValue) || isNaN(numericValue) || numericValue < 0 || (autogratEnabled && Math.round(numericValue * 100) < TwentyPercentTipValue.amount)) {
       dispatch(incrementTipFixes());

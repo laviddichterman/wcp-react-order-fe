@@ -3,6 +3,7 @@ import type * as Square from '@square/web-sdk';
 import { CreateValidateStoreCreditThunk } from "@wcp/wario-ux-shared";
 import { TipSelection, CreateOrderResponse, JSFECreditV2 } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
+import { scrollToIdOffsetAfterDelay } from "../../utils/shared";
 import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
 import { setSubmitTime } from "./WMetricsSlice";
 
@@ -94,6 +95,7 @@ const WPaymentSlice = createSlice({
     })
     .addCase(submitToWario.fulfilled, (state, action) => {
       state.warioResponse = action.payload;
+      scrollToIdOffsetAfterDelay("WARIO_order", 500);
       state.submitToWarioStatus = 'SUCCEEDED';
     })
     .addCase(submitToWario.pending, (state) => {
