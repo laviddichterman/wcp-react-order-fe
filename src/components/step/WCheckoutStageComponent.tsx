@@ -38,7 +38,13 @@ export function WCheckoutStage() {
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
   const isCustomTipSelected = useMemo(() => currentTipSelection?.isSuggestion === false ?? false, [currentTipSelection]);
-  const [customTipAmount, setCustomTipAmount] = useState(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis));
+  const [customTipAmount, setCustomTipAmount] = useState<string>(MoneyToDisplayString(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis), false));
+  const customTipAsIMoney = useMemo(() => {
+    const parsedCustomTipAmount = parseFloat(customTipAmount);
+    return (!isFinite(parsedCustomTipAmount) || isNaN(parsedCustomTipAmount) || parsedCustomTipAmount < 0) ? 
+    { currency: CURRENCY.USD, amount: 0 } : 
+    { amount : Math.round(parsedCustomTipAmount * 100), currency: CURRENCY.USD }
+  }, [customTipAmount]);
   const squareTokenErrors = useAppSelector(s => s.payment.squareTokenErrors);
   const orderSubmitErrors = useAppSelector(s => s.payment.orderSubmitErrors);
   useEffect(() => {
@@ -80,23 +86,20 @@ export function WCheckoutStage() {
 
   const resetCustomTip = () => {
     const resetValue = ComputeTipValue(TIP_SUGGESTION_20, tipBasis);
-    setCustomTipAmount(resetValue);
+    setCustomTipAmount((resetValue.amount / 100).toFixed(2));
     dispatch(setTip({ value: resetValue, isPercentage: false, isSuggestion: false }));
   }
 
-  const setCustomTipAmountIntercept = (value: string) => {
-    const parsedValue = parseFloat(value);
-    setCustomTipAmount({ amount : Math.round(parsedValue * 100), currency: CURRENCY.USD });
-  }
-
   const onSelectSuggestedTip = (tip: TipSelection) => {
+    dispatch(incrementTipAdjusts());
     onChangeSelectedTip(tip);
     const newTipCashValue = ComputeTipValue(tip, tipBasis);
-    if (customTipAmount.amount < newTipCashValue.amount) {
-      setCustomTipAmount(newTipCashValue);
+    if (customTipAsIMoney.amount < newTipCashValue.amount) {
+      setCustomTipAmount(MoneyToDisplayString(newTipCashValue, false));
     }
   }
 
+  // actually sets the custom tip, this should be called onBlur
   const setCustomTipHandler = (value: string) => {
     dispatch(incrementTipAdjusts());
     const numericValue = parseFloat(value);
@@ -105,7 +108,7 @@ export function WCheckoutStage() {
       resetCustomTip();
     } else {
       const newTipMoney = { amount : Math.round(numericValue * 100), currency: CURRENCY.USD };
-      setCustomTipAmount(newTipMoney);
+      setCustomTipAmount(MoneyToDisplayString(newTipMoney, false));
       dispatch(setTip({ value: newTipMoney, isPercentage: false, isSuggestion: false }));
     }
   }
@@ -127,7 +130,7 @@ export function WCheckoutStage() {
           </Grid>
         )}
         <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
-          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipHandler(MoneyToDisplayString(customTipAmount, false))} >
+          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipHandler(customTipAmount)} >
             <Grid container>
               <Grid item xs={12}>
                 <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
@@ -138,8 +141,8 @@ export function WCheckoutStage() {
                     sx={{ pt: 0 }}
                     size='small'
                     disableUnderline
-                    value={MoneyToDisplayString(customTipAmount, false)}
-                    onChange={(e) => setCustomTipAmountIntercept(e.target.value)}
+                    value={customTipAmount}
+                    onChange={(e) => setCustomTipAmount(e.target.value)}
                     onBlur={(e) => setCustomTipHandler(e.target.value)}
                     type="number"
                     inputProps={{ inputMode: 'decimal', min: 0, sx: { pt: 0, textAlign: 'center', color: 'white' }, step: 1 }}
