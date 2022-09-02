@@ -15,6 +15,7 @@ import { WShopForPrimaryProductsStage } from './WShopForPrimaryProductsStageComp
 import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent';
 import { Separator } from '../styled/styled';
 import { cloneDeep } from 'lodash';
+import { setTimeToFirstProductIfUnset } from '../../app/slices/WMetricsSlice';
 
 export interface OrderHideable { 
   order: {
@@ -76,6 +77,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
           else {
             // it's a new entry!
             enqueueSnackbar(`Added ${productCopy.m.name} to order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
+            dispatch(setTimeToFirstProductIfUnset(Date.now()));
             dispatch(addToCart({ categoryId: cid, product: productCopy }));
           }
         }

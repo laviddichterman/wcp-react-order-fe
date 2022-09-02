@@ -29,6 +29,12 @@ const WMetricsSlice = createSlice({
     incrementTipFixes(state) {
       state.numTipFixed = state.numTipFixed + 1;
     },
+    // handled manually, be sure to call whenever addToCart is called
+    setTimeToFirstProductIfUnset(state, action: PayloadAction<number>) {
+      if (state.timeToFirstProduct === 0) {
+        state.timeToFirstProduct = action.payload;
+      }
+    },
     // handled by ListenerMiddleware
     setTimeToStage(state, action: PayloadAction<{ stage: STEPPER_STAGE_ENUM, ticks: number }>) {
       state.timeToStage![action.payload.stage] = action.payload.ticks;
@@ -58,6 +64,7 @@ export const {
   incrementTimeBumps, 
   incrementTipAdjusts, 
   incrementTipFixes, 
+  setTimeToFirstProductIfUnset,
   setTimeToServiceDate, 
   setTimeToServiceTime, 
   setSubmitTime } = WMetricsSlice.actions;

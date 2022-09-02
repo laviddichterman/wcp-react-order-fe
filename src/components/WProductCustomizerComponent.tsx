@@ -25,6 +25,7 @@ import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { scrollToIdOffsetAfterDelay } from '../utils/shared';
 import { CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
 import { ModifierOptionTooltip } from './ModifierOptionTooltip';
+import { setTimeToFirstProductIfUnset } from '../app/slices/WMetricsSlice';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: WCPOption;
@@ -444,6 +445,7 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
     else {
       // cartEntry being undefined means it's an addition 
       if (cartEntry === undefined) {
+        dispatch(setTimeToFirstProductIfUnset(Date.now()));
         dispatch(addToCart({ categoryId, product: selectedProduct }))
         enqueueSnackbar(`Added ${selectedProduct.m.name} to your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
       }
