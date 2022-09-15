@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@reduxjs/toolkit";
-import { CartEntry, MenuModifiers, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
+import { CartEntry, CatalogModifierEntry, Selector, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
 
 const DeadCartAdapter = createEntityAdapter<CartEntry>({
   selectId: entry => entry.id
@@ -79,17 +79,17 @@ export const {
 /**
  * Looks through the cart for a duplicate product 
  * @param cart the entries in the cart
- * @param menuModifiers menu modifiers access
+ * @param catalogModifierEntrySelector: Selector<CatalogModifierEntry> modifiers type access
  * @param categoryId categoryId of product to add/update
  * @param product the product we're attempting to add
  * @param skipId the cart entry ID to ignore in a search for a match
  * @returns the CartEntry if a match is found for the product attempting to be added, otherwise null
  */
-export const FindDuplicateInCart = (cart: CartEntry[], menuModifiers: MenuModifiers, categoryId: string, product: WProduct, skipId: string | null = null) => {
+export const FindDuplicateInCart = (cart: CartEntry[], catalogModifierEntrySelector: Selector<CatalogModifierEntry>, categoryId: string, product: WProduct, skipId: string | null = null) => {
   for (let i = 0; i < cart.length; ++i) {
     const entry = cart[i];
     if (categoryId === entry.categoryId) {
-      if (skipId !== entry.id && WProductEquals(WProductCompare(entry.product.p, product.p, menuModifiers))) {
+      if (skipId !== entry.id && WProductEquals(WProductCompare(entry.product.p, product.p, catalogModifierEntrySelector))) {
         return entry;
       }
     }

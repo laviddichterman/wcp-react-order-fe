@@ -26,7 +26,6 @@ export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSor
               description
               dots
               price
-              menuModifiers={menu.modifiers}
               displayContext="order"
             />
           </Grid>)}

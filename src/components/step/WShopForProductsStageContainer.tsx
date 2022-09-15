@@ -4,7 +4,7 @@ import { CartEntry, WProduct, FilterProduct, IMenu, IProductInstance, FilterEmpt
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
-import { GetSelectableModifiers, IProductInstancesSelectors, IProductsSelectors, SelectMainProductCategoryCount, selectSelectedProduct } from '../../app/store';
+import { GetSelectableModifiers, SelectMainProductCategoryCount, selectSelectedProduct } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEntry } from '../../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
@@ -16,6 +16,7 @@ import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent'
 import { Separator } from '../styled/styled';
 import { cloneDeep } from 'lodash';
 import { setTimeToFirstProductIfUnset } from '../../app/slices/WMetricsSlice';
+import { CatalogSelectors, getProductEntryById, getProductInstanceById } from '@wcp/wario-ux-shared';
 
 export interface OrderHideable { 
   order: {
@@ -45,11 +46,12 @@ export interface WShopForProductsStageProps {
 export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY' | 'SECONDARY' }) {
   const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
+  const catalogSelectors = useAppSelector(s=>CatalogSelectors(s.ws));
   const selectedService = useAppSelector(s=>s.fulfillment.selectedService!);
   const menu = useAppSelector(s => s.ws.menu!);
   const { enqueueSnackbar } = useSnackbar();
-  const selectProductClassById = useAppSelector(s => (id: string) => IProductsSelectors.selectById(s, id));
-  const selectProductInstanceById = useAppSelector(s => (id: string) => IProductInstancesSelectors.selectById(s, id));
+  const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
+  const productInstanceSelector = useAppSelector(s => (id: string) => getProductInstanceById(s.ws.productInstances, id));
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const selectedProduct = useAppSelector(selectSelectedProduct);
@@ -62,14 +64,14 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
   const onProductSelection = useCallback((returnToId: string, cid: string, pid: string) => {
     // either dispatch to the customizer or to the cart
 
-    const productInstance = selectProductInstanceById(pid);
+    const productInstance = productInstanceSelector(pid);
     if (productInstance) {
-      const productClass = selectProductClassById(productInstance.productId);
-      if (productClass) {
-        const productCopy: WProduct = { p: CreateWCPProduct(productClass, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
+      const productEntry = productEntrySelector(productInstance.productId);
+      if (productEntry) {
+        const productCopy: WProduct = { p: CreateWCPProduct(productEntry.product, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
         if ((productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
-          const matchInCart = FindDuplicateInCart(cart, menu.modifiers, cid, productCopy);
+          const matchInCart = FindDuplicateInCart(cart, catalogSelectors.modifierEntry, cid, productCopy);
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });
             dispatch(updateCartQuantity({ id: matchInCart.id, newQuantity: matchInCart.quantity + 1 }));
@@ -89,7 +91,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
       }
       setScrollToOnReturn(returnToId);
     }
-  }, [cart, dispatch, enqueueSnackbar, menu, selectProductClassById, selectProductInstanceById]);
+  }, [cart, dispatch, enqueueSnackbar, menu, productEntrySelector, productInstanceSelector, catalogSelectors.modifierEntry]);
 
   const setProductToEdit = useCallback((entry: CartEntry) => {
     dispatch(lockCartEntry(entry.id));

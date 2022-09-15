@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CartEntry, IMenu, WProduct, IOption, IOptionState, IOptionType, MTID_MOID, OptionPlacement, OptionQualifier, WProductMetadata, ProductModifierEntry } from "@wcp/wcpshared";
+import { CartEntry, IMenu, WProduct, IOption, IOptionState, MTID_MOID, OptionPlacement, OptionQualifier, WProductMetadata, ProductModifierEntry, CatalogModifierEntry } from "@wcp/wcpshared";
 import { cloneDeep } from 'lodash';
 
 
@@ -76,21 +76,21 @@ export const WCustomizerSlice = createSlice({
         state.selectedProduct.m = action.payload;
       }
     },
-    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: IOptionType, mo: IOption, optionState: IOptionState, menu: IMenu }>) {
+    updateModifierOptionStateCheckbox(state, action: PayloadAction<{ mt: CatalogModifierEntry, mo: IOption, optionState: IOptionState, menu: IMenu }>) {
       if (state.selectedProduct !== null) {
         const newOptInstance = { ...action.payload.optionState, optionId: action.payload.mo.id };
-        const modifierEntryIndex = state.selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === action.payload.mt.id);
+        const modifierEntryIndex = state.selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === action.payload.mo.modifierTypeId);
         let newModifierOptions = modifierEntryIndex !== -1 ? state.selectedProduct.p.modifiers[modifierEntryIndex].options : [];
         if (action.payload.optionState.placement === OptionPlacement.NONE) {
           newModifierOptions = newModifierOptions.filter(x => x.optionId !== action.payload.mo.id);
         } else {
-          if (action.payload.mt.min_selected === 0 && action.payload.mt.max_selected === 1) {
+          if (action.payload.mt.modifierType.min_selected === 0 && action.payload.mt.modifierType.max_selected === 1) {
             // checkbox that requires we unselect any other values since it kinda functions like a radio
             newModifierOptions = [];
           }
           const moIdX = newModifierOptions.findIndex(x => x.optionId === action.payload.mo.id);
           if (moIdX === -1) {
-            const modifierOptions = action.payload.menu.modifiers[action.payload.mt.id].options;
+            const modifierOptions = action.payload.menu.modifiers[action.payload.mo.modifierTypeId].options;
             newModifierOptions.push(newOptInstance);
             newModifierOptions.sort((a, b) => modifierOptions[a.optionId].index - modifierOptions[b.optionId].index);
           }
@@ -99,7 +99,7 @@ export const WCustomizerSlice = createSlice({
           }
         }
         if (modifierEntryIndex === -1 && newModifierOptions.length > 0) {
-          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mt.id, options: newModifierOptions });
+          state.selectedProduct.p.modifiers.push({ modifierTypeId: action.payload.mo.modifierTypeId, options: newModifierOptions });
           SortProductModifierEntries(state.selectedProduct.p.modifiers, action.payload.menu);
         } else {
           if (newModifierOptions.length > 0) {

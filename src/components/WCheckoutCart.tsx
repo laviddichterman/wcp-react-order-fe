@@ -7,7 +7,6 @@ import { SelectBalanceAfterCredits, SelectServiceFee, SelectDiscountCreditValida
 import { ProductPrice, ProductTitle } from './styled/styled';
 
 export function WCheckoutCart() {
-  const menu = useAppSelector(s => s.ws.menu);
   const cart = useAppSelector(selectGroupedAndOrderedCart);
   const TAX_RATE = useAppSelector(SelectTaxRate);
   // const deliveryFee = useAppSelector(SelectDeliveryFee);
@@ -18,7 +17,7 @@ export function WCheckoutCart() {
   const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
 
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
-  if (menu === null || selectedService === null) {
+  if (selectedService === null) {
     return null;
   }
   return (<>
@@ -36,7 +35,7 @@ export function WCheckoutCart() {
           {cart.map(x=>x[1].map((cartEntry: CartEntry, i: number) => (
             <TableRow key={cartEntry.id}>
               <TableCell>
-                <ProductDisplay productMetadata={cartEntry.product.m} menuModifiers={menu.modifiers} description displayContext="order" />
+                <ProductDisplay productMetadata={cartEntry.product.m} description displayContext="order" />
               </TableCell>
               <TableCell><ProductPrice>{cartEntry.quantity}</ProductPrice></TableCell>
               <TableCell><ProductPrice>×</ProductPrice></TableCell>

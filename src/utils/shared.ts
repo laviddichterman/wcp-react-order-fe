@@ -1,8 +1,8 @@
-export const scrollToElementOffsetAfterDelay = (element: Element, delay: number, location: 'start' | 'center', offsetY: number = 0) => {
+export const scrollToElementOffsetAfterDelay = (element: Element, delay: number, location: ScrollLogicalPosition, offsetY: number = 0) => {
   setTimeout(function () {
     if (offsetY === 0) {
       console.log(`${element} has bbox of ${JSON.stringify(element.getBoundingClientRect())}, scrolling to ${location}}`);
-      element.scrollIntoView({ behavior: 'smooth', inline: location, block: location });
+      element.scrollIntoView({ behavior: 'smooth', block: location });
     } else {
       const bbox = element.getBoundingClientRect();
       let loc = (location === 'start' ? bbox.top : ((bbox.top + bbox.bottom) / 2)) + offsetY;
@@ -20,7 +20,7 @@ export const scrollToIdOffsetAfterDelay = (elementId: string, delay: number, off
       const bbox = foundElement.getBoundingClientRect();
       if (offsetY === 0) {
         console.log(`${elementId} has bbox of ${JSON.stringify(foundElement.getBoundingClientRect())}, scrolling to start}`);
-        foundElement.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'start' });
+        foundElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         const loc = bbox.top + offsetY;
         console.log(`${elementId} has bbox of ${JSON.stringify(foundElement.getBoundingClientRect())}, scrolling to ${loc}`);
@@ -29,3 +29,7 @@ export const scrollToIdOffsetAfterDelay = (elementId: string, delay: number, off
     }
   }, delay);
 }
+
+const nonProduction: boolean = process.env.NODE_ENV && process.env.NODE_ENV !== 'production';
+
+export const isNonProduction = () => nonProduction;

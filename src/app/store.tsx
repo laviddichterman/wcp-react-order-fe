@@ -1,12 +1,8 @@
 import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
-  ICategoriesAdapter,
-  IOptionTypesAdapter,
-  IOptionsAdapter,
   IProductInstancesAdapter,
-  IProductsAdapter,
-  ProductInstanceFunctionsAdapter
+  ProductInstanceFunctionsAdapter,
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
@@ -68,11 +64,7 @@ export const store = configureStore({
 export type RootState = ReturnType<typeof RootReducer>;
 export type AppDispatch = typeof store.dispatch;
 
-export const ICategoriesSelectors = ICategoriesAdapter.getSelectors((state: RootState) => state.ws.categories);
-export const IOptionTypesSelectors = IOptionTypesAdapter.getSelectors((state: RootState) => state.ws.modifiers);
-export const IOptionsSelectors = IOptionsAdapter.getSelectors((state: RootState) => state.ws.modifierOptions);
 export const IProductInstancesSelectors = IProductInstancesAdapter.getSelectors((state: RootState) => state.ws.productInstances);
-export const IProductsSelectors = IProductsAdapter.getSelectors((state: RootState) => state.ws.products);
 export const ProductInstanceFunctionsSelectors = ProductInstanceFunctionsAdapter.getSelectors((state: RootState) => state.ws.productInstanceFunctions);
 
 export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {

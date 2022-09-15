@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
 import { LoadingScreen } from '@wcp/wario-ux-shared';
-import { CreditCard } from 'react-square-web-payments-sdk';
+import { CreditCard, GooglePay, ApplePay } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
@@ -160,6 +160,8 @@ export function WCheckoutStage() {
           <Grid item xs={12}>
             {balance.amount > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
               <>
+                <ApplePay>Pay with Apple Pay</ApplePay>
+                <GooglePay>Pay with Google Pay</GooglePay>
                 <CreditCard
                   // @ts-ignore 
                   focus={""}
@@ -168,8 +170,8 @@ export function WCheckoutStage() {
                   }}>
                   Submit Order
                 </CreditCard>
-                {/* <ApplePay>Pay with Apple Pay</ApplePay> */}
-                {/* <GooglePay /> */}
+                
+                
               </> :
               <WarioButton disabled={submitToWarioStatus === 'PENDING'} fullWidth onClick={() => submitNoBalanceDue()} >Submit Order</WarioButton>}
             {squareTokenErrors.length > 0 &&

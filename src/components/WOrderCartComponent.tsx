@@ -50,7 +50,7 @@ export function WOrderCart({ isProductEditDialogOpen, setProductToEdit }: IOrder
             {cart.map(x => x[1].map((cartEntry: CartEntry) => (
               <TableRow key={cartEntry.id} className={`cart-item${productHasSelectableModifiers(cartEntry.id, menu) ? " editible" : ""}`}>
                 <TableCell sx={{ py: 0 }}>
-                  <ProductDisplay productMetadata={cartEntry.product.m} description menuModifiers={menu.modifiers} displayContext="order" />
+                  <ProductDisplay productMetadata={cartEntry.product.m} description displayContext="order" />
                 </TableCell>
                 <TableCell sx={{ py: 1 }}>
                   <Grid container alignContent={'center'} >

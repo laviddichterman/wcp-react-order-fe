@@ -1,5 +1,6 @@
 // API
 // ----------------------------------------------------------------------
+import { LicenseInfo } from '@mui/x-license-pro';
 
 export enum STEPPER_STAGE_ENUM {
   TIMING,
@@ -18,3 +19,4 @@ export const SOCKETIO = {
   ns: process.env.REACT_APP_SOCKETIO_NS,
 }
 export const MUI_LICENSE = process.env.REACT_APP_MUI_KEY;
+LicenseInfo.setLicenseKey(MUI_LICENSE!);
