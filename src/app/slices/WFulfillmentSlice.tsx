@@ -133,7 +133,7 @@ const WFulfillmentSlice = createSlice({
 export const SelectServiceDateTime = createSelector(
   (s: WFulfillmentState) => s.selectedDate,
   (s: WFulfillmentState) => s.selectedTime,
-  (selectedDate: string | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime(selectedDate, selectedTime) : null
+  (selectedDate: string | null, selectedTime: number | null) => selectedDate !== null && selectedTime !== null ? WDateUtils.ComputeServiceDateTime({selectedDate, selectedTime}) : null
 );
 
 export const { setService, setDate, setTime, setDineInInfo, setDeliveryInfo, setHasAgreedToTerms, setSelectedDateExpired, setSelectedTimeExpired } = WFulfillmentSlice.actions;

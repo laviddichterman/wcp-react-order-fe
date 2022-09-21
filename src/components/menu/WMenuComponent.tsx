@@ -217,7 +217,7 @@ export function WMenuComponent() {
   const FulfillmentId = useAppSelector(SelectDefaultFulfillmentId);
   // NOTE THIS WILL BE NULL UNTIL WE ASSIGN A FULFILLMENT
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
-  const nextAvailableTime = useAppSelector(s => WDateUtils.ComputeServiceDateTime(...GetNextAvailableServiceDateTime(s)));
+  const nextAvailableTime = useAppSelector(s => WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTime(s)));
 
   useEffect(() => {
     dispatch(setService(FulfillmentId));

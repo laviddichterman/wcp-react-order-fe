@@ -106,7 +106,7 @@ ListeningMiddleware.startListening({
     const fulfillments = api.getState().ws.fulfillments;
     if (catalog !== null && currentTime !== 0 && fulfillments !== null) {
       const service = api.getState().fulfillment.selectedService ?? Object.keys(fulfillments)[0];
-      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? WDateUtils.ComputeServiceDateTime(...GetNextAvailableServiceDateTime(api.getState()));
+      const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTime(api.getState()));
       const MENU = GenerateMenu(catalog, api.getState().ws.catalog?.version ?? "", menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;

@@ -38,7 +38,8 @@ import {
   IMoney,
   JSFECreditV2,
   GetNextAvailableServiceDate,
-  Metrics
+  Metrics,
+  FulfillmentTime
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { addDays, differenceInMinutes, formatISO, startOfDay } from "date-fns";
@@ -290,11 +291,13 @@ export const GetNextAvailableServiceDateTime = createSelector(
   (nextAvailableForServiceFunction, selectedService, currentTime, defaultFulfillment) => {
     if (selectedService !== null) {
       const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
-      if (nextAvailableForSelectedService) {
+      if (nextAvailableForSelectedService) {  
         return nextAvailableForSelectedService;
       }
     }
-    return (nextAvailableForServiceFunction(defaultFulfillment) ?? [WDateUtils.formatISODate(currentTime), differenceInMinutes(currentTime, startOfDay(currentTime))]) as [string, number];
+    return (nextAvailableForServiceFunction(defaultFulfillment) ?? 
+      { selectedDate: WDateUtils.formatISODate(currentTime), 
+        selectedTime: differenceInMinutes(currentTime, startOfDay(currentTime))}) as FulfillmentTime;
   });
 
 export const SelectHasSpaceForPartyOf = createSelector(
