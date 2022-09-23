@@ -30,6 +30,6 @@ export const scrollToIdOffsetAfterDelay = (elementId: string, delay: number, off
   }, delay);
 }
 
-const nonProduction: boolean = process.env.NODE_ENV && process.env.NODE_ENV !== 'production';
+const nonProduction: boolean = process.env.REACT_APP_ENV ? process.env.REACT_APP_ENV !== 'production' : true;
 
 export const isNonProduction = () => nonProduction;

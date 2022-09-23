@@ -16,6 +16,7 @@ import { SelectBalanceAfterCredits, SelectSquareAppId, SelectSquareLocationId } 
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
 import { StepperTitle } from './styled/styled';
+import { isNonProduction } from '../utils/shared';
 
 const STAGES = [
   {
@@ -71,6 +72,9 @@ export function WOrderingComponent() {
 
   return (
     <PaymentForm
+    overrides={
+      isNonProduction() ? { scriptSrc: 'https://sandbox.web.squarecdn.com/v1/square.js'} : undefined
+    }
       applicationId={squareApplicationId}
       locationId={squareLocationId}
       createPaymentRequest={createPaymentRequest}
@@ -85,6 +89,7 @@ export function WOrderingComponent() {
         </Stepper> : <></>
       }
       <Box sx={{ mx: 'auto', pt: 1 }}>
+        {isNonProduction() ? "NON PRODUCTION" : ''}
         {STAGES[stage].content}
       </Box>
     </PaymentForm>
