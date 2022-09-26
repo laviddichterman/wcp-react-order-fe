@@ -9,14 +9,12 @@ import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEn
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
-import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { WOrderCart } from '../WOrderCartComponent';
 import { WShopForPrimaryProductsStage } from './WShopForPrimaryProductsStageComponent';
 import { WShopForSuppProductsStage } from './WShopForSuppProductsStageComponent';
-import { Separator } from '../styled/styled';
 import { cloneDeep } from 'lodash';
 import { setTimeToFirstProductIfUnset } from '../../app/slices/WMetricsSlice';
-import { CatalogSelectors, getProductEntryById, getProductInstanceById } from '@wcp/wario-ux-shared';
+import { Separator, CatalogSelectors, getProductEntryById, getProductInstanceById, scrollToIdOffsetAfterDelay } from '@wcp/wario-ux-shared';
 
 export interface OrderHideable { 
   order: {

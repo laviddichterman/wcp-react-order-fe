@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Link, Typography, Grid, FormLabel } from '@mui/material';
 import { useAppSelector } from '../app/useHooks';
 import { MoneyInput } from './MoneyInput';
-import { CURRENCY, IMoney, MoneyToDisplayString, PurchaseStoreCreditRequest, PurchaseStoreCreditResponse, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
+import { CURRENCY, IMoney, MoneyToDisplayString, PurchaseStoreCreditRequest, PurchaseStoreCreditResponse, RoundToTwoDecimalPlaces, WError } from '@wcp/wcpshared';
 import * as yup from "yup";
 import { YupValidateEmail } from './hook-form/RHFMailTextField';
 import { useForm } from "react-hook-form";
@@ -13,8 +13,8 @@ import { ApplePay, CreditCard, PaymentForm } from 'react-square-web-payments-sdk
 import type * as Square from '@square/web-sdk';
 import axiosInstance from '../utils/axios';
 import { styled } from '@mui/system';
-import { ErrorResponseOutput, SquareButtonCSS } from './styled/styled';
-import { SelectSquareAppId, SelectSquareLocationId } from '../app/store';
+import { SelectSquareAlternateLocationId, SelectSquareAppId, ErrorResponseOutput, SquareButtonCSS } from '@wcp/wario-ux-shared';
+import { AxiosResponse } from 'axios';
 
 const Title = styled(Typography)({
   fontWeight: 500,
@@ -88,7 +88,7 @@ const makeRequest = (token: string, amount: IMoney, values: CreditPurchaseInfo) 
 
 export function WStoreCreditPurchase() {
   const squareApplicationId = useAppSelector(SelectSquareAppId);
-  const squareLocationId = useAppSelector(SelectSquareLocationId);
+  const squareLocationId = useAppSelector(SelectSquareAlternateLocationId);
   const cPForm = useCPForm();
   const { getValues, watch, formState: { isValid, errors } } = cPForm;
   const sendEmailToRecipientState = watch('sendEmailToRecipient');
@@ -105,11 +105,11 @@ export function WStoreCreditPurchase() {
     }
   }, [isValid])
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
-    const formValues = {...getValues()};
+    const formValues = { ...getValues() };
     if (purchaseStatus !== 'PROCESSING') {
       setPurchaseStatus('PROCESSING');
       if (props.token) {
-        await makeRequest(props.token, creditAmount, formValues).then((response) => {
+        await makeRequest(props.token, creditAmount, formValues).then((response: AxiosResponse<PurchaseStoreCreditResponse>) => {
           setPurchaseResponse(response.data);
           setPurchaseStatus('SUCCESS');
         }).catch((reason: any) => {
@@ -117,7 +117,7 @@ export function WStoreCreditPurchase() {
 
             console.log(reason.error);
             setPurchaseStatus('INVALID_DATA');
-            setPaymentErrors((reason as PurchaseStoreCreditResponse).error.map(x => x.detail ?? x.code));
+            setPaymentErrors(reason.error.map((x: WError) => x.detail ?? x.code));
           }
           else {
             setPurchaseStatus('FAILED_UNKNOWN');
@@ -264,7 +264,7 @@ export function WStoreCreditPurchase() {
             </Grid>
           </FormProvider>
         }
-        {purchaseStatus === 'SUCCESS' && purchaseResponse !== null && purchaseResponse.success === true && 
+        {purchaseStatus === 'SUCCESS' && purchaseResponse !== null && purchaseResponse.success === true &&
           <Grid container>
             <Grid item xs={12}>
               <Typography variant="h3">Payment of {MoneyToDisplayString(purchaseResponse.result.amount, true)} received

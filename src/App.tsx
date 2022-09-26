@@ -4,12 +4,11 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 
-import { LoadingScreen, AdapterCurrentTimeOverrideUtils, SocketIoActions, IsSocketDataLoaded } from '@wcp/wario-ux-shared';
+import { scrollToIdOffsetAfterDelay, LoadingScreen, AdapterCurrentTimeOverrideUtils, SocketIoActions, IsSocketDataLoaded } from '@wcp/wario-ux-shared';
 
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import { themeOptions } from './components/styled/styled';
-import { scrollToIdOffsetAfterDelay } from './utils/shared';
 
 import { WStoreCreditPurchase } from './components/WStoreCreditPurchase';
 import { WMenuComponent } from './components/menu/WMenuComponent';

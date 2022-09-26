@@ -38,7 +38,7 @@ export type WFulfillmentState = {
   hasSelectedDateExpired: boolean;
   hasAgreedToTerms: boolean;
   deliveryValidationStatus: 'IDLE' | 'PENDING' | 'VALID' | 'INVALID' | 'OUTSIDE_RANGE';
-} & NullablePartial<FulfillmentDto>;
+} & NullablePartial<Omit<FulfillmentDto, 'status'>>;
 
 export const validateDeliveryAddress = createAsyncThunk<DeliveryAddressValidateResponse, DeliveryInfoFormData>(
   'addressRequest/validate',

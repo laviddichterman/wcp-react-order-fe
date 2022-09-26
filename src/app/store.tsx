@@ -3,6 +3,10 @@ import {
   SocketIoReducer,
   IProductInstancesAdapter,
   ProductInstanceFunctionsAdapter,
+  SelectAllowAdvanced,
+  SelectTaxRate,
+  SelectAutoGratutityThreshold,
+  SelectDefaultFulfillmentId
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
@@ -13,7 +17,6 @@ import StepperReducer from "./slices/StepperSlice";
 import { SocketIoMiddleware } from "./slices/SocketIoMiddleware";
 import ListeningMiddleware from "./slices/ListeningMiddleware";
 import {
-  CartEntry,
   ComputeCartSubTotal,
   IMenu,
   ComputeTipBasis,
@@ -32,17 +35,17 @@ import {
   ComputeSubtotalAfterDiscount,
   ComputeSubtotalPreDiscount,
   FulfillmentConfig,
-  OrderFunctional,
   CURRENCY,
   StoreCreditType,
   IMoney,
   JSFECreditV2,
   GetNextAvailableServiceDate,
   Metrics,
-  FulfillmentTime
+  FulfillmentTime,
+  WFulfillmentStatus
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
-import { addDays, differenceInMinutes, formatISO, startOfDay } from "date-fns";
+import { differenceInMinutes, formatISO, startOfDay } from "date-fns";
 
 export const RootReducer = combineReducers({
   fulfillment: WFulfillmentReducer,
@@ -75,19 +78,6 @@ export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) =
   return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
 }, {} as MetadataModifierMap);
 
-export const SelectSquareAppId = (s: RootState) => s.ws.settings?.config.SQUARE_APPLICATION_ID as string ?? "";
-export const SelectSquareLocationId = (s: RootState) => s.ws.settings?.config.SQUARE_LOCATION as string ?? "";
-export const SelectDefaultFulfillmentId = (s: RootState) => s.ws.settings?.config.DEFAULT_FULFILLMENTID as string ?? null;
-export const SelectAllowAdvanced = (s: RootState) => s.ws.settings?.config.ALLOW_ADVANCED as boolean ?? false;
-export const SelectDeliveryAreaLink = (s: RootState) => s.ws.settings!.config.DELIVERY_LINK as string;
-export const SelectTipPreamble = (s: RootState) => s.ws.settings!.config.TIP_PREAMBLE as string ?? "";
-export const SelectTaxRate = (s: RootState) => s.ws.settings!.config.TAX_RATE as number;
-export const SelectAutoGratutityThreshold = (s: RootState) => s.ws.settings!.config.AUTOGRAT_THRESHOLD as number ?? 5;
-export const SelectMessageRequestVegan = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_VEGAN as string ?? "";
-export const SelectMessageRequestHalf = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_HALF as string ?? "";
-export const SelectMessageRequestWellDone = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_WELLDONE as string ?? "";
-export const SelectMessageRequestSlicing = (s: RootState) => s.ws.settings!.config.MESSAGE_REQUEST_SLICING as string ?? "";
-
 const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => createSelector(
   (s: RootState) => s.ws.fulfillments,
   (s: RootState) => s.fulfillment.selectedService,
@@ -103,17 +93,19 @@ export const SelectMenuCategoryId = SelectSomethingFromFulfillment('menuBaseCate
 export const SelectMaxPartySize = SelectSomethingFromFulfillment('maxGuests');
 export const SelectServiceFeeSetting = SelectSomethingFromFulfillment('serviceCharge');
 
-export const selectGroupedAndOrderedCart = createSelector(
-  (s: RootState) => getCart(s.cart.cart),
-  (s: RootState) => s.ws.catalog!,
-  (cart, catalog) => {
-    return Object.entries(cart.reduce((cartMap: Record<string, CartEntry[]>, entry) =>
-      Object.hasOwn(cartMap, entry.categoryId) ?
-        { ...cartMap, [entry.categoryId]: [...cartMap[entry.categoryId], entry] } :
-        { ...cartMap, [entry.categoryId]: [entry] },
-      {})).sort(([keyA, _], [keyB, __]) => catalog.categories[keyA].category.ordinal - catalog.categories[keyB].category.ordinal);
-  }
-)
+// createSelector(
+//   (s: RootState) => getCart(s.cart.cart),
+//   (s: RootState) => s.ws.catalog!,
+//   (cart, catalog) => {
+//     return Object.entries(cart.reduce((cartMap: Record<string, CartEntry[]>, entry) =>
+//       Object.hasOwn(cartMap, entry.categoryId) ?
+//         { ...cartMap, [entry.categoryId]: [...cartMap[entry.categoryId], entry] } :
+//         { ...cartMap, [entry.categoryId]: [entry] },
+//       {})).sort(([keyA, _], [keyB, __]) => catalog.categories[keyA].category.ordinal - catalog.categories[keyB].category.ordinal);
+//   }
+// )
+//<P extends object, T extends CoreCartEntry<P>>
+
 
 export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
@@ -334,7 +326,7 @@ export const SelectWarioSubmissionArguments = createSelector(
     const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[];
     return {
       customerInfo,
-      fulfillment: fulfillmentInfo,
+      fulfillment: { status: WFulfillmentStatus.PROPOSED, ...fulfillmentInfo },
       specialInstructions: specialInstructions ?? "",
       cart: cartDto,
       metrics,

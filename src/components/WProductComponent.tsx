@@ -3,8 +3,7 @@ import { ComputePotentialPrices, WProductMetadata, WProductDisplayOptions, Price
 import { useAppSelector } from '../app/useHooks';
 import { Box, BoxProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Dots, ProductAdornment, AdornedSxProps, ProductDescription, ProductPrice, ProductTitle } from './styled/styled';
-import { CatalogSelectors, getProductInstanceById } from '@wcp/wario-ux-shared';
+import { AdornedSxProps, ProductDescription, ProductPrice, ProductTitle, Dots, ProductAdornment, CatalogSelectors, getProductInstanceById } from '@wcp/wario-ux-shared';
 
 interface WProductComponentProps {
   productMetadata: WProductMetadata;

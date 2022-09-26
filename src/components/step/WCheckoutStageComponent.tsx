@@ -1,18 +1,17 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
-import { LoadingScreen } from '@wcp/wario-ux-shared';
+import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton, LoadingScreen, SelectTipPreamble } from '@wcp/wario-ux-shared';
 import { CreditCard, GooglePay, ApplePay } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectGiftCardValidationsWithAmounts, SelectTipBasis, SelectTipPreamble, SelectTipValue } from '../../app/store';
+import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectGiftCardValidationsWithAmounts, SelectTipBasis, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { TipSelection, ComputeTipValue, MoneyToDisplayString, PaymentMethod, OrderPayment, CURRENCY } from '@wcp/wcpshared';
-import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton } from '../styled/styled';
 import { incrementTipAdjusts, incrementTipFixes } from '../../app/slices/WMetricsSlice';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
@@ -189,7 +188,7 @@ export function WCheckoutStage() {
       <Separator sx={{ pb: 3 }} />
       <Typography variant='body1'>Please check your email for order confirmation.</Typography>
       <Grid container>
-        {submitToWarioResponse!.result?.payments.map((payment, i) => {
+        {submitToWarioResponse?.success && submitToWarioResponse!.result?.payments.map((payment, i) => {
           return (
             <Grid key={`${payment.t}${i}`} item sx={{ pt: 1 }} xs={12} >
               {generatePaymentHtml(payment)}

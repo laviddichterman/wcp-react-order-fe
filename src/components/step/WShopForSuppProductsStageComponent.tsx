@@ -6,9 +6,8 @@ import { IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
-import { scrollToElementOffsetAfterDelay } from '../../utils/shared';
 import { FilterEmptyCategoriesWrapper, WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { Separator, StageTitle } from '../styled/styled';
+import { Separator, StageTitle, scrollToElementOffsetAfterDelay } from '@wcp/wario-ux-shared';
 
 export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
   // TODO: we need to handle if this is null by choice. how to we bypass this stage?

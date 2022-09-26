@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Done, Error } from '@mui/icons-material';
 import { CREDIT_REGEX } from '@wcp/wcpshared';
 import { validateStoreCredit, clearCreditCode } from '../app/slices/WPaymentSlice';
-import { ErrorResponseOutput } from './styled/styled';
+import { ErrorResponseOutput } from '@wcp/wario-ux-shared';
 
 
 

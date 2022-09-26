@@ -4,7 +4,7 @@ import { useAppSelector } from '../app/useHooks';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NUM_STAGES } from '../config';
-import { WarioButton } from './styled/styled';
+import { WarioButton } from '@wcp/wario-ux-shared';
 
 
 export interface NavigationProps {

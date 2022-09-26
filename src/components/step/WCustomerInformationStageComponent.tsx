@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { RHFMailTextField } from '../hook-form/RHFMailTextField';
 import { Navigation } from '../Navigation';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
-import { Separator, StageTitle } from '../styled/styled';
+import { StageTitle, Separator } from '@wcp/wario-ux-shared';
 
 // TODO: use funny names as the placeholder info for the names here and randomize it. So sometimes it would be the empire carpet guy, other times eagle man
 

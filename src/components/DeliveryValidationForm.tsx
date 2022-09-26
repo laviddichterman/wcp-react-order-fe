@@ -6,8 +6,7 @@ import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { FormProvider, RHFTextField } from './hook-form';
 
 import { DeliveryInfoFormData, deliveryAddressSchema, setDeliveryInfo, validateDeliveryAddress } from '../app/slices/WFulfillmentSlice';
-import { SelectDeliveryAreaLink } from '../app/store';
-import { ErrorResponseOutput, OkResponseOutput } from './styled/styled';
+import { ErrorResponseOutput, OkResponseOutput, SelectDeliveryAreaLink } from '@wcp/wario-ux-shared';
 
 
 function useDeliveryInfoForm() {

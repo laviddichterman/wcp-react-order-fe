@@ -9,8 +9,8 @@ import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setSpecialInstructions } from '../../app/slices/WPaymentSlice';
-import { Separator, StageTitle, WarningResponseOutput } from '../styled/styled';
-import { SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan, SelectServiceTimeDisplayString } from '../../app/store';
+import { SelectServiceTimeDisplayString } from '../../app/store';
+import { Separator, StageTitle, WarningResponseOutput, SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan } from '@wcp/wario-ux-shared';
 
 
 const REQUEST_ANY = "By adding any special instructions, the cost of your order may increase and it will take longer. Please text the restaurant with your special request before making it here.";

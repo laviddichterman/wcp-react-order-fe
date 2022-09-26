@@ -1,13 +1,14 @@
 import { ProductDisplay } from './WProductComponent';
-import { removeFromCart, updateCartQuantity } from '../app/slices/WCartSlice';
+import { removeFromCart, updateCartQuantity, getCart } from '../app/slices/WCartSlice';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { useCallback } from 'react';
 import { IMenu, CartEntry } from '@wcp/wcpshared';
 import { IconButton, Grid, TableContainer, Table, TableCell, TableHead, TableBody, Typography, Paper, TableRow } from '@mui/material';
 import { Clear, Edit } from '@mui/icons-material';
-import { GetSelectableModifiersForCartEntry, selectGroupedAndOrderedCart } from '../app/store';
+import { GetSelectableModifiersForCartEntry } from '../app/store';
 import { CheckedNumericInput } from './CheckedNumericTextInput';
 import { styled } from '@mui/system';
+import { selectGroupedAndOrderedCart } from '@wcp/wario-ux-shared';
 
 
 const RemoveFromCart = styled(Clear)(() => ({
@@ -24,7 +25,7 @@ interface IOrderCart {
 export function WOrderCart({ isProductEditDialogOpen, setProductToEdit }: IOrderCart) {
   const dispatch = useAppDispatch();
   const menu = useAppSelector(s => s.ws.menu!);
-  const cart = useAppSelector(selectGroupedAndOrderedCart);
+  const cart = useAppSelector(s=>selectGroupedAndOrderedCart(s, getCart(s.cart.cart)));
   const selectSelectableModifiersForEntry = useAppSelector(s => (id: string, menu: IMenu) => GetSelectableModifiersForCartEntry(s, id, menu));
   const productHasSelectableModifiers = useCallback((id: string, menu: IMenu) => Object.values(selectSelectableModifiersForEntry(id, menu)).length > 0, [selectSelectableModifiersForEntry]);
   const setRemoveEntry = (id: string) => {

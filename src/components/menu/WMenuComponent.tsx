@@ -5,12 +5,10 @@ import { useAppDispatch, useAppSelector } from "../../app/useHooks";
 import { Box, Tab, Typography, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
 import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu, WDateUtils, CategoryDisplay, MoneyToDisplayString } from '@wcp/wcpshared';
-import { GetNextAvailableServiceDateTime, SelectDefaultFulfillmentId, SelectMenuCategoryId } from '../../app/store';
-import { getProductEntryById, LoadingScreen } from '@wcp/wario-ux-shared';
-import { Separator } from '../styled/styled';
+import { GetNextAvailableServiceDateTime, SelectMenuCategoryId } from '../../app/store';
+import { getProductEntryById, isNonProduction, LoadingScreen, scrollToElementOffsetAfterDelay, SelectDefaultFulfillmentId, Separator } from '@wcp/wario-ux-shared';
 import { cloneDeep } from 'lodash';
 import { setService } from '../../app/slices/WFulfillmentSlice';
-import { isNonProduction, scrollToElementOffsetAfterDelay } from '../../utils/shared';
 import { ExpandMore } from '@mui/icons-material';
 
 import { DataGridPro, DataGridProProps, GridColumns, GridValueGetterParams } from '@mui/x-data-grid-pro';

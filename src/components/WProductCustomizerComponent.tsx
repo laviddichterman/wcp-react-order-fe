@@ -3,7 +3,7 @@ import { useSnackbar } from 'notistack';
 import { FormControl, FormControlProps, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone, Circle, CircleOutlined } from "@mui/icons-material";
 import { ProductDisplay } from './WProductComponent';
-import { getProductInstanceFunctionById, DialogContainer, getModifierTypeEntryById, getModifierOptionById, getProductInstanceById, CatalogSelectors } from '@wcp/wario-ux-shared';
+import { scrollToIdOffsetAfterDelay, CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput, getProductInstanceFunctionById, DialogContainer, getModifierTypeEntryById, getModifierOptionById, getProductInstanceById, CatalogSelectors } from '@wcp/wario-ux-shared';
 import { WProduct, MetadataModifierMapEntry, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID, DISABLE_REASON, IProductInstanceFunction, WFunctional, WCPProduct, IOption, ICatalogModifierSelectors, CatalogModifierEntry, Selector } from '@wcp/wcpshared';
 import {
   clearCustomizer,
@@ -22,8 +22,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
-import { scrollToIdOffsetAfterDelay } from '../utils/shared';
-import { CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput } from './styled/styled';
 import { ModifierOptionTooltip } from './ModifierOptionTooltip';
 import { setTimeToFirstProductIfUnset } from '../app/slices/WMetricsSlice';
 

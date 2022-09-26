@@ -1,8 +1,7 @@
 import { Grid, Box } from "@mui/material";
-import { getModifierOptionById, getModifierTypeEntryById } from "@wcp/wario-ux-shared";
+import { ProductPrice, ProductTitle, ProductDescription, getModifierOptionById, getModifierTypeEntryById } from "@wcp/wario-ux-shared";
 import { IProduct, MoneyToDisplayString } from "@wcp/wcpshared";
 import { useAppSelector } from "../../app/useHooks";
-import { ProductPrice, ProductTitle, ProductDescription } from "../styled/styled";
 
 export function WModifiersComponent({ product }: { product: IProduct; }) {
   const modifierTypeEntrySelector = useAppSelector(s => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id));

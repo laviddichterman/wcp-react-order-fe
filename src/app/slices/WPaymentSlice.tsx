@@ -1,15 +1,14 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
-import { CreateValidateStoreCreditThunk } from "@wcp/wario-ux-shared";
-import { TipSelection, CreateOrderResponse, JSFECreditV2 } from "@wcp/wcpshared";
+import { CreateValidateStoreCreditThunk, scrollToIdOffsetAfterDelay } from "@wcp/wario-ux-shared";
+import { TipSelection, CrudOrderResponse, JSFECreditV2 } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
-import { scrollToIdOffsetAfterDelay } from "../../utils/shared";
 import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
 import { setSubmitTime } from "./WMetricsSlice";
 
 export const validateStoreCredit = CreateValidateStoreCreditThunk(axiosInstance);
 
-export const submitToWario = createAsyncThunk<CreateOrderResponse, string|null, {dispatch: AppDispatch; state: RootState}>(
+export const submitToWario = createAsyncThunk<CrudOrderResponse, string|null, {dispatch: AppDispatch; state: RootState}>(
   'order',
   async (nonce, thunkApi) => {
     thunkApi.dispatch(setSubmitTime(Date.now()));
@@ -32,7 +31,7 @@ export const submitToWario = createAsyncThunk<CreateOrderResponse, string|null, 
 
 export interface WPaymentState {
   storeCreditValidations: Omit<JSFECreditV2, 'amount_used'>[];
-  warioResponse: CreateOrderResponse | null;
+  warioResponse: CrudOrderResponse | null;
   selectedTip: TipSelection | null;
   specialInstructions: string | null;
   storeCreditInput: string;

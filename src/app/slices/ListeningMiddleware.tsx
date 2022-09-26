@@ -2,7 +2,7 @@ import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } fro
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
 import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../store'
 import { SelectOptionsForServicesAndDate } from '../store'
-import { CatalogSelectors, SocketIoActions } from '@wcp/wario-ux-shared';
+import { CatalogSelectors, SocketIoActions, scrollToIdOffsetAfterDelay } from '@wcp/wario-ux-shared';
 import { enqueueSnackbar } from 'notistack'
 import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
@@ -12,7 +12,6 @@ import { STEPPER_STAGE_ENUM } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity, updateManyCartProducts } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
-import { scrollToIdOffsetAfterDelay } from '../../utils/shared';
 import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
 
 

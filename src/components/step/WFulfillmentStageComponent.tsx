@@ -10,7 +10,7 @@ import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
 import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
-import { Separator, StageTitle } from '../styled/styled';
+import { StageTitle, Separator } from '@wcp/wario-ux-shared';
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();

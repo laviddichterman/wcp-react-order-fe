@@ -12,11 +12,10 @@ import { WCustomerInformationStage } from './step/WCustomerInformationStageCompo
 import WReviewOrderStage from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
 import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
-import { SelectBalanceAfterCredits, SelectSquareAppId, SelectSquareLocationId } from '../app/store';
+import { SelectBalanceAfterCredits } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
-import { StepperTitle } from './styled/styled';
-import { isNonProduction } from '../utils/shared';
+import { StepperTitle, SelectSquareAppId, SelectSquareLocationId, isNonProduction } from '@wcp/wario-ux-shared';
 
 const STAGES = [
   {

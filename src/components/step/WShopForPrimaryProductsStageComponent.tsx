@@ -4,7 +4,7 @@ import { IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
 import { SelectMainCategoryId, SelectMainProductCategoryCount } from '../../app/store';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { Separator, StageTitle } from '../styled/styled';
+import { Separator, StageTitle } from '@wcp/wario-ux-shared';
 
 export function WShopForPrimaryProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
   const MAIN_CATID = useAppSelector(SelectMainCategoryId)!;
