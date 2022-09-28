@@ -207,7 +207,7 @@ WMenuRecursive = (props: WMenuDisplayProps) => {
   }
 }
 
-export function WMenuComponent() {
+export default function WMenuComponent() {
   const dispatch = useAppDispatch();
   const menu = useAppSelector(s => s.ws.menu);
 

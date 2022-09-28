@@ -44,7 +44,7 @@ const STAGES = [
   }
 ];
 
-export function WOrderingComponent() {
+export default function WOrderingComponent() {
   const dispatch = useAppDispatch();
   const stage = useAppSelector(s => s.stepper.stage);
   const squareApplicationId = useAppSelector(SelectSquareAppId);

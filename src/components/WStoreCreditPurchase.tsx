@@ -86,7 +86,7 @@ const makeRequest = (token: string, amount: IMoney, values: CreditPurchaseInfo) 
   return axiosInstance.post('api/v1/payments/storecredit/stopgap', typedBody);
 }
 
-export function WStoreCreditPurchase() {
+export default function WStoreCreditPurchase() {
   const squareApplicationId = useAppSelector(SelectSquareAppId);
   const squareLocationId = useAppSelector(SelectSquareAlternateLocationId);
   const cPForm = useCPForm();

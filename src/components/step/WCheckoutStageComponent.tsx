@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
 import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton, LoadingScreen, SelectTipPreamble } from '@wcp/wario-ux-shared';
-import { CreditCard, GooglePay, ApplePay } from 'react-square-web-payments-sdk';
+import { CreditCard /*, GooglePay, ApplePay */} from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
@@ -61,7 +61,7 @@ export function WCheckoutStage() {
         return (
           <>
             <Typography variant="body2">
-              Payment of {MoneyToDisplayString(payment.amount, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
+              Payment of {MoneyToDisplayString({ currency: payment.amount.currency, amount: payment.amount.amount + payment.tipAmount.amount}, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
               <br />Here's your <Link href={payment.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </>);
       case PaymentMethod.StoreCredit:
@@ -159,8 +159,8 @@ export function WCheckoutStage() {
           <Grid item xs={12}>
             {balance.amount > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
               <>
-                <ApplePay>Pay with Apple Pay</ApplePay>
-                <GooglePay>Pay with Google Pay</GooglePay>
+                {/* <ApplePay>Pay with Apple Pay</ApplePay>
+                <GooglePay>Pay with Google Pay</GooglePay> */}
                 <CreditCard
                   // @ts-ignore 
                   focus={""}

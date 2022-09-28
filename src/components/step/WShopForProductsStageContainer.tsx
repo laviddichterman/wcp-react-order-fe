@@ -68,7 +68,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
       if (productEntry) {
         const productCopy: WProduct = { p: CreateWCPProduct(productEntry.product, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
-        if ((productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
+        if ((!productCopy.m.incomplete && productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
           const matchInCart = FindDuplicateInCart(cart, catalogSelectors.modifierEntry, cid, productCopy);
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });

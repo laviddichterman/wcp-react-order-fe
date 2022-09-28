@@ -2,10 +2,12 @@ import { useAppSelector } from '../app/useHooks';
 import { CatalogSelectors, WCheckoutCartComponent, selectGroupedAndOrderedCart, SelectTaxRate } from '@wcp/wario-ux-shared';
 import { SelectBalanceAfterCredits, SelectDiscountCreditValidationsWithAmounts, SelectGiftCardValidationsWithAmounts, SelectTaxAmount, SelectTipValue } from '../app/store';
 import { getCart } from '../app/slices/WCartSlice';
+import { CreditPayment, PaymentMethod } from '@wcp/wcpshared';
 
 export function WCheckoutCart() {
   //const ungroupedCart = useAppSelector(s=>getCart(s.cart.cart));
   const cart = useAppSelector(s => selectGroupedAndOrderedCart(s, getCart(s.cart.cart)));
+  const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
   const TAX_RATE = useAppSelector(SelectTaxRate);
   const catalogSelectors = useAppSelector(s => CatalogSelectors(s.ws));
   const tipValue = useAppSelector(SelectTipValue);
@@ -28,6 +30,6 @@ export function WCheckoutCart() {
     taxRate={TAX_RATE}
     taxValue={taxValue}
     tipValue={tipValue}
-    payments={[]}
+    payments={submitToWarioResponse && submitToWarioResponse.success ? submitToWarioResponse.result.payments.filter(x=>x.t === PaymentMethod.CreditCard) as CreditPayment[] : []}
     />
 }
