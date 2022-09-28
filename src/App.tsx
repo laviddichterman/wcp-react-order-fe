@@ -10,7 +10,10 @@ import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
 import { themeOptions } from './components/styled/styled';
 
-import React from 'react';
+//import React from 'react';
+import WStoreCreditPurchase from './components/WStoreCreditPurchase';
+import WMenuComponent from './components/menu/WMenuComponent';
+import WOrderingComponent from './components/WOrderingComponent';
 
 const theme = createTheme(themeOptions);
 
@@ -68,6 +71,6 @@ const App = () => {
 export default App;
 
 
-const WStoreCreditPurchase = React.lazy(() => import('./components/WStoreCreditPurchase'));
-const WMenuComponent = React.lazy(() => import('./components/menu/WMenuComponent'));
-const WOrderingComponent = React.lazy(() => import('./components/WOrderingComponent'));
+// const WStoreCreditPurchase = React.lazy(() => import('./components/WStoreCreditPurchase'));
+// const WMenuComponent = React.lazy(() => import('./components/menu/WMenuComponent'));
+// const WOrderingComponent = React.lazy(() => import('./components/WOrderingComponent'));
