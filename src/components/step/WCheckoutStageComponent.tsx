@@ -61,7 +61,7 @@ export function WCheckoutStage() {
         return (
           <>
             <Typography variant="body2">
-              Payment of {MoneyToDisplayString({ currency: payment.amount.currency, amount: payment.amount.amount + payment.tipAmount.amount}, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
+              Payment of {MoneyToDisplayString(payment.amount, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
               <br />Here's your <Link href={payment.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </>);
       case PaymentMethod.StoreCredit:

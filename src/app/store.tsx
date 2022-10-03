@@ -93,20 +93,6 @@ export const SelectMenuCategoryId = SelectSomethingFromFulfillment('menuBaseCate
 export const SelectMaxPartySize = SelectSomethingFromFulfillment('maxGuests');
 export const SelectServiceFeeSetting = SelectSomethingFromFulfillment('serviceCharge');
 
-// createSelector(
-//   (s: RootState) => getCart(s.cart.cart),
-//   (s: RootState) => s.ws.catalog!,
-//   (cart, catalog) => {
-//     return Object.entries(cart.reduce((cartMap: Record<string, CartEntry[]>, entry) =>
-//       Object.hasOwn(cartMap, entry.categoryId) ?
-//         { ...cartMap, [entry.categoryId]: [...cartMap[entry.categoryId], entry] } :
-//         { ...cartMap, [entry.categoryId]: [entry] },
-//       {})).sort(([keyA, _], [keyB, __]) => catalog.categories[keyA].category.ordinal - catalog.categories[keyB].category.ordinal);
-//   }
-// )
-//<P extends object, T extends CoreCartEntry<P>>
-
-
 export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
   SelectAllowAdvanced,
