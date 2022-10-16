@@ -16,14 +16,15 @@ export interface NavigationProps {
   handleBack: React.MouseEventHandler<HTMLButtonElement>;
   nextText?: string;
   backText?: string;
+  hidden?: boolean;
 }
 
-export function Navigation({ canNext, canBack, nextText = "Next", backText = "Back", handleNext, handleBack, hasBack = true, hasNext = true }: NavigationProps) {
+export function Navigation({ canNext, canBack, nextText = "Next", backText = "Back", handleNext, handleBack, hasBack = true, hasNext = true, hidden }: NavigationProps) {
   const currentStage = useAppSelector(s => s.stepper.stage);
   const theme = useTheme();
   const useVerticalStepper = useMediaQuery(theme.breakpoints.up('md'));
 
-  return <Box sx={{ float: 'right', display: 'block', mx: 'auto', width: '100%', pt: 3, pb: 2 }}>
+  return <Box sx={{ float: 'right', display: 'block', mx: 'auto', width: '100%', pt: 3, pb: 2, ...(hidden ? { display: 'none'} : {}) }}>
     <Box sx={{ float: 'right', width: '33.3%', textAlign: 'right' }}>
       {hasNext ?
         <WarioButton

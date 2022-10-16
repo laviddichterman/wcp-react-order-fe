@@ -22,7 +22,7 @@ export const submitToWario = createAsyncThunk<CrudOrderResponse, string|null, {d
     catch (err : any) { 
       console.log(err);
       try {
-        thunkApi.dispatch(setOrderSubmitErrors(err!.errors.map(((x : any) => x.detail))));
+        thunkApi.dispatch(setOrderSubmitErrors(err!.error.map(((x : any) => x.detail))));
       } catch (e) { }
       return thunkApi.rejectWithValue(err);
     }

@@ -51,7 +51,7 @@ export default function WFulfillmentStageComponent() {
 
   const ServiceOptions = useMemo(() => {
     return Object.values(fulfillments).filter((fulfillment) =>
-      HasOperatingHoursForService(fulfillment.id)).map((fulfillment) => {
+      fulfillment.exposeFulfillment && HasOperatingHoursForService(fulfillment.id)).map((fulfillment) => {
         return { label: fulfillment.displayName, value: fulfillment.id, disabled: !canSelectService(fulfillment.id) };
       });
   }, [fulfillments, canSelectService, HasOperatingHoursForService]);
@@ -91,10 +91,11 @@ export default function WFulfillmentStageComponent() {
     <Separator sx={{ pb: 3 }} />
     {/* <div>Current Time as computed... {formatISO(currentTime)}</div>
     <div>Browser thinks it is... {formatISO(Date.now())}</div>
-    <div>Server Time {serverTime.time} tz: {serverTime.tz} and as DT: {formatISO(parseISO(serverTime.time))}</div>
+    <div>Selected Service? {JSON.stringify(selectedService)}</div>
     <div>Service Date {serviceDate ? serviceDate : "none"} in ISO Date {serviceDate ? formatISO(parseISO(serviceDate)) : "none"}</div> */}
     <Grid container alignItems="center">
-      <Grid item xs={12} xl={4} sx={{ pl: 3, pb: 5 }}><span>Requested Service:</span>
+      <Grid item xs={12} xl={4} sx={{ pl: 3, pb: 5 }}>
+        <span>Requested Service:</span>
         <RadioGroup
           row onChange={onChangeServiceSelection} value={selectedService}>
           {ServiceOptions.map((option) => (
@@ -107,7 +108,7 @@ export default function WFulfillmentStageComponent() {
           ))}
         </RadioGroup>
       </Grid>
-      <Grid hidden={serviceTerms.length === 0} item xs={12} xl={8}>
+      <Grid sx={serviceTerms.length === 0 ? { display: 'none'} : {}} item xs={12} xl={8}>
         <FormControlLabel control={
           <><Checkbox checked={hasAgreedToTerms} onChange={(_, checked) => onSetHasAgreedToTerms(checked)} />
           </>} label={<>
@@ -119,14 +120,14 @@ export default function WFulfillmentStageComponent() {
           } />
       </Grid>
       
-      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3 }}>
+      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3, ...(selectedService === null ? { display: 'none'} : {})}}>
         <StaticDatePicker
           displayStaticWrapperAs="desktop"
           openTo="day"
           disablePast
           label={selectedService === null ? "Select a requested service first" : "Service Date"}
           minDate={startOfDay(currentTime)}
-          maxDate={add(currentTime, { days: 60 })}
+          maxDate={add(currentTime, { days: 6 })}
           shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, {representation: 'date'})).length === 0}
           disableMaskedInput
           value={serviceDate ? parseISO(serviceDate) : null}
@@ -134,13 +135,13 @@ export default function WFulfillmentStageComponent() {
           renderInput={(params) => <TextField {...params} error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null} />}
         />
       </Grid>
-      <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex' }} >
+      <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', ...(selectedService === null ? { display: 'none'} : {}) }} >
         <Grid item xs={12} sx={{ pb: 5 }}>
           <Autocomplete
             sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
             openOnFocus
             disableClearable
-            noOptionsText="Select a valid service date first"
+            noOptionsText={"Select a valid service date first"}
             id="service-time"
             options={Object.values(TimeOptions).map(x => x.value)}
             getOptionDisabled={o => TimeOptions[o].disabled}
@@ -177,6 +178,6 @@ export default function WFulfillmentStageComponent() {
           <DeliveryInfoForm />
         </Grid>}
     </Grid>
-    <Navigation hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
+    <Navigation hidden={serviceTime === null} hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);
 }
