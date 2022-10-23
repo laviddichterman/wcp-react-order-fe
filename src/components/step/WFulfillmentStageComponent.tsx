@@ -130,7 +130,7 @@ export default function WFulfillmentStageComponent() {
           maxDate={add(currentTime, { days: 6 })}
           shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, {representation: 'date'})).length === 0}
           disableMaskedInput
-          value={serviceDate ? parseISO(serviceDate) : null}
+          value={serviceDate ? parseISO(serviceDate) : ""}
           onChange={(v) => onSetServiceDate(v)}
           renderInput={(params) => <TextField {...params} error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null} />}
         />

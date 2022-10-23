@@ -13,7 +13,7 @@ import { ApplePay, CreditCard, PaymentForm } from 'react-square-web-payments-sdk
 import type * as Square from '@square/web-sdk';
 import axiosInstance from '../utils/axios';
 import { styled } from '@mui/system';
-import { SelectSquareAlternateLocationId, SelectSquareAppId, ErrorResponseOutput, SquareButtonCSS } from '@wcp/wario-ux-shared';
+import { SelectSquareLocationId, SelectSquareAppId, ErrorResponseOutput, SquareButtonCSS } from '@wcp/wario-ux-shared';
 import { AxiosResponse } from 'axios';
 
 const Title = styled(Typography)({
@@ -88,7 +88,7 @@ const makeRequest = (token: string, amount: IMoney, values: CreditPurchaseInfo) 
 
 export default function WStoreCreditPurchase() {
   const squareApplicationId = useAppSelector(SelectSquareAppId);
-  const squareLocationId = useAppSelector(SelectSquareAlternateLocationId);
+  const squareLocationId = useAppSelector(SelectSquareLocationId);
   const cPForm = useCPForm();
   const { getValues, watch, formState: { isValid, errors } } = cPForm;
   const sendEmailToRecipientState = watch('sendEmailToRecipient');

@@ -112,7 +112,7 @@ ListeningMiddleware.startListening({
       const customizerCategoryId = api.getState().customizer.categoryId;
       let regenerateCustomizerMetadata = false;
       if (customizerProduct !== null) {
-        if (!CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service) ||
+        if (!CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service, false) ||
           (customizerCategoryId !== null &&
             (!Object.hasOwn(MENU.categories, customizerCategoryId) ||
               MENU.categories[customizerCategoryId].serviceDisable.indexOf(service) !== -1))) {
@@ -127,8 +127,8 @@ ListeningMiddleware.startListening({
       const deadCart = getDeadCart(api.getState().cart.deadCart);
       const toKill: CartEntry[] = [];
       const toRefreshMetadata: CartEntry[] = [];
-      cart.forEach(x => !CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service) || !Object.hasOwn(MENU.categories, x.categoryId) || MENU.categories[x.categoryId].serviceDisable.indexOf(service) !== -1 ? toKill.push(x) : toRefreshMetadata.push(x));
-      const toRevive = deadCart.filter(x => CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service) && Object.hasOwn(MENU.categories, x.categoryId) && MENU.categories[x.categoryId].serviceDisable.indexOf(service) === -1);
+      cart.forEach(x => !CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service, true) || !Object.hasOwn(MENU.categories, x.categoryId) || MENU.categories[x.categoryId].serviceDisable.indexOf(service) !== -1 ? toKill.push(x) : toRefreshMetadata.push(x));
+      const toRevive = deadCart.filter(x => CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service, true) && Object.hasOwn(MENU.categories, x.categoryId) && MENU.categories[x.categoryId].serviceDisable.indexOf(service) === -1);
 
       if (toKill.length > 0) {
         if (toKill.length < 4) {
