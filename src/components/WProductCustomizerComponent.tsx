@@ -20,7 +20,7 @@ import {
   selectShowAdvanced
 } from '../app/store';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
-import { addToCart, FindDuplicateInCart, getCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
+import { addToCart, FindDuplicateInCart, getCart, removeFromCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { ModifierOptionTooltip } from './ModifierOptionTooltip';
 import { setTimeToFirstProductIfUnset } from '../app/slices/WMetricsSlice';
@@ -440,7 +440,13 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       const amountToAdd = cartEntry?.quantity ?? 1;
       const newQuantity = matchingCartEntry.quantity + amountToAdd;
       dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity }));
-      enqueueSnackbar(cartEntry ? `Merged duplicate ${selectedProduct.m.name} in your order.` : `Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success', autoHideDuration: 3000 });
+      if (cartEntry) { 
+        dispatch(removeFromCart(cartEntry.id));
+        enqueueSnackbar(`Merged duplicate ${selectedProduct.m.name} in your order.`, { variant: 'success', autoHideDuration: 3000 });
+      }
+      else {
+        enqueueSnackbar(`Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success', autoHideDuration: 3000 });
+      }
     }
     else {
       // cartEntry being undefined means it's an addition 
