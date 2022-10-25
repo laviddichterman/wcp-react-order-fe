@@ -1,5 +1,4 @@
-import { styled } from '@mui/material/styles';
-import { Typography, ToggleButton, Button, FormControlLabel, ThemeOptions } from '@mui/material';
+import { ThemeOptions } from '@mui/material';
 
 export const themeOptions: ThemeOptions = {
   breakpoints: {

@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import * as yup from "yup";
-import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentConfig, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
+import { DeliveryAddressValidateRequest, DeliveryAddressValidateResponse, DeliveryInfoDto, DineInInfoDto, FulfillmentDto, NullablePartial, WDateUtils } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
 
 export const deliveryAddressSchema = yup.object().shape({
