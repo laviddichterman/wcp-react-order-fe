@@ -48,7 +48,7 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
 
   return (
     <div hidden={hidden}>
-      <StageTitle>Add small plates or beverages to your order.</StageTitle>
+      <StageTitle>Add small plates and other stuff to your order.</StageTitle>
       <Separator sx={{ pb: 3 }} />
       {extrasCategories.map((catId, i) =>
         <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
