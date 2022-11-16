@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {InputBaseComponentProps, TextField, TextFieldProps} from '@mui/material';
+import { InputBaseComponentProps, TextField, TextFieldProps } from '@mui/material';
 
 export interface ICheckFxnGen<T> {
   inputProps: {
@@ -10,7 +10,7 @@ export interface ICheckFxnGen<T> {
   parseFunction: (v: string | null | undefined) => number;
   allowEmpty: T;
 }
-function CheckFunctionGenerator<T extends boolean>({ inputProps, parseFunction, allowEmpty}: ICheckFxnGen<T>) {
+function CheckFunctionGenerator<T extends boolean>({ inputProps, parseFunction, allowEmpty }: ICheckFxnGen<T>) {
   const MIN = inputProps.min !== undefined && Number.isFinite(inputProps.min) ? inputProps.min : null;
   const MAX = inputProps.max !== undefined && Number.isFinite(inputProps.max) ? inputProps.max : null;
   return (e: string | null) => {
@@ -32,14 +32,14 @@ function CheckFunctionGenerator<T extends boolean>({ inputProps, parseFunction, 
 }
 
 interface CheckedNumericInputProps {
-  onChange: (value : number | null) => void;
+  onChange: (value: number | null) => void;
   value: number | null;
 }
 
 export type ICheckedNumericInput<T> = ICheckFxnGen<T> & CheckedNumericInputProps & Omit<TextFieldProps, 'value' | 'onChange' | 'inputProps' | 'onBlur'>;
 
-export function CheckedNumericInput<T extends boolean>({ onChange, value, inputProps, allowEmpty, parseFunction = parseInt, ...other } : ICheckedNumericInput<T>) {
-  const CheckFxn = useCallback((v : string | null) => CheckFunctionGenerator<T>({inputProps, parseFunction, allowEmpty})(v), [inputProps, parseFunction]);
+export function CheckedNumericInput<T extends boolean>({ onChange, value, inputProps, allowEmpty, parseFunction = parseInt, ...other }: ICheckedNumericInput<T>) {
+  const CheckFxn = useCallback((v: string | null) => CheckFunctionGenerator<T>({ inputProps, parseFunction, allowEmpty })(v), [inputProps, parseFunction]);
   const [local_value, setLocalValue] = useState(value !== null ? String(value) : null);
   const [dirty, setDirty] = useState(false);
   const onFinishChangingLocal = () => {

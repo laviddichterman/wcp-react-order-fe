@@ -27,9 +27,11 @@ import {
   WDateUtils,
   ComputeTaxAmount,
   CreateOrderRequestV2,
-  ComputeCreditsApplied,
-  ComputeBalanceAfterCredits,
+  ComputeDiscountsApplied,
+  ComputePaymentsApplied,
+  ComputeBalance,
   CoreCartEntry,
+  DiscountMethod,
   WCPProductV2Dto,
   WProduct,
   ComputeSubtotalAfterDiscount,
@@ -37,12 +39,13 @@ import {
   FulfillmentConfig,
   CURRENCY,
   StoreCreditType,
+  TenderBaseStatus,
   IMoney,
-  JSFECreditV2,
   GetNextAvailableServiceDate,
   Metrics,
   FulfillmentTime,
-  WFulfillmentStatus
+  WFulfillmentStatus,
+  PaymentMethod
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { differenceInMinutes, formatISO, startOfDay } from "date-fns";
@@ -153,23 +156,19 @@ export const SelectSubtotalPreDiscount = createSelector(
   ComputeSubtotalPreDiscount
 );
 
-const CreateSelectorForCreditUsedOfType = (creditType: StoreCreditType, preCreditTotalSelector: (s: RootState) => IMoney) => createSelector(
-  preCreditTotalSelector,
-  (s: RootState) => s.payment.storeCreditValidations.filter(x => x.validation.credit_type === creditType),
-  ComputeCreditsApplied);
+export const SelectDiscountsApplied = createSelector(
+  SelectSubtotalPreDiscount,
+  (s: RootState) => s.payment.storeCreditValidations.filter(x => x.validation.credit_type === StoreCreditType.DISCOUNT),
+  (subtotalPreDiscount: IMoney, discounts) => ComputeDiscountsApplied(subtotalPreDiscount, discounts.map(x=>({createdAt: x.createdAt, t: DiscountMethod.CreditCodeAmount, status: TenderBaseStatus.AUTHORIZED, discount: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
 
-const CreateSelectSelectCreditApplied = (creditsUsedSelector: (s: RootState) => JSFECreditV2[]) => createSelector(
-  creditsUsedSelector,
-  (credits) => ({ amount: credits.reduce((acc, x) => acc + x.amount_used.amount, 0), currency: CURRENCY.USD }));
+export const SelectDiscountsAmountApplied = createSelector(
+  SelectDiscountsApplied,
+  (discountsApplied) => ({ amount: discountsApplied.reduce((acc, x) => acc + x.discount.amount.amount, 0), currency: CURRENCY.USD }));
 
-
-export const SelectDiscountCreditValidationsWithAmounts = CreateSelectorForCreditUsedOfType(StoreCreditType.DISCOUNT, SelectSubtotalPreDiscount);
-
-export const SelectDiscountApplied = CreateSelectSelectCreditApplied(SelectDiscountCreditValidationsWithAmounts);
 
 export const SelectSubtotalAfterDiscount = createSelector(
   SelectSubtotalPreDiscount,
-  SelectDiscountApplied,
+  SelectDiscountsAmountApplied,
   ComputeSubtotalAfterDiscount
 );
 
@@ -198,14 +197,29 @@ export const SelectTotal = createSelector(
   ComputeTotal
 );
 
-export const SelectGiftCardValidationsWithAmounts = CreateSelectorForCreditUsedOfType(StoreCreditType.MONEY, SelectTotal);
-
-export const SelectGiftCardApplied = CreateSelectSelectCreditApplied(SelectGiftCardValidationsWithAmounts);
-
-export const SelectBalanceAfterCredits = createSelector(
+export const SelectPaymentsApplied = createSelector(
   SelectTotal,
-  SelectGiftCardApplied,
-  ComputeBalanceAfterCredits
+  SelectTipValue,
+  (s: RootState) => s.payment.storeCreditValidations.filter(x => x.validation.credit_type === StoreCreditType.MONEY),
+  (totalWithTip, tipAmount, moneyCredits) => ComputePaymentsApplied(totalWithTip, tipAmount, moneyCredits.map(x=>({createdAt: x.createdAt, t: PaymentMethod.StoreCredit, status: TenderBaseStatus.PROPOSED, payment: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
+
+export const SelectPaymentAmountsApplied = createSelector( 
+  SelectPaymentsApplied,
+  (paymentsApplied) => ({ amount: paymentsApplied.reduce((acc, x) => acc + x.amount.amount, 0), currency: CURRENCY.USD }));
+
+export const SelectBalanceAfterPayments = createSelector(
+  SelectTotal,
+  SelectPaymentAmountsApplied,
+  ComputeBalance
+);
+
+const SelectPaymentsProposedForSubmission = createSelector(
+  (_: RootState, nonce: string|null) => nonce,
+  SelectPaymentsApplied,
+  SelectTotal,
+  SelectTipValue,
+  SelectBalanceAfterPayments,
+  (nonce, payments, totalWithTip, tipAmount, balance) => balance.amount > 0 && nonce ? ComputePaymentsApplied(totalWithTip, tipAmount, [...payments, { createdAt: Date.now(), t: PaymentMethod.CreditCard, status: TenderBaseStatus.PROPOSED, payment: { sourceId: nonce }}]) : payments
 );
 
 export const SelectMainProductCategoryCount = createSelector(
@@ -217,9 +231,10 @@ export const SelectMainProductCategoryCount = createSelector(
 export const SelectAutoGratutityEnabled = createSelector(
   SelectMainProductCategoryCount,
   SelectAutoGratutityThreshold,
+  (s: RootState) => s.payment.specialInstructions,
   (s: RootState) => s.fulfillment.dineInInfo,
   (s: RootState) => s.fulfillment.deliveryInfo,
-  (count, threshold, dineInInfo, deliveryInfo) => deliveryInfo !== null || dineInInfo !== null || count >= threshold
+  (count, threshold, specialInstructions, dineInInfo, deliveryInfo) => deliveryInfo !== null || dineInInfo !== null || count >= threshold || (specialInstructions && specialInstructions.length > 20)
 );
 
 export const SelectHasOperatingHoursForService = createSelector(
@@ -304,11 +319,10 @@ export const SelectWarioSubmissionArguments = createSelector(
   (s: RootState) => getCart(s.cart.cart),
   (s: RootState) => s.payment.specialInstructions,
   SelectMetricsForSubmission,
-  SelectBalanceAfterCredits,
   (s: RootState) => s.payment.selectedTip!,
-  SelectDiscountCreditValidationsWithAmounts,
-  SelectGiftCardValidationsWithAmounts,
-  (fulfillmentInfo, customerInfo, cart, specialInstructions, metrics, balanceAfterCredits, tipSelection, discountCredits, giftCredits) => {
+  SelectDiscountsApplied,
+  (s: RootState, nonce: string|null) => SelectPaymentsProposedForSubmission(s, nonce),
+  (fulfillmentInfo, customerInfo, cart, specialInstructions, metrics, tipSelection, discountsApplied, paymentsApplied) => {
     const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[];
     return {
       customerInfo,
@@ -316,8 +330,8 @@ export const SelectWarioSubmissionArguments = createSelector(
       specialInstructions: specialInstructions ?? "",
       cart: cartDto,
       metrics,
-      creditValidations: [...discountCredits, ...giftCredits],
-      balance: balanceAfterCredits,
+      proposedDiscounts: discountsApplied,
+      proposedPayments: paymentsApplied,
       tip: tipSelection,
     } as CreateOrderRequestV2;
   })

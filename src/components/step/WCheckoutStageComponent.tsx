@@ -6,12 +6,12 @@ import { CreditCard /*, GooglePay, ApplePay */} from 'react-square-web-payments-
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { SelectAutoGratutityEnabled, SelectBalanceAfterCredits, SelectGiftCardValidationsWithAmounts, SelectTipBasis, SelectTipValue } from '../../app/store';
+import { SelectAutoGratutityEnabled, SelectBalanceAfterPayments, SelectTipBasis, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
-import { TipSelection, ComputeTipValue, MoneyToDisplayString, PaymentMethod, OrderPayment, CURRENCY } from '@wcp/wcpshared';
+import { TipSelection, ComputeTipValue, MoneyToDisplayString, PaymentMethod, CURRENCY, OrderPaymentAllocated } from '@wcp/wcpshared';
 import { incrementTipAdjusts, incrementTipFixes } from '../../app/slices/WMetricsSlice';
 
 const TIP_SUGGESTION_15: TipSelection = { value: .15, isSuggestion: true, isPercentage: true };
@@ -24,10 +24,9 @@ const TIP_SUGGESTIONS = [TIP_SUGGESTION_15, TIP_SUGGESTION_20, TIP_SUGGESTION_25
 export function WCheckoutStage() {
   const dispatch = useAppDispatch();
   const tipBasis = useAppSelector(SelectTipBasis);
-  const balance = useAppSelector(SelectBalanceAfterCredits);
+  const balance = useAppSelector(SelectBalanceAfterPayments);
   //const selectedTipAmount = useAppSelector(SelectTipValue);
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
-  const giftCreditsApplied = useAppSelector(SelectGiftCardValidationsWithAmounts);
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
   //const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
@@ -52,7 +51,7 @@ export function WCheckoutStage() {
     }
   }, [currentTipSelection, autogratEnabled, TwentyPercentTipValue, selectedTipValue, dispatch])
 
-  const generatePaymentHtml = useCallback((payment: OrderPayment) => {
+  const generatePaymentHtml = useCallback((payment: OrderPaymentAllocated) => {
     switch (payment.t) {
       case PaymentMethod.Cash:
         return (<>Somehow you paid cash?</>
@@ -65,17 +64,16 @@ export function WCheckoutStage() {
               <br />Here's your <Link href={payment.payment.receiptUrl} target="_blank">receipt</Link></Typography>
           </>);
       case PaymentMethod.StoreCredit:
-        const validation = giftCreditsApplied.find(x => x.code === payment.payment.code)!;
-        const balance = { amount: validation.validation.amount.amount - payment.amount.amount, currency: payment.amount.currency };
+        const paymentBalance = { amount: payment.payment.balance.amount - payment.amount.amount, currency: payment.amount.currency };
         return (
           <>
             <Typography variant='h6'>Digital Gift Card number <Typography sx={{ textTransform: "none" }}>{payment.payment.code}</Typography> debited {MoneyToDisplayString(payment.amount, true)}.</Typography>
             <Typography variant="body2">
-              {balance.amount === 0 ? "No balance remains." : `Balance of ${MoneyToDisplayString(balance, true)} remains.`}
+              {paymentBalance.amount === 0 ? "No balance remains." : `Balance of ${MoneyToDisplayString(paymentBalance, true)} remains.`}
             </Typography>
           </>);
     }
-  }, [giftCreditsApplied])
+  }, [])
   const onChangeSelectedTip = (tip: TipSelection) => {
     dispatch(setTip(tip));
   }

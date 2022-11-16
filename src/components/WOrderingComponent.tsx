@@ -12,7 +12,7 @@ import { WCustomerInformationStage } from './step/WCustomerInformationStageCompo
 import WReviewOrderStage from './step/WReviewOrderStage';
 import { WCheckoutStage } from './step/WCheckoutStageComponent';
 import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
-import { SelectBalanceAfterCredits } from '../app/store';
+import { SelectBalanceAfterPayments } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
 import { StepperTitle, SelectSquareAppId, SelectSquareLocationId, isNonProduction } from '@wcp/wario-ux-shared';
@@ -50,7 +50,7 @@ export default function WOrderingComponent() {
   const squareApplicationId = useAppSelector(SelectSquareAppId);
   const squareLocationId = useAppSelector(SelectSquareLocationId);
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
-  const balanceAfterCredits = useAppSelector(SelectBalanceAfterCredits);
+  const balanceAfterPayments = useAppSelector(SelectBalanceAfterPayments);
   const theme = useTheme();
   const useStepper = useMediaQuery(theme.breakpoints.up('md'));
   const cardTokenizeResponseReceived = async (props: Square.TokenResult, verifiedBuyer?: Square.VerifyBuyerResponseDetails) => {
@@ -65,7 +65,7 @@ export default function WOrderingComponent() {
     return {
       countryCode: "US",
       currencyCode: CURRENCY.USD,
-      total: { label: "Total", amount: RoundToTwoDecimalPlaces(balanceAfterCredits.amount/100).toFixed(2) }
+      total: { label: "Total", amount: RoundToTwoDecimalPlaces(balanceAfterPayments.amount/100).toFixed(2) }
     }
   }
 

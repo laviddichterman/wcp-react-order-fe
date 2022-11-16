@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
 import { CreateValidateStoreCreditThunk, scrollToIdOffsetAfterDelay } from "@wcp/wario-ux-shared";
-import { TipSelection, CrudOrderResponse, JSFECreditV2 } from "@wcp/wcpshared";
+import { TipSelection, CrudOrderResponse, ValidateAndLockCreditResponseValid } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
 import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
 import { setSubmitTime } from "./WMetricsSlice";
@@ -12,9 +12,7 @@ export const submitToWario = createAsyncThunk<CrudOrderResponse, string|null, {d
   'order',
   async (nonce, thunkApi) => {
     thunkApi.dispatch(setSubmitTime(Date.now()));
-    const requestWithoutNonce = SelectWarioSubmissionArguments(thunkApi.getState()) 
-    const request = nonce !== null ? {...requestWithoutNonce, nonce} : requestWithoutNonce;
-    console.log(request);
+    const request = SelectWarioSubmissionArguments(thunkApi.getState(), nonce);
     try {
       const result = await axiosInstance.post('/api/v1/order', request);
       return result.data;
@@ -30,9 +28,10 @@ export const submitToWario = createAsyncThunk<CrudOrderResponse, string|null, {d
 );
 
 export interface WPaymentState {
-  storeCreditValidations: Omit<JSFECreditV2, 'amount_used'>[];
+  storeCreditValidations: { code: string; validation: ValidateAndLockCreditResponseValid; createdAt: number; }[];
   warioResponse: CrudOrderResponse | null;
   selectedTip: TipSelection | null;
+  acknowledgeInstructionsDialogue: boolean;
   specialInstructions: string | null;
   storeCreditInput: string;
   squareTokenErrors: Square.TokenError[];
@@ -47,6 +46,7 @@ const initialState: WPaymentState = {
   squareTokenErrors: [],
   orderSubmitErrors: [],
   selectedTip: null,
+  acknowledgeInstructionsDialogue: false,
   specialInstructions: null,
   storeCreditInput: "",
   creditValidationLoading: 'IDLE',
@@ -73,13 +73,17 @@ const WPaymentSlice = createSlice({
     },
     setSpecialInstructions(state, action: PayloadAction<string>) {
       state.specialInstructions = action.payload;
+    },
+    setAcknowledgeInstructionsDialogue(state, action: PayloadAction<boolean>) {
+      state.specialInstructions = null;
+      state.acknowledgeInstructionsDialogue = action.payload;
     }
   },
   extraReducers: (builder) => {
     builder
     .addCase(validateStoreCredit.fulfilled, (state, action) => {
       if (action.payload.valid) {
-        state.storeCreditValidations = [...state.storeCreditValidations, { validation: action.payload, code: action.meta.arg } ];
+        state.storeCreditValidations = [...state.storeCreditValidations, { validation: action.payload, code: action.meta.arg, createdAt: Date.now() } ];
         state.creditValidationLoading = 'SUCCEEDED';
       } else {
         state.creditValidationLoading = 'FAILED';
@@ -112,6 +116,6 @@ const WPaymentSlice = createSlice({
   },
 });
 
-export const { setTip, clearCreditCode, setSquareTokenizationErrors, setOrderSubmitErrors, setSpecialInstructions } = WPaymentSlice.actions;
+export const { setTip, clearCreditCode, setSquareTokenizationErrors, setOrderSubmitErrors, setSpecialInstructions, setAcknowledgeInstructionsDialogue } = WPaymentSlice.actions;
 
 export const WPaymentReducer = WPaymentSlice.reducer;
