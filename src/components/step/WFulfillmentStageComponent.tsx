@@ -141,7 +141,7 @@ export default function WFulfillmentStageComponent() {
             sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
             openOnFocus
             disableClearable
-            noOptionsText={"Select a valid service date first"}
+            noOptionsText={"Select an available service date first"}
             id="service-time"
             options={Object.values(TimeOptions).map(x => x.value)}
             getOptionDisabled={o => TimeOptions[o].disabled}
