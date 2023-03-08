@@ -6,7 +6,9 @@ import {
   SelectAllowAdvanced,
   SelectTaxRate,
   SelectAutoGratutityThreshold,
-  SelectDefaultFulfillmentId
+  SelectDefaultFulfillmentId,
+  SelectGratuityServiceCharge,
+  getProductEntryById
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
@@ -34,7 +36,7 @@ import {
   DiscountMethod,
   WCPProductV2Dto,
   WProduct,
-  ComputeSubtotalAfterDiscount,
+  ComputeSubtotalAfterDiscountAndGratuity,
   ComputeSubtotalPreDiscount,
   FulfillmentConfig,
   CURRENCY,
@@ -45,7 +47,9 @@ import {
   Metrics,
   FulfillmentTime,
   WFulfillmentStatus,
-  PaymentMethod
+  PaymentMethod,
+  ComputeGratuityServiceCharge,
+  DetermineCartBasedLeadTime
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { differenceInMinutes, formatISO, startOfDay } from "date-fns";
@@ -100,6 +104,11 @@ export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
   SelectAllowAdvanced,
   (prod: WProduct | null, allowAdvanced: boolean) => allowAdvanced === true && prod !== null && prod.m.advanced_option_eligible
+)
+
+export const selectCartAsDto = createSelector(
+  (s: RootState) => getCart(s.cart.cart),
+  (cart) => cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) satisfies CoreCartEntry<WCPProductV2Dto>[]
 )
 
 export const selectCartEntryBeingCustomized = createSelector(
@@ -166,10 +175,16 @@ export const SelectDiscountsAmountApplied = createSelector(
   (discountsApplied) => ({ amount: discountsApplied.reduce((acc, x) => acc + x.discount.amount.amount, 0), currency: CURRENCY.USD }));
 
 
+export const SelectGratutityServiceChargeAmount = createSelector(
+  SelectGratuityServiceCharge,
+  SelectSubtotalPreDiscount,
+  ComputeGratuityServiceCharge);
+
 export const SelectSubtotalAfterDiscount = createSelector(
   SelectSubtotalPreDiscount,
   SelectDiscountsAmountApplied,
-  ComputeSubtotalAfterDiscount
+  SelectGratutityServiceChargeAmount,
+  ComputeSubtotalAfterDiscountAndGratuity
 );
 
 export const SelectTaxAmount = createSelector(
@@ -243,36 +258,35 @@ export const SelectHasOperatingHoursForService = createSelector(
   (fulfillments, fulfillmentId) => WDateUtils.HasOperatingHours(fulfillments[fulfillmentId].operatingHours)
 );
 
+export const SelectCartBasedLeadTime = createSelector(
+  selectCartAsDto,
+  (s: RootState) => (x: EntityId) => getProductEntryById(s.ws.products, x),
+  (cart, productSelector) => DetermineCartBasedLeadTime(cart, productSelector)
+)
+
 export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
-  (s: RootState, _: string, __: string[], ___: number) => s.ws.fulfillments!,
-  (_: RootState, __: string, ___: string[], mainProductCount: number) => mainProductCount,
+  (s: RootState, _: string, __: string[]) => s.ws.fulfillments!,
+  (s: RootState, __: string, ___: string[]) => SelectCartBasedLeadTime(s),
   (_: RootState, selectedDate: string, __: string[]) => selectedDate,
   (_: RootState, __: string, serviceSelection: string[]) => serviceSelection,
-  (fulfillments, mainProductCount, selectedDate, serviceSelection) =>
-    WDateUtils.GetInfoMapForAvailabilityComputation(serviceSelection.map(x => fulfillments[x]), selectedDate, { cart_based_lead_time: 0, size: Math.max(mainProductCount, 1) })
-);
-
-export const SelectAvailabilityForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: string, serviceSelection: string[]) =>
-    (mainProductCount: number) =>
-      SelectAvailabilityForServicesDateAndProductCount(s, selectedDate, serviceSelection, mainProductCount),
-  (s: RootState, _: string, __: string[]) => SelectMainProductCategoryCount(s),
-  (selector, mainProductCount) => selector(mainProductCount)
+  (fulfillments, cartBasedLeadTime, selectedDate, serviceSelection) =>
+    WDateUtils.GetInfoMapForAvailabilityComputation(serviceSelection.map(x => fulfillments[x]), selectedDate, cartBasedLeadTime)
 );
 
 export const SelectOptionsForServicesAndDate = createSelector(
-  (s: RootState, selectedDate: string, serviceSelection: string[]) => SelectAvailabilityForServicesAndDate(s, selectedDate, serviceSelection),
+  (s: RootState, selectedDate: string, serviceSelection: string[]) => SelectAvailabilityForServicesDateAndProductCount(s, selectedDate, serviceSelection),
   (s: RootState, _: string, __: string[]) => s.ws.currentTime,
   (_: RootState, selectedDate: string, __: string[]) => selectedDate,
   (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, formatISO(currentTime))
 )
 
+
 export const GetNextAvailableServiceDateTimeForService = createSelector(
   (s: RootState, __: string, _: Date | number) => s.ws.fulfillments,
-  (s: RootState, __: string, _: Date | number) => SelectMainProductCategoryCount(s),
+  (s: RootState, __: string, _: Date | number) => SelectCartBasedLeadTime(s),
   (_: RootState, service: string, __: Date | number) => service,
   (_: RootState, __: string, now: Date | number) => now,
-  (fulfillments, orderSize, service, now) => fulfillments !== null && Object.hasOwn(fulfillments, service) ? GetNextAvailableServiceDate([fulfillments[service]], orderSize, formatISO(now)) : null
+  (fulfillments, cartBasedLeadTime, service, now) => fulfillments !== null && Object.hasOwn(fulfillments, service) ? GetNextAvailableServiceDate([fulfillments[service]], formatISO(now), cartBasedLeadTime) : null
 );
 
 // Note: this falls back to now if there's really nothing for the selected service or for dine-in
@@ -316,19 +330,18 @@ export const SelectMetricsForSubmission = createSelector(
 export const SelectWarioSubmissionArguments = createSelector(
   (s: RootState) => s.fulfillment,
   (s: RootState) => s.ci,
-  (s: RootState) => getCart(s.cart.cart),
+  selectCartAsDto,
   (s: RootState) => s.payment.specialInstructions,
   SelectMetricsForSubmission,
   (s: RootState) => s.payment.selectedTip!,
   SelectDiscountsApplied,
   (s: RootState, nonce: string|null) => SelectPaymentsProposedForSubmission(s, nonce),
   (fulfillmentInfo, customerInfo, cart, specialInstructions, metrics, tipSelection, discountsApplied, paymentsApplied) => {
-    const cartDto = cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[];
     return {
       customerInfo,
       fulfillment: { status: WFulfillmentStatus.PROPOSED, ...fulfillmentInfo },
       specialInstructions: specialInstructions ?? "",
-      cart: cartDto,
+      cart,
       metrics,
       proposedDiscounts: discountsApplied,
       proposedPayments: paymentsApplied,

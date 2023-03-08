@@ -151,7 +151,7 @@ export default function WFulfillmentStageComponent() {
             value={serviceTime || null}
             //sx={{ width: 300 }}
             onChange={(_, v) => onSetServiceTime(v)}
-            renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : null} />}
+            renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : "Please note this time can change depending on what you order. Times are confirmed after orders are sent."} />}
           />
         </Grid>
         {(selectedService !== null && fulfillments[selectedService].service === FulfillmentType.DineIn && serviceDate !== null) &&
