@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { SnackbarProvider } from 'notistack';
+import { LazyMotion, domMax } from "framer-motion"
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -29,6 +30,12 @@ const theme = createTheme(themeOptions);
  */
 
 
+const LazyLoadingPage = () => 
+<LazyMotion features={domMax}>
+<LoadingScreen />
+</LazyMotion>
+
+
 const App = () => {
   const dispatch = useAppDispatch();
   const socketIoState = useAppSelector((s) => s.ws.status);
@@ -52,7 +59,7 @@ const App = () => {
       <ThemeProvider theme={theme}>
         <SnackbarProvider style={{ zIndex: 999999 }} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
           {!isSocketDataLoaded || currentTime === 0 ?
-            <LoadingScreen /> :
+            <LazyLoadingPage /> :
             <LocalizationProvider dateAdapter={DateAdapter}>
               <div id="WARIO_order">
                 {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
