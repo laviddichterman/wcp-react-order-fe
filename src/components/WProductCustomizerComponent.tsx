@@ -243,7 +243,12 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
   const visibleOptions = useMemo(() => {
     const filterUnavailable = modifierTypeEntry.modifierType.displayFlags.omit_options_if_not_available;
     const mmEntry = product.m.modifier_map[mtid];
-    return serviceDateTime !== null ? modifierTypeEntry.options.map(o=>modifierOptionSelector(o)).filter((o) => DisableDataCheck(o.disabled, serviceDateTime) && (!filterUnavailable || FilterUnselectable(mmEntry, o.id))) : [];
+    if (serviceDateTime === null) {
+      return [];
+    }
+    return modifierTypeEntry.options.map(o=>modifierOptionSelector(o))
+      .sort((a,b)=>a.ordinal-b.ordinal)
+      .filter((o) => DisableDataCheck(o.disabled, o.availability, serviceDateTime) && (!filterUnavailable || FilterUnselectable(mmEntry, o.id)));
   }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
   const modifierOptionsHtml = useMemo(() => {
     const mEntry = menu.modifiers[mtid];
