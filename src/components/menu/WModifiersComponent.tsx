@@ -16,13 +16,12 @@ export function WModifiersComponent({ product }: { product: IProduct; }) {
               {modifierTypeEntry.modifierType.displayName ? modifierTypeEntry.modifierType.displayName : modifierTypeEntry.modifierType.name}
             </ProductTitle>
           </Grid>
-          {modifierTypeEntry.options.map((opt, j) => {
-            const modifierOption = modifierOptionSelector(opt)!;
+          {modifierTypeEntry.options.map(x => modifierOptionSelector(x)!).sort((a, b) => a.ordinal - b.ordinal).map((opt, j) => {
             return (<Grid item xs={12} md={6} lg={4} key={j} sx={{ pl: 3, pt: 1 }}>
               <Box sx={{ position: 'relative' }}>
-                <ProductDescription>{modifierOption.displayName}</ProductDescription>
+                <ProductDescription>{opt.displayName}</ProductDescription>
                 <ProductPrice sx={{ position: 'absolute', top: 0, right: 0, zIndex: 1 }}>
-                  {modifierOption.price.amount !== 0 ? MoneyToDisplayString(modifierOption.price, false) : "No Charge"}
+                  {opt.price.amount !== 0 ? MoneyToDisplayString(opt.price, false) : "No Charge"}
                 </ProductPrice>
               </Box>
             </Grid>)
