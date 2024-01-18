@@ -2,7 +2,7 @@ import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } fro
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
 import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../store'
 import { SelectOptionsForServicesAndDate } from '../store'
-import { CatalogSelectors, SocketIoActions, scrollToIdOffsetAfterDelay } from '@wcp/wario-ux-shared';
+import { CatalogSelectors, scrollToIdOffsetAfterDelay, setCurrentTime, receiveFulfillments, receiveSettings, receiveCatalog, setMenu } from '@wcp/wario-ux-shared';
 import { enqueueSnackbar } from 'notistack'
 import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
@@ -24,22 +24,23 @@ export const startAppListening = ListeningMiddleware.startListening as AppStartL
 export const addAppListener = addListener as TypedAddListener<RootState, AppDispatch>;
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(SocketIoActions.setCurrentTime,
+  matcher: isAnyOf(setCurrentTime,
     setService,
-    SocketIoActions.receiveFulfillments,
-    SocketIoActions.receiveSettings,
-    SocketIoActions.receiveCatalog,
+    receiveFulfillments,
+    receiveSettings,
+    receiveCatalog,
     addToCart,
     removeFromCart,
     updateCartQuantity),
   effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const originalState = api.getOriginalState();
-    const isConfirmed = originalState.payment.submitToWarioStatus === 'SUCCEEDED'; // omit because if it bumps it here, then the server will likely bump it too|| originalState.payment.submitToWarioStatus === 'PENDING';
+    // we check for the pending state because we want to avoid the case of an in-flight request where this middleware starts messing with state. better to let the response run its course.
+    const isAlreadySubmitted = originalState.payment.submitToWarioStatus === 'SUCCEEDED' || originalState.payment.submitToWarioStatus === 'PENDING';
     const previouslySelectedDate = originalState.fulfillment.selectedDate;
     const previouslySelectedTime = originalState.fulfillment.selectedTime;
     const selectedService = api.getState().fulfillment.selectedService;
     const fulfillments = api.getState().ws.fulfillments!;
-    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && Object.hasOwn(fulfillments, selectedService) && !isConfirmed) {
+    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && Object.hasOwn(fulfillments, selectedService) && !isAlreadySubmitted) {
       const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, [selectedService]);
       if (!newOptions.find(x => x.value === previouslySelectedTime)) {
         if (newOptions.length > 0) {
@@ -98,7 +99,7 @@ ListeningMiddleware.startListening({
 });
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(SocketIoActions.receiveCatalog, setTime, setService),
+  matcher: isAnyOf(receiveCatalog, setTime, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const catalog = CatalogSelectors(api.getState().ws);
     const currentTime = api.getState().ws.currentTime;
@@ -138,7 +139,7 @@ ListeningMiddleware.startListening({
         }
         api.dispatch(killAllCartEntries(toKill));
       }
-      api.dispatch(SocketIoActions.setMenu(MENU));
+      api.dispatch(setMenu(MENU));
       if (regenerateCustomizerMetadata) {
         api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct!.p, catalog, menuTime, service)));
       }

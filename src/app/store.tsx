@@ -1,4 +1,4 @@
-import { configureStore, createSelector, EntityId, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, createSelector, combineReducers } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
   IProductInstancesAdapter,
@@ -136,8 +136,8 @@ export const SelectServiceTimeDisplayString = createSelector(
 
 // todo: decouple this from the cart entry and just take in the modifier map
 export const GetSelectableModifiersForCartEntry = createSelector(
-  (s: RootState, cartEntryId: EntityId, _: IMenu) => getCartEntry(s.cart.cart, cartEntryId),
-  (_: RootState, __: EntityId, menu: IMenu) => menu,
+  (s: RootState, cartEntryId: string, _: IMenu) => getCartEntry(s.cart.cart, cartEntryId),
+  (_: RootState, __: string, menu: IMenu) => menu,
   (entry, menu) =>
     entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu) : {}
 );
@@ -260,7 +260,7 @@ export const SelectHasOperatingHoursForService = createSelector(
 
 export const SelectCartBasedLeadTime = createSelector(
   selectCartAsDto,
-  (s: RootState) => (x: EntityId) => getProductEntryById(s.ws.products, x),
+  (s: RootState) => (x: string) => getProductEntryById(s.ws.products, x),
   (cart, productSelector) => DetermineCartBasedLeadTime(cart, productSelector)
 )
 

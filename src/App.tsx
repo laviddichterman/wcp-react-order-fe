@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 
-import { scrollToIdOffsetAfterDelay, LoadingScreen, AdapterCurrentTimeOverrideUtils, SocketIoActions, IsSocketDataLoaded } from '@wcp/wario-ux-shared';
+import { scrollToIdOffsetAfterDelay, LoadingScreen, AdapterCurrentTimeOverrideUtils, IsSocketDataLoaded, startConnection } from '@wcp/wario-ux-shared';
 
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
@@ -44,7 +44,7 @@ const App = () => {
   const DateAdapter = useMemo(() => AdapterCurrentTimeOverrideUtils(currentTime), [currentTime]);
   useEffect(() => {
     if (socketIoState === 'NONE') {
-      dispatch(SocketIoActions.startConnection());
+      dispatch(startConnection());
     }
     dispatch(setUserAgent(window.navigator.userAgent));
   }, [socketIoState, dispatch]);

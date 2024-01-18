@@ -1,18 +1,14 @@
 import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@reduxjs/toolkit";
 import { CartEntry, CatalogModifierEntry, Selector, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
 
-const DeadCartAdapter = createEntityAdapter<CartEntry>({
-  selectId: entry => entry.id
-});
+const DeadCartAdapter = createEntityAdapter<CartEntry>();
 
-const WCartAdapter = createEntityAdapter<CartEntry>({
-  selectId: entry => entry.id
-});
+const WCartAdapter = createEntityAdapter<CartEntry>();
 
 export interface WCartState {
   indexCounter: number;
-  cart: EntityState<CartEntry>,
-  deadCart: EntityState<CartEntry>
+  cart: EntityState<CartEntry, string>,
+  deadCart: EntityState<CartEntry, string>
 }
 
 const initialState: WCartState = {
