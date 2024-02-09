@@ -2,71 +2,22 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ProductDisplay } from '../WProductComponent';
 import { WModifiersComponent } from './WModifiersComponent';
 import { useAppDispatch, useAppSelector } from "../../app/useHooks";
-import { Box, Tab, Typography, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Tab, Typography, Accordion, AccordionSummary, AccordionDetails, Grid } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
-import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu, WDateUtils, CategoryDisplay, MoneyToDisplayString } from '@wcp/wcpshared';
+import { IMenu, CategoryEntry, IProductInstance, FilterProduct, FilterWMenu, WDateUtils, CategoryDisplay } from '@wcp/wcpshared';
 import { GetNextAvailableServiceDateTime, SelectMenuCategoryId } from '../../app/store';
 import { getProductEntryById, isNonProduction, LoadingScreen, scrollToElementOffsetAfterDelay, SelectDefaultFulfillmentId, Separator } from '@wcp/wario-ux-shared';
 import { cloneDeep } from 'lodash';
 import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
-
-import { DataGridPro, DataGridProProps, GridColumns, GridValueGetterParams } from '@mui/x-data-grid-pro';
-import {
-  GridToolbarContainer,
-  GridToolbarQuickFilter,
-  GridToolbarQuickFilterProps
-} from '@mui/x-data-grid';
+import { WMenuDataGrid } from './WMenuTableComponent';
 
 interface WMenuDisplayProps { menu: IMenu; category: CategoryEntry; };
-
-const DataGridMetadataPrefix = "DG_";
-
-type IProductInstanceValueGetter = GridValueGetterParams<any, IProductInstance>;
-function WMenuDataGrid({ menu, category }: WMenuDisplayProps) {
-  const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
-  const productRows = useMemo(() => [...category.menu, ...category.children.map(x => menu.categories[x].menu).flat()], [menu, category]);
-  const dynamicColumns: GridColumns<IProductInstance> = useMemo(() => {
-    const acc: Record<string, boolean> = {};
-    productRows.forEach((pi) => pi.externalIDs.forEach(md => {
-      if (md.key.startsWith(DataGridMetadataPrefix)) {
-        acc[md.key.slice(DataGridMetadataPrefix.length)] = true;
-      }
-    }));
-    //{ headerName: "Ordinal", field: "ordinal", valueGetter: (v: ValueGetterRow) => v.row.category.ordinal, flex: 3 },
-
-    return Object.keys(acc).map(x=>({ headerName: x, field: x, valueGetter: (v: IProductInstanceValueGetter) => v.row.externalIDs.find(ext=> ext.key === `DG_${x}`)?.value ?? "" }));
-  }, [productRows]);
-  return <DataGridPro
-    density="compact"
-    hideFooter
-    autoHeight
-    disableColumnReorder
-    columns={[
-      {headerName: "Name", field: "name", valueGetter: (v:IProductInstanceValueGetter)=> v.row.displayName },
-      {headerName: "Price", field: "price", valueGetter: (v:IProductInstanceValueGetter)=> MoneyToDisplayString(productEntrySelector(v.row.productId)!.product.price, false) },
-      ...dynamicColumns ]}
-    rows={productRows}
-  />
-}
-// return (
-//   <Box>
-//     {category.children.map((subSection) => {
-//       const subCategory = menu.categories[subSection];
-//       return (
-//         <Box sx={{ pt: 4 }} key={subSection}>
-//           <Typography variant="h4" sx={{ ml: 2 }} dangerouslySetInnerHTML={{ __html: subCategory.menu_name }} />
-//           <Separator />
-//           <WMenuRecursive menu={menu} category={subCategory} />
-//         </Box>)
-//     })}
-//     <WMenuSection menu={menu} category={category} />
-//   </Box>);
-// }
 
 function WMenuSection({ menu, category }: WMenuDisplayProps) {
   const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
   return (
+    // TODO: need to fix the location of the menu subtitle
     <Box sx={{ pt: 0 }}>
       {category.subtitle !== null &&
         <Typography variant="h6" dangerouslySetInnerHTML={{ __html: category.subtitle }} />
