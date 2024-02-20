@@ -55,9 +55,9 @@ export default function WFulfillmentStageComponent() {
 
   const ServiceOptions = useMemo(() => {
     return fulfillments.filter((fulfillment) =>
-      fulfillment.exposeFulfillment && HasOperatingHoursForService(fulfillment.id)).
-      sort((x, y) => x.ordinal - y.ordinal).
-      map((fulfillment) => {
+      fulfillment.exposeFulfillment && HasOperatingHoursForService(fulfillment.id))
+      .sort((x, y) => x.ordinal - y.ordinal)
+      .map((fulfillment) => {
         return { label: fulfillment.displayName, value: fulfillment.id, disabled: !canSelectService(fulfillment.id) };
       });
   }, [fulfillments, canSelectService, HasOperatingHoursForService]);

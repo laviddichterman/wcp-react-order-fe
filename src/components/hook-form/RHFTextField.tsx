@@ -2,7 +2,6 @@
 import { useFormContext, Controller } from 'react-hook-form';
 // @mui
 import { TextField, TextFieldProps } from '@mui/material';
-import { StaticDatePicker, StaticDatePickerProps } from '@mui/x-date-pickers';
 
 // ----------------------------------------------------------------------
 type IProps = {
