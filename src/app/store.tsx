@@ -1,4 +1,4 @@
-import { configureStore, createSelector, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, createSelector, combineReducers, createSelectorCreator, weakMapMemoize } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
   IProductInstancesAdapter,
@@ -8,7 +8,9 @@ import {
   SelectAutoGratutityThreshold,
   SelectDefaultFulfillmentId,
   SelectGratuityServiceCharge,
-  getProductEntryById
+  getProductEntryById,
+  getFulfillmentById,
+  getCategoryEntryById
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
@@ -23,7 +25,8 @@ import {
   IMenu,
   ComputeTipBasis,
   ComputeTipValue,
-  ComputeMainProductCategoryCount,
+  ComputeProductCategoryMatchCount,
+  ComputeCategoryTreeIdList,
   ComputeTotal,
   MetadataModifierMap,
   WDateUtils,
@@ -78,6 +81,11 @@ export type AppDispatch = typeof store.dispatch;
 export const IProductInstancesSelectors = IProductInstancesAdapter.getSelectors((state: RootState) => state.ws.productInstances);
 export const ProductInstanceFunctionsSelectors = ProductInstanceFunctionsAdapter.getSelectors((state: RootState) => state.ws.productInstanceFunctions);
 
+export const localCreateSelector = createSelectorCreator({
+  memoize: weakMapMemoize,
+  argsMemoize: weakMapMemoize
+});
+
 export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {
   const modifierEntry = menu.modifiers[k];
   const omit_section_if_no_available_options = modifierEntry.modifier_type.displayFlags.omit_section_if_no_available_options;
@@ -85,20 +93,23 @@ export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) =
   return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
 }, {} as MetadataModifierMap);
 
-const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => createSelector(
+const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => localCreateSelector(
   (s: RootState) => s.ws.fulfillments,
   (s: RootState) => s.fulfillment.selectedService,
   (fulfillments, fulfillmentId) =>
-    fulfillments !== null &&
-      fulfillmentId !== null &&
-      Object.hasOwn(fulfillments, fulfillmentId) ? fulfillments[fulfillmentId][field] : null
+    fulfillmentId && getFulfillmentById(fulfillments, fulfillmentId) ? getFulfillmentById(fulfillments, fulfillmentId)[field] : null
 );
 
+export const SelectFulfillmentDisplayName = SelectSomethingFromFulfillment('displayName');
 export const SelectMainCategoryId = SelectSomethingFromFulfillment('orderBaseCategoryId');
 export const SelectSupplementalCategoryId = SelectSomethingFromFulfillment('orderSupplementaryCategoryId');
 export const SelectMenuCategoryId = SelectSomethingFromFulfillment('menuBaseCategoryId');
 export const SelectMaxPartySize = SelectSomethingFromFulfillment('maxGuests');
 export const SelectServiceFeeSetting = SelectSomethingFromFulfillment('serviceCharge');
+export const SelectFulfillmentMinDuration = SelectSomethingFromFulfillment('minDuration');
+export const SelectFulfillmentServiceTerms = SelectSomethingFromFulfillment('terms');
+export const SelectFulfillmentService = SelectSomethingFromFulfillment('service');
+export const SelectFulfillmentMaxGuests = SelectSomethingFromFulfillment('maxGuests');
 
 export const selectAllowAdvancedPrompt = createSelector(
   (s: RootState) => s.customizer.selectedProduct,
@@ -108,7 +119,7 @@ export const selectAllowAdvancedPrompt = createSelector(
 
 export const selectCartAsDto = createSelector(
   (s: RootState) => getCart(s.cart.cart),
-  (cart) => cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) satisfies CoreCartEntry<WCPProductV2Dto>[]
+  (cart) => cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[]
 )
 
 export const selectCartEntryBeingCustomized = createSelector(
@@ -124,14 +135,12 @@ export const selectShowAdvanced = (s: RootState) => s.customizer.showAdvanced;
 export const selectSelectedProduct = (s: RootState) => s.customizer.selectedProduct;
 
 export const SelectServiceTimeDisplayString = createSelector(
-  (s: RootState) => s.ws.fulfillments,
+  SelectFulfillmentMinDuration,
   (s: RootState) => s.fulfillment.selectedService,
   (s: RootState) => s.fulfillment.selectedTime,
-  (fulfillments, service, selectedTime) =>
-    fulfillments !== null &&
-      service !== null &&
-      selectedTime !== null ?
-      (fulfillments[service].minDuration !== 0 ? `${WDateUtils.MinutesToPrintTime(selectedTime)} to ${WDateUtils.MinutesToPrintTime(selectedTime + fulfillments[service].minDuration)}` : WDateUtils.MinutesToPrintTime(selectedTime)) : "");
+  (minDuration, service, selectedTime) =>
+    minDuration !== null && service !== null && selectedTime !== null ?
+      (minDuration === 0 ? WDateUtils.MinutesToPrintTime(selectedTime) : `${WDateUtils.MinutesToPrintTime(selectedTime)} to ${WDateUtils.MinutesToPrintTime(selectedTime + minDuration)}`) : "");
 
 
 // todo: decouple this from the cart entry and just take in the modifier map
@@ -237,10 +246,16 @@ const SelectPaymentsProposedForSubmission = createSelector(
   (nonce, payments, totalWithTip, tipAmount, balance) => balance.amount > 0 && nonce ? ComputePaymentsApplied(totalWithTip, tipAmount, [...payments, { createdAt: Date.now(), t: PaymentMethod.CreditCard, status: TenderBaseStatus.PROPOSED, payment: { sourceId: nonce }}]) : payments
 );
 
+export const SelectMainCategoryTreeIdList = createSelector(
+  (s: RootState) => SelectMainCategoryId(s),
+  (s: RootState) => s.ws.categories,
+  (cId, categories) => cId ? ComputeCategoryTreeIdList(cId, (id: string) => getCategoryEntryById(categories, id)) : []
+)
+
 export const SelectMainProductCategoryCount = createSelector(
-  SelectMainCategoryId,
+  SelectMainCategoryTreeIdList,
   (s: RootState) => getCart(s.cart.cart),
-  ComputeMainProductCategoryCount
+  ComputeProductCategoryMatchCount
 )
 
 export const SelectAutoGratutityEnabled = createSelector(
@@ -253,24 +268,23 @@ export const SelectAutoGratutityEnabled = createSelector(
 );
 
 export const SelectHasOperatingHoursForService = createSelector(
-  (s: RootState, _: string) => s.ws.fulfillments!,
-  (_: RootState, fulfillmentId: string) => fulfillmentId,
-  (fulfillments, fulfillmentId) => WDateUtils.HasOperatingHours(fulfillments[fulfillmentId].operatingHours)
+  (s: RootState, fulfillmentId: string) => getFulfillmentById(s.ws.fulfillments, fulfillmentId),
+  (fulfillment) => WDateUtils.HasOperatingHours(fulfillment.operatingHours)
 );
 
 export const SelectCartBasedLeadTime = createSelector(
   selectCartAsDto,
-  (s: RootState) => (x: string) => getProductEntryById(s.ws.products, x),
-  (cart, productSelector) => DetermineCartBasedLeadTime(cart, productSelector)
+  (s: RootState) => s.ws.products,
+  (cart, products) => DetermineCartBasedLeadTime(cart, (x: string) => getProductEntryById(products, x))
 )
 
 export const SelectAvailabilityForServicesDateAndProductCount = createSelector(
-  (s: RootState, _: string, __: string[]) => s.ws.fulfillments!,
+  (s: RootState, _: string, __: string[]) => s.ws.fulfillments,
   (s: RootState, __: string, ___: string[]) => SelectCartBasedLeadTime(s),
   (_: RootState, selectedDate: string, __: string[]) => selectedDate,
   (_: RootState, __: string, serviceSelection: string[]) => serviceSelection,
   (fulfillments, cartBasedLeadTime, selectedDate, serviceSelection) =>
-    WDateUtils.GetInfoMapForAvailabilityComputation(serviceSelection.map(x => fulfillments[x]), selectedDate, cartBasedLeadTime)
+    WDateUtils.GetInfoMapForAvailabilityComputation(serviceSelection.map(x => getFulfillmentById(fulfillments, x)), selectedDate, cartBasedLeadTime)
 );
 
 export const SelectOptionsForServicesAndDate = createSelector(
@@ -280,13 +294,11 @@ export const SelectOptionsForServicesAndDate = createSelector(
   (infoMap, currentTime, selectedDate) => WDateUtils.GetOptionsForDate(infoMap, selectedDate, formatISO(currentTime))
 )
 
-
 export const GetNextAvailableServiceDateTimeForService = createSelector(
-  (s: RootState, __: string, _: Date | number) => s.ws.fulfillments,
+  (s: RootState, service: string, _: Date | number) => getFulfillmentById(s.ws.fulfillments, service),
+  (_: RootState, __: string, now: Date | number) => formatISO(now),
   (s: RootState, __: string, _: Date | number) => SelectCartBasedLeadTime(s),
-  (_: RootState, service: string, __: Date | number) => service,
-  (_: RootState, __: string, now: Date | number) => now,
-  (fulfillments, cartBasedLeadTime, service, now) => fulfillments !== null && Object.hasOwn(fulfillments, service) ? GetNextAvailableServiceDate([fulfillments[service]], formatISO(now), cartBasedLeadTime) : null
+  (fulfillment, now, cartBasedLeadTime) => GetNextAvailableServiceDate([fulfillment], now, cartBasedLeadTime)
 );
 
 // Note: this falls back to now if there's really nothing for the selected service or for dine-in

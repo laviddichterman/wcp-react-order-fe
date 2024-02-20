@@ -1,11 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { SnackbarProvider } from 'notistack';
 import { LazyMotion, domMax } from "framer-motion"
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ScopedCssBaseline } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers';
 
-import { scrollToIdOffsetAfterDelay, LoadingScreen, AdapterCurrentTimeOverrideUtils, IsSocketDataLoaded, startConnection } from '@wcp/wario-ux-shared';
+import { scrollToIdOffsetAfterDelay, LoadingScreen, IsSocketDataLoaded, startConnection } from '@wcp/wario-ux-shared';
 
 import { setUserAgent } from './app/slices/WMetricsSlice';
 import { useAppDispatch, useAppSelector } from "./app/useHooks";
@@ -30,18 +29,17 @@ const theme = createTheme(themeOptions);
  */
 
 
-const LazyLoadingPage = () => 
-<LazyMotion features={domMax}>
-<LoadingScreen />
-</LazyMotion>
+const LazyLoadingPage = () =>
+  <LazyMotion features={domMax}>
+    <LoadingScreen />
+  </LazyMotion>
 
 
 const App = () => {
   const dispatch = useAppDispatch();
   const socketIoState = useAppSelector((s) => s.ws.status);
   const isSocketDataLoaded = useAppSelector(s => IsSocketDataLoaded(s.ws));
-  const currentTime = useAppSelector(s => s.ws.currentTime);
-  const DateAdapter = useMemo(() => AdapterCurrentTimeOverrideUtils(currentTime), [currentTime]);
+  const currentTimeNotLoaded = useAppSelector(s => s.ws.currentTime === 0);
   useEffect(() => {
     if (socketIoState === 'NONE') {
       dispatch(startConnection());
@@ -58,16 +56,14 @@ const App = () => {
     <ScopedCssBaseline>
       <ThemeProvider theme={theme}>
         <SnackbarProvider style={{ zIndex: 999999 }} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
-          {!isSocketDataLoaded || currentTime === 0 ?
+          {!isSocketDataLoaded || currentTimeNotLoaded ?
             <LazyLoadingPage /> :
-            <LocalizationProvider dateAdapter={DateAdapter}>
-              <div id="WARIO_order">
-                {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
-                {/* { <WStoreCreditPurchase />} */}
-                {/* {<WMenuComponent />} */}
-                {<WOrderingComponent />}
-              </div>
-            </LocalizationProvider>
+            <div id="WARIO_order">
+              {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
+              {/* {<WStoreCreditPurchase />} */}
+              {/* {<WMenuComponent />} */}
+              {<WOrderingComponent />}
+            </div>
           }
         </SnackbarProvider>
       </ThemeProvider>

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { backStage, nextStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
 import { setAcknowledgeInstructionsDialogue, setSpecialInstructions } from '../../app/slices/WPaymentSlice';
-import { SelectServiceTimeDisplayString } from '../../app/store';
+import { SelectFulfillmentDisplayName, SelectServiceTimeDisplayString } from '../../app/store';
 import { Separator, StageTitle, WarningResponseOutput, SelectMessageRequestHalf, SelectMessageRequestSlicing, SelectMessageRequestVegan } from '@wcp/wario-ux-shared';
 
 
@@ -22,9 +22,8 @@ export default function WReviewOrderStage() {
   const REQUEST_HALF = useAppSelector(SelectMessageRequestHalf);
   const REQUEST_SLICING = useAppSelector(SelectMessageRequestSlicing);
   const REQUEST_VEGAN = useAppSelector(SelectMessageRequestVegan);
-  const fulfillments = useAppSelector(s => s.ws.fulfillments!);
+  const selectedServiceDisplayName = useAppSelector(SelectFulfillmentDisplayName)
   const { givenName, familyName, mobileNum, email } = useAppSelector(s => s.ci);
-  const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceTimeDisplayString = useAppSelector(SelectServiceTimeDisplayString);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
@@ -62,7 +61,7 @@ export default function WReviewOrderStage() {
     setSpecialInstructionsResponses(special_instructions_responses);
   }, [specialInstructions]);
 
-  if (selectedService === null || serviceDateTime === null) {
+  if (selectedServiceDisplayName === null || serviceDateTime === null) {
     return <div>You found a bug</div>;
   }
   return (
@@ -86,7 +85,7 @@ export default function WReviewOrderStage() {
             </TableRow>
             <TableRow>
               <TableCell>Service</TableCell>
-              <TableCell>{fulfillments[selectedService].displayName} on {format(serviceDateTime, WDateUtils.ServiceDateDisplayFormat)} at {serviceTimeDisplayString}</TableCell>
+              <TableCell>{selectedServiceDisplayName} on {format(serviceDateTime, WDateUtils.ServiceDateDisplayFormat)} at {serviceTimeDisplayString}</TableCell>
             </TableRow>
             {dineInInfo &&
               <TableRow>

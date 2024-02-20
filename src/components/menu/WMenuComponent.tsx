@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ProductDisplay } from '../WProductComponent';
 import { WModifiersComponent } from './WModifiersComponent';
 import { useAppDispatch, useAppSelector } from "../../app/useHooks";
@@ -11,6 +11,7 @@ import { cloneDeep } from 'lodash';
 import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
 import { WMenuDataGrid } from './WMenuTableComponent';
+// import useRenderingTrace from '../../utils/useRenderingTrace';
 
 interface WMenuDisplayProps { menu: IMenu; category: CategoryEntry; };
 
@@ -167,7 +168,7 @@ export default function WMenuComponent() {
   // NOTE THIS WILL BE NULL UNTIL WE ASSIGN A FULFILLMENT
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
   const nextAvailableTime = useAppSelector(s => WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTime(s)));
-
+  // useRenderingTrace('wmenucomponent', { filteredMenu });
   useEffect(() => {
     dispatch(setService(FulfillmentId));
   }, [dispatch, FulfillmentId]);

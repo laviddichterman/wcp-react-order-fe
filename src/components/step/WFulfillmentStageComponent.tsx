@@ -1,39 +1,43 @@
 import React, { useCallback, useMemo } from 'react';
 import { FulfillmentType, WDateUtils } from '@wcp/wcpshared';
 import { Autocomplete, Grid, Checkbox, Radio, RadioGroup, TextField, FormControlLabel } from '@mui/material';
-import { StaticDatePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, formatISO, parseISO, startOfDay } from 'date-fns';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
-import { SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
+import { SelectFulfillmentMaxGuests, SelectFulfillmentService, SelectFulfillmentServiceTerms, SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
 import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
 import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
-import { StageTitle, Separator } from '@wcp/wario-ux-shared';
+import { StageTitle, Separator, SelectDateFnsAdapter, ErrorResponseOutput, getFulfillments } from '@wcp/wario-ux-shared';
+
 
 export default function WFulfillmentStageComponent() {
   const dispatch = useAppDispatch();
-  const fulfillments = useAppSelector(s => s.ws.fulfillments!);
+  const fulfillments = useAppSelector(s => getFulfillments(s.ws.fulfillments));
+  const DateAdapter = useAppSelector(s => SelectDateFnsAdapter(s));
   const HasSpaceForPartyOf = useCallback((partySize: number, orderDate: string, orderTime: number) => true, []);
   const HasOperatingHoursForService = useAppSelector(s => (fulfillmentId: string) => SelectHasOperatingHoursForService(s, fulfillmentId));
   const OptionsForServicesAndDate = useAppSelector(s => (selectedDate: string, selectedServices: string[]) => SelectOptionsForServicesAndDate(s, selectedDate, selectedServices));
-  const currentTime = useAppSelector(s=>s.ws.currentTime);
+  const currentTime = useAppSelector(s => s.ws.currentTime);
   const selectedService = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDate = useAppSelector(s => s.fulfillment.selectedDate);
   const serviceTime = useAppSelector(s => s.fulfillment.selectedTime);
-  const serviceTerms = useMemo(() => selectedService !== null ? fulfillments[selectedService].terms : [], [fulfillments, selectedService]);
+  const serviceTerms = useAppSelector(s => SelectFulfillmentServiceTerms(s) || []);
+  const serviceServiceEnum = useAppSelector(SelectFulfillmentService);
+  const serviceServiceMaxGuests = useAppSelector(SelectFulfillmentMaxGuests);
   const hasAgreedToTerms = useAppSelector(s => s.fulfillment.hasAgreedToTerms);
   const dineInInfo = useAppSelector(s => s.fulfillment.dineInInfo);
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
   const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired);
   const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
   const valid = useMemo(() => {
-    return selectedService !== null && serviceDate !== null && serviceTime !== null &&
+    return selectedService !== null && serviceDate !== null && serviceTime !== null && serviceServiceEnum !== null &&
       (serviceTerms.length === 0 || hasAgreedToTerms) &&
-      (fulfillments[selectedService].service !== FulfillmentType.DineIn || dineInInfo !== null) &&
-      (fulfillments[selectedService].service !== FulfillmentType.Delivery || deliveryInfo !== null);
-  }, [fulfillments, selectedService, serviceDate, serviceTime, serviceTerms.length, hasAgreedToTerms, dineInInfo, deliveryInfo]);
+      (serviceServiceEnum !== FulfillmentType.DineIn || dineInInfo !== null) &&
+      (serviceServiceEnum !== FulfillmentType.Delivery || deliveryInfo !== null);
+  }, [selectedService, serviceServiceEnum, serviceDate, serviceTime, serviceTerms, hasAgreedToTerms, dineInInfo, deliveryInfo]);
 
   const OptionsForDate = useCallback((d: string | null) => {
     if (selectedService !== null && d !== null) {
@@ -50,8 +54,10 @@ export default function WFulfillmentStageComponent() {
   const TimeOptions = useMemo(() => serviceDate !== null ? OptionsForDate(serviceDate).reduce((acc: { [index: number]: { value: number, disabled: boolean } }, v) => ({ ...acc, [v.value]: v }), {}) : {}, [OptionsForDate, serviceDate]);
 
   const ServiceOptions = useMemo(() => {
-    return Object.values(fulfillments).filter((fulfillment) =>
-      fulfillment.exposeFulfillment && HasOperatingHoursForService(fulfillment.id)).map((fulfillment) => {
+    return fulfillments.filter((fulfillment) =>
+      fulfillment.exposeFulfillment && HasOperatingHoursForService(fulfillment.id)).
+      sort((x, y) => x.ordinal - y.ordinal).
+      map((fulfillment) => {
         return { label: fulfillment.displayName, value: fulfillment.id, disabled: !canSelectService(fulfillment.id) };
       });
   }, [fulfillments, canSelectService, HasOperatingHoursForService]);
@@ -64,7 +70,7 @@ export default function WFulfillmentStageComponent() {
   }
   const onSetServiceDate = (v: Date | number | null) => {
     if (v !== null) {
-      const serviceDateString = formatISO(v, {representation: 'date'});
+      const serviceDateString = formatISO(v, { representation: 'date' });
       // check if the selected servicetime is valid in the new service date
       if (serviceTime !== null) {
         const newDateOptions = OptionsForDate(serviceDateString);
@@ -108,7 +114,7 @@ export default function WFulfillmentStageComponent() {
           ))}
         </RadioGroup>
       </Grid>
-      <Grid sx={serviceTerms.length === 0 ? { display: 'none'} : {}} item xs={12} xl={8}>
+      <Grid sx={serviceTerms.length === 0 ? { display: 'none' } : {}} item xs={12} xl={8}>
         <FormControlLabel control={
           <><Checkbox checked={hasAgreedToTerms} onChange={(_, checked) => onSetHasAgreedToTerms(checked)} />
           </>} label={<>
@@ -119,23 +125,22 @@ export default function WFulfillmentStageComponent() {
           </>
           } />
       </Grid>
-      
-      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3, ...(selectedService === null ? { display: 'none'} : {})}}>
-        <StaticDatePicker
-          displayStaticWrapperAs="desktop"
-          openTo="day"
-          disablePast
-          label={selectedService === null ? "Select a requested service first" : "Service Date"}
-          minDate={startOfDay(currentTime)}
-          maxDate={add(currentTime, { days: 6 })}
-          shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, {representation: 'date'})).length === 0}
-          disableMaskedInput
-          value={serviceDate ? parseISO(serviceDate) : ""}
-          onChange={(v) => onSetServiceDate(v)}
-          renderInput={(params) => <TextField {...params} error={hasSelectedDateExpired} helperText={hasSelectedDateExpired ? "The previously selected service date has expired." : null} />}
-        />
+      <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3, ...(selectedService === null ? { display: 'none' } : {}) }}>
+        <LocalizationProvider dateAdapter={DateAdapter}>
+          <StaticDatePicker
+          slotProps={{ }}
+            displayStaticWrapperAs="desktop"
+            openTo="day"
+            disablePast
+            minDate={startOfDay(currentTime)}
+            maxDate={add(currentTime, { days: 6 })}
+            shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, { representation: 'date' })).length === 0}
+            value={serviceDate ? parseISO(serviceDate) : ""}
+            onChange={(v : Date | null) => onSetServiceDate(v)}
+          />
+        </LocalizationProvider>
       </Grid>
-      <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', ...(selectedService === null ? { display: 'none'} : {}) }} >
+      <Grid item xs={12} container xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', ...(selectedService === null ? { display: 'none' } : {}) }} >
         <Grid item xs={12} sx={{ pb: 5 }}>
           <Autocomplete
             sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
@@ -154,7 +159,7 @@ export default function WFulfillmentStageComponent() {
             renderInput={(params) => <TextField {...params} label="Time" error={hasSelectedTimeExpired} helperText={hasSelectedTimeExpired ? "The previously selected service time has expired." : "Please note this time can change depending on what you order. Times are confirmed after orders are sent."} />}
           />
         </Grid>
-        {(selectedService !== null && fulfillments[selectedService].service === FulfillmentType.DineIn && serviceDate !== null) &&
+        {(serviceServiceEnum !== null && serviceServiceEnum === FulfillmentType.DineIn && serviceDate !== null) &&
           (<Grid item xs={12} sx={{ pb: 5 }}>
             <Autocomplete
               sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', width: 300, margin: 'auto' }}
@@ -163,7 +168,7 @@ export default function WFulfillmentStageComponent() {
               disableClearable
               disabled={serviceTime === null}
               className="guest-count"
-              options={[...Array((fulfillments[selectedService].maxGuests ?? 50) - 1)].map((_, i) => i + 1)}
+              options={[...Array((serviceServiceMaxGuests ?? 50) - 1)].map((_, i) => i + 1)}
               getOptionDisabled={o => serviceTime === null || !HasSpaceForPartyOf(o, serviceDate, serviceTime)}
               getOptionLabel={o => String(o)}
               // @ts-ignore
@@ -173,11 +178,12 @@ export default function WFulfillmentStageComponent() {
             />
           </Grid>)}
       </Grid>
-      {(selectedService !== null && fulfillments[selectedService].service === FulfillmentType.Delivery && serviceDate !== null) &&
+      {(serviceServiceEnum !== null && serviceServiceEnum === FulfillmentType.Delivery && serviceDate !== null) &&
         <Grid item xs={12}>
           <DeliveryInfoForm />
         </Grid>}
     </Grid>
+    {hasSelectedDateExpired === true && <ErrorResponseOutput>The previously selected service date has expired.</ErrorResponseOutput>}
     <Navigation hidden={serviceTime === null} hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);
 }

@@ -2,7 +2,7 @@ import { useAppSelector } from '../app/useHooks';
 import { useMemo } from 'react';
 import { OptionEnableState, DISABLE_REASON, WFunctional, IOption } from '@wcp/wcpshared';
 import { Tooltip } from '@mui/material';
-import { CatalogSelectors, getProductInstanceFunctionById } from '@wcp/wario-ux-shared';
+import { CatalogSelectors, getFulfillments, getProductInstanceFunctionById } from '@wcp/wario-ux-shared';
 
 interface ModifierOptionTooltipProps {
   enableState: OptionEnableState;
@@ -11,7 +11,7 @@ interface ModifierOptionTooltipProps {
 }
 
 export function ModifierOptionTooltip({ enableState, option, children }: ModifierOptionTooltipProps) {
-  const SERVICES = useAppSelector(s => s.ws.fulfillments!);
+  const fulfillments = useAppSelector(s => getFulfillments(s.ws.fulfillments));
   const selectedProduct = useAppSelector(s=>s.customizer.selectedProduct);
   const catalogSelectors = useAppSelector(s=>CatalogSelectors(s.ws));
   const pifGetter = useAppSelector(s=>(pifId : string)=> getProductInstanceFunctionById(s.ws.productInstanceFunctions, pifId));
@@ -30,7 +30,7 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
       case DISABLE_REASON.DISABLED_WEIGHT:
         return `Adding ${displayName} would exceed maximum weight.`;
       case DISABLE_REASON.DISABLED_FULFILLMENT_TYPE:
-        return `${displayName} is disabled for ${SERVICES[enableState.fulfillment].displayName}.`;
+        return `${displayName} is disabled for ${fulfillments.find(x=>x.id === enableState.fulfillment)!.displayName}.`;
       case DISABLE_REASON.DISABLED_NO_SPLITTING:
         return `${displayName} is disabled as a split modifier.`;
       case DISABLE_REASON.DISABLED_SPLIT_DIFFERENTIAL:
@@ -46,7 +46,7 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
         return `${displayName} is not available with the current combination of options.`;
     }
     //return displayName;
-  }, [enableState, option, SERVICES, pifGetter, catalogSelectors, selectedProduct]);
+  }, [enableState, option, fulfillments, pifGetter, catalogSelectors, selectedProduct]);
   return enableState.enable === DISABLE_REASON.ENABLED ?
     <span>{children}</span> :
     <Tooltip arrow title={tooltipText}>

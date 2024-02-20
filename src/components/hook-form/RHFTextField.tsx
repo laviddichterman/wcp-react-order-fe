@@ -33,39 +33,3 @@ export function RHFTextField({ name, readOnly, inputProps, ...other }: Props) {
     />
   );
 }
-
-// ----------------------------------------------------------------------
-
-type RHFDatePickerProps<TInputDate, TDate> = IProps & Omit<StaticDatePickerProps<TInputDate, TDate>, 'value' | 'onSubmit' | 'onChange' | 'renderInput'>;
-
-export function RHFDatePicker<TInputDate, TDate>({ name, ...other }: RHFDatePickerProps<TInputDate, TDate>) {
-  const { control } = useFormContext();
-
-  return (
-    <Controller
-      name={name}
-      control={control}
-      defaultValue={null}
-      render={({
-        field: { onChange, value },
-        fieldState: { error }
-      }) =>
-        {
-          return <StaticDatePicker
-          {...other}
-          displayStaticWrapperAs="desktop"
-          openTo="day"
-          value={value || ""}
-          onChange={(value) => onChange(value)}
-          renderInput={(params) => (
-            (
-              <TextField
-                {...params}
-              />
-            )
-          )}
-        />}
-      }
-    />
-  );
-}
