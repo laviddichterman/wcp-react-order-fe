@@ -4,14 +4,12 @@ import { ExpandMore } from "@mui/icons-material";
 import { ClickableProductDisplay } from '../WProductComponent';
 import { IProductInstance } from '@wcp/wcpshared';
 import { useAppSelector } from '../../app/useHooks';
-import { SelectSupplementalCategoryId } from '../../app/store';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { FilterEmptyCategoriesWrapper, WShopForProductsStageProps } from './WShopForProductsStageContainer';
 import { Separator, StageTitle, scrollToElementOffsetAfterDelay } from '@wcp/wario-ux-shared';
 
-export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
+export function WShopForSuppProductsStage({ categoryId, ProductsForCategoryFilteredAndSorted, onProductSelection, hidden }: WShopForProductsStageProps) {
   // TODO: we need to handle if this is null by choice. how to we bypass this stage?
-  const SUPP_CATID = useAppSelector(SelectSupplementalCategoryId);
   const menu = useAppSelector(s => s.ws.menu!);
   const selectedService = useAppSelector(s=>s.fulfillment.selectedService);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
@@ -22,14 +20,14 @@ export function WShopForSuppProductsStage({ ProductsForCategoryFilteredAndSorted
 
   // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
-    if (serviceDateTime !== null && selectedService !== null && SUPP_CATID !== null) {
-      const extras = menu.categories[SUPP_CATID].children.length ? menu.categories[SUPP_CATID].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
+    if (serviceDateTime !== null && selectedService !== null && categoryId !== null) {
+      const extras = menu.categories[categoryId].children.length ? menu.categories[categoryId].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
       if (extras.length !== extrasCategories.length) {
         setActivePanel(0);
         setExtrasCategories(extras);
       }
     }
-  }, [SUPP_CATID, extrasCategories.length, serviceDateTime, menu, selectedService]);
+  }, [categoryId, extrasCategories.length, serviceDateTime, menu, selectedService]);
 
   const toggleAccordion = useCallback((event: React.SyntheticEvent<Element, Event>, i: number) => {
     event.preventDefault();

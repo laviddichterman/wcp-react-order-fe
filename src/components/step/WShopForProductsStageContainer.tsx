@@ -4,7 +4,7 @@ import { CartEntry, WProduct, FilterProduct, IMenu, IProductInstance, FilterEmpt
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
-import { GetSelectableModifiers, SelectMainProductCategoryCount, selectSelectedProduct } from '../../app/store';
+import { GetSelectableModifiers, SelectMainCategoryId, SelectMainProductCategoryCount, selectSelectedProduct, SelectSupplementalCategoryId } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEntry } from '../../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
@@ -36,6 +36,7 @@ export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu 
     ((_: string) => [])
 }
 export interface WShopForProductsStageProps {
+  categoryId: string;
   ProductsForCategoryFilteredAndSorted: (category: string) => IProductInstance[];
   onProductSelection: (returnToId: string, cid: string, pid: string) => void;
   hidden: boolean;
@@ -44,6 +45,8 @@ export interface WShopForProductsStageProps {
 export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY' | 'SECONDARY' }) {
   const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
+  const mainCategoryId = useAppSelector(SelectMainCategoryId)!;
+  const supplementalCategoryId = useAppSelector(SelectSupplementalCategoryId);
   const catalogSelectors = useAppSelector(s=>CatalogSelectors(s.ws));
   const selectedService = useAppSelector(s=>s.fulfillment.selectedService!);
   const menu = useAppSelector(s => s.ws.menu!);
@@ -101,8 +104,8 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
   return (
     <div>
       { productSet === 'PRIMARY' ?
-          <WShopForPrimaryProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
-          <WShopForSuppProductsStage hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />}
+          <WShopForPrimaryProductsStage categoryId={mainCategoryId} hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} /> :
+          <WShopForSuppProductsStage categoryId={supplementalCategoryId!} hidden={selectedProduct !== null} onProductSelection={onProductSelection} ProductsForCategoryFilteredAndSorted={ProductsForCategoryFilteredAndSorted} />}
       {selectedProduct !== null && (<WProductCustomizerComponent scrollToWhenDone={scrollToOnReturn} />)}
       {cart.length > 0 && <Separator />}
       <WOrderCart isProductEditDialogOpen={selectedProduct !== null} setProductToEdit={setProductToEdit} />
