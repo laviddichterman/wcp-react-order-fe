@@ -1,7 +1,7 @@
 {
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3000/",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
@@ -13,7 +13,7 @@
     "@mui/x-date-pickers": "^6.19.4",
     "@reduxjs/toolkit": "^2.2.1",
     "@wcp/wario-ux-shared": "^1.1.5",
-    "@wcp/wcpshared": "^4.3.0",
+    "@wcp/wcpshared": "^4.3.2",
     "axios": "^1.6.7",
     "date-fns": "^3.3.1",
     "framer-motion": "^11.0.5",
