@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { CartEntry, WProduct, CreateWCPProduct } from '@wcp/wcpshared';
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
@@ -12,7 +12,7 @@ import { WOrderCart } from '../WOrderCartComponent';
 import { WShopForProductsStage } from './WShopForProductsStageComponent';
 import { cloneDeep } from 'lodash';
 import { setTimeToFirstProductIfUnset } from '../../app/slices/WMetricsSlice';
-import { Separator, CatalogSelectors, getProductEntryById, getProductInstanceById, scrollToIdOffsetAfterDelay, StageTitle } from '@wcp/wario-ux-shared';
+import { Separator, getProductEntryById, getProductInstanceById, scrollToIdOffsetAfterDelay, StageTitle, getModifierTypeEntryById } from '@wcp/wario-ux-shared';
 
 export interface WShopForProductsStageProps {
   categoryId: string;
@@ -20,11 +20,11 @@ export interface WShopForProductsStageProps {
 }
 
 export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY' | 'SECONDARY' }) {
-  const [scrollToOnReturn, setScrollToOnReturn] = React.useState<string>('WARIO_order');
+  const [scrollToOnReturn, setScrollToOnReturn] = useState('WARIO_order');
   const numMainCategoryProducts = useAppSelector(SelectMainProductCategoryCount);
   const mainCategoryId = useAppSelector(SelectMainCategoryId)!;
-  const supplementalCategoryId = useAppSelector(SelectSupplementalCategoryId);
-  const catalogSelectors = useAppSelector(s => CatalogSelectors(s.ws));
+  const supplementalCategoryId = useAppSelector(SelectSupplementalCategoryId)!;
+  const modiferEntrySelector = useAppSelector(s => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id));
   const menu = useAppSelector(s => s.ws.menu!);
   const { enqueueSnackbar } = useSnackbar();
   const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
@@ -37,7 +37,6 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
     'Add small plates and other stuff to your order.',
     [productSet, numMainCategoryProducts]);
 
-
   const onProductSelection = useCallback((returnToId: string, cid: string, pid: string) => {
     // either dispatch to the customizer or to the cart
 
@@ -48,7 +47,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
         const productCopy: WProduct = { p: CreateWCPProduct(productEntry.product, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
         if ((!productCopy.m.incomplete && productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
-          const matchInCart = FindDuplicateInCart(cart, catalogSelectors.modifierEntry, cid, productCopy);
+          const matchInCart = FindDuplicateInCart(cart, modiferEntrySelector, cid, productCopy);
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });
             dispatch(updateCartQuantity({ id: matchInCart.id, newQuantity: matchInCart.quantity + 1 }));
@@ -68,7 +67,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
       }
       setScrollToOnReturn(returnToId);
     }
-  }, [cart, dispatch, enqueueSnackbar, menu, productEntrySelector, productInstanceSelector, catalogSelectors.modifierEntry]);
+  }, [cart, dispatch, enqueueSnackbar, menu, productEntrySelector, productInstanceSelector, modiferEntrySelector]);
 
   const setProductToEdit = useCallback((entry: CartEntry) => {
     dispatch(lockCartEntry(entry.id));

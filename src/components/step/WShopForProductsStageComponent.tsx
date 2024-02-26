@@ -47,8 +47,8 @@ export function WShopForProductsStage({ categoryId, onProductSelection }: WShopF
       const extras = menu.categories[categoryId].children.length ? menu.categories[categoryId].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
       if (extras.length !== subCategories.length) {
         setActivePanel(0);
-        setSubCategories(extras);
       }
+      setSubCategories(extras);
     }
   }, [categoryId, subCategories.length, serviceDateTime, menu, selectedService]);
 
@@ -68,22 +68,21 @@ export function WShopForProductsStage({ categoryId, onProductSelection }: WShopF
   }, [activePanel, isExpanded]);
 
   return (
-    <>
-      <Grid container>
-        {ProductsForCategoryFilteredAndSorted(categoryId).map((p: IProductInstance, i: number) =>
-          <Grid item xs={12} md={6} lg={4} xl={3} key={i} >
-            <ClickableProductDisplay
-              sx={{ mb: 3.75, mx: 2 }}
-              onClick={(e) => onProductSelection('WARIO_order', categoryId, p.id)}
-              productMetadata={menu.product_instance_metadata[p.id]}
-              allowAdornment
-              description
-              dots
-              price
-              displayContext="order"
-            />
-          </Grid>)}
-      </Grid>
+    <Grid container>
+      {ProductsForCategoryFilteredAndSorted(categoryId).map((p: IProductInstance, i: number) =>
+        <Grid item xs={12} md={6} lg={4} xl={3} key={i} >
+          <ClickableProductDisplay
+            sx={{ mb: 3.75, mx: 2 }}
+            onClick={(e) => onProductSelection('WARIO_order', categoryId, p.id)}
+            productMetadata={menu.product_instance_metadata[p.id]}
+            allowAdornment
+            description
+            dots
+            price
+            displayContext="order"
+          />
+        </Grid>)}
+
       {subCategories.map((catId, i) =>
         <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
           <AccordionSummary expandIcon={activePanel === i && isExpanded ? <ExpandMore /> : <ExpandMore />}>
@@ -110,6 +109,6 @@ export function WShopForProductsStage({ categoryId, onProductSelection }: WShopF
             </Grid>
           </AccordionDetails>
         </Accordion>)}
-    </>
+    </Grid>
   );
 }
