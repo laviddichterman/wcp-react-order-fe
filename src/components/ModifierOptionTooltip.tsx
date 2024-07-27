@@ -40,7 +40,7 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
       case DISABLE_REASON.DISABLED_FUNCTION:
         const PIF = pifGetter(enableState.functionId);
         if (PIF && selectedProduct) {
-          const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(selectedProduct.p, PIF.expression, catalogSelectors);
+          const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(selectedProduct.p.modifiers, PIF.expression, catalogSelectors);
           return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalogSelectors)}`;
         }
         return `${displayName} is not available with the current combination of options.`;

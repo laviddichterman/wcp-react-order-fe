@@ -13,6 +13,7 @@ import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, re
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
 import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
+// import { isEqual } from 'lodash';
 
 
 export const ListeningMiddleware = createListenerMiddleware()
@@ -94,7 +95,7 @@ ListeningMiddleware.startListening({
     const customizerProduct = s.customizer.selectedProduct!;
     const service = api.getState().fulfillment.selectedService!;
     const serviceTime = SelectServiceDateTime(api.getState().fulfillment)!;
-    api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct.p, catalog, serviceTime, service)));
+    api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct.p.productId, customizerProduct.p.modifiers, catalog, serviceTime, service)));
   }
 });
 
@@ -139,12 +140,14 @@ ListeningMiddleware.startListening({
         }
         api.dispatch(killAllCartEntries(toKill));
       }
-      api.dispatch(setMenu(MENU));
+      // if (!isEqual(api.getState().ws.menu, MENU)) {
+        api.dispatch(setMenu(MENU));
+      // }
       if (regenerateCustomizerMetadata) {
-        api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct!.p, catalog, menuTime, service)));
+        api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct!.p.productId, customizerProduct!.p.modifiers, catalog, menuTime, service)));
       }
       if (toRefreshMetadata.length > 0) {
-        api.dispatch(updateManyCartProducts(toRefreshMetadata.map(x=>({id: x.id, product: {...x.product, m: WCPProductGenerateMetadata(x.product.p, catalog, menuTime, service)}}))));
+        api.dispatch(updateManyCartProducts(toRefreshMetadata.map(x=>({id: x.id, product: {...x.product, m: WCPProductGenerateMetadata(x.product.p.productId, x.product.p.modifiers, catalog, menuTime, service)}}))));
       }
       if (toRevive.length > 0) {
         if (toRevive.length < 4) {
@@ -152,7 +155,7 @@ ListeningMiddleware.startListening({
         } else {
           enqueueSnackbar(`The ${toRevive.map(x => x.product.m.name).reduceRight((acc, prod, i) => i === 0 ? acc : (i === toRevive.length - 1 ? `${acc}, and ${prod}` : `${acc}, ${prod}`), "")} as configured are once again available and returned to your order.`, { variant: 'warning' });
         }
-        api.dispatch(reviveAllCartEntries(toRevive.map(x=>({...x, product: {...x.product, m: WCPProductGenerateMetadata(x.product.p, catalog, menuTime, service)}}))));
+        api.dispatch(reviveAllCartEntries(toRevive.map(x=>({...x, product: {...x.product, m: WCPProductGenerateMetadata(x.product.p.productId, x.product.p.modifiers, catalog, menuTime, service)}}))));
       }
     }
     //api.getState().fulfillment 

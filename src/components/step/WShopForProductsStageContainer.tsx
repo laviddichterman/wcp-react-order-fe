@@ -4,7 +4,7 @@ import { CartEntry, WProduct, CreateWCPProduct } from '@wcp/wcpshared';
 import { customizeProduct, editCartEntry } from '../../app/slices/WCustomizerSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { WProductCustomizerComponent } from '../WProductCustomizerComponent';
-import { GetSelectableModifiers, SelectMainCategoryId, SelectMainProductCategoryCount, selectSelectedProduct, SelectSupplementalCategoryId } from '../../app/store';
+import { GetSelectableModifiers, SelectMainCategoryId, SelectMainProductCategoryCount, selectSelectedWProduct, SelectSupplementalCategoryId } from '../../app/store';
 import { getCart, updateCartQuantity, addToCart, FindDuplicateInCart, lockCartEntry } from '../../app/slices/WCartSlice';
 import { nextStage, backStage } from '../../app/slices/StepperSlice';
 import { Navigation } from '../Navigation';
@@ -30,7 +30,7 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
   const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
   const productInstanceSelector = useAppSelector(s => (id: string) => getProductInstanceById(s.ws.productInstances, id));
   const cart = useAppSelector(s => getCart(s.cart.cart));
-  const selectedProduct = useAppSelector(selectSelectedProduct);
+  const selectedProduct = useAppSelector(selectSelectedWProduct);
   const dispatch = useAppDispatch();
   const titleString = useMemo(() => productSet === 'PRIMARY' ?
     (numMainCategoryProducts > 0 ? "Click a pizza below or next to continue." : "Click a pizza below to get started.") :
@@ -44,10 +44,10 @@ export function WShopForProductsContainer({ productSet }: { productSet: 'PRIMARY
     if (productInstance) {
       const productEntry = productEntrySelector(productInstance.productId);
       if (productEntry) {
-        const productCopy: WProduct = { p: CreateWCPProduct(productEntry.product, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
+        const productCopy: WProduct = { p: CreateWCPProduct(productEntry.product.id, productInstance.modifiers), m: cloneDeep(menu!.product_instance_metadata[pid]) };
         const productHasSelectableModifiers = Object.values(GetSelectableModifiers(productCopy.m.modifier_map, menu!)).length > 0;
         if ((!productCopy.m.incomplete && productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
-          const matchInCart = FindDuplicateInCart(cart, modiferEntrySelector, cid, productCopy);
+          const matchInCart = FindDuplicateInCart(cart, modiferEntrySelector, productEntrySelector, cid, productCopy);
           if (matchInCart !== null) {
             enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });
             dispatch(updateCartQuantity({ id: matchInCart.id, newQuantity: matchInCart.quantity + 1 }));

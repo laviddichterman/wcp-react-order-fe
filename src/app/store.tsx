@@ -1,4 +1,4 @@
-import { configureStore, createSelector, combineReducers, createSelectorCreator, weakMapMemoize } from "@reduxjs/toolkit";
+import { configureStore, createSelector, combineReducers } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
   IProductInstancesAdapter,
@@ -10,7 +10,8 @@ import {
   SelectGratuityServiceCharge,
   getProductEntryById,
   getFulfillmentById,
-  getCategoryEntryById
+  getCategoryEntryById,
+  weakMapCreateSelector
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
@@ -81,10 +82,6 @@ export type AppDispatch = typeof store.dispatch;
 export const IProductInstancesSelectors = IProductInstancesAdapter.getSelectors((state: RootState) => state.ws.productInstances);
 export const ProductInstanceFunctionsSelectors = ProductInstanceFunctionsAdapter.getSelectors((state: RootState) => state.ws.productInstanceFunctions);
 
-export const localCreateSelector = createSelectorCreator({
-  memoize: weakMapMemoize,
-  argsMemoize: weakMapMemoize
-});
 
 export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {
   const modifierEntry = menu.modifiers[k];
@@ -93,7 +90,7 @@ export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) =
   return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
 }, {} as MetadataModifierMap);
 
-const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => localCreateSelector(
+const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => weakMapCreateSelector(
   (s: RootState) => s.ws.fulfillments,
   (s: RootState) => s.fulfillment.selectedService,
   (fulfillments, fulfillmentId) =>
@@ -119,7 +116,7 @@ export const selectAllowAdvancedPrompt = createSelector(
 
 export const selectCartAsDto = createSelector(
   (s: RootState) => getCart(s.cart.cart),
-  (cart) => cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.PRODUCT_CLASS.id } })) as CoreCartEntry<WCPProductV2Dto>[]
+  (cart) => cart.map((x) => ({ ...x, product: { modifiers: x.product.p.modifiers, pid: x.product.p.productId } })) as CoreCartEntry<WCPProductV2Dto>[]
 )
 
 export const selectCartEntryBeingCustomized = createSelector(
@@ -132,7 +129,13 @@ export const selectOptionState = (s: RootState) => (mtId: string, moId: string) 
 
 export const selectShowAdvanced = (s: RootState) => s.customizer.showAdvanced;
 
-export const selectSelectedProduct = (s: RootState) => s.customizer.selectedProduct;
+export const selectSelectedWProduct = (s: RootState) => s.customizer.selectedProduct;
+
+export const selectIProductOfSelectedProduct = createSelector(
+  selectSelectedWProduct,
+  (s: RootState) => s.ws.products,
+  (selectedProduct, products) => selectedProduct ? getProductEntryById(products, selectedProduct.p.productId).product : null
+)
 
 export const SelectServiceTimeDisplayString = createSelector(
   SelectFulfillmentMinDuration,

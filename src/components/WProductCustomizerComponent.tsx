@@ -3,7 +3,7 @@ import { useSnackbar } from 'notistack';
 import { FormControl, FormControlProps, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone, Circle, CircleOutlined } from "@mui/icons-material";
 import { ProductDisplay } from './WProductComponent';
-import { scrollToIdOffsetAfterDelay, CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput, getProductInstanceFunctionById, DialogContainer, getModifierTypeEntryById, getModifierOptionById, getProductInstanceById, CatalogSelectors } from '@wcp/wario-ux-shared';
+import { scrollToIdOffsetAfterDelay, CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput, getProductInstanceFunctionById, DialogContainer, getModifierTypeEntryById, getModifierOptionById, CatalogSelectors, SelectBaseProductByProductId } from '@wcp/wario-ux-shared';
 import { WProduct, MetadataModifierMapEntry, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID, DISABLE_REASON, IProductInstanceFunction, WFunctional, WCPProduct, IOption, ICatalogModifierSelectors, CatalogModifierEntry, Selector } from '@wcp/wcpshared';
 import {
   clearCustomizer,
@@ -15,8 +15,9 @@ import {
 import {
   selectAllowAdvancedPrompt,
   selectCartEntryBeingCustomized,
+  selectIProductOfSelectedProduct,
   selectOptionState,
-  selectSelectedProduct,
+  selectSelectedWProduct,
   selectShowAdvanced
 } from '../app/store';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
@@ -236,9 +237,9 @@ interface IModifierTypeCustomizerComponent {
 }
 export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IModifierTypeCustomizerComponent & Omit<FormControlProps, 'children'>) {
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
-  const modifierTypeEntry = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, mtid)!)
+  const modifierTypeEntry = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, mtid))
   const modifierOptionSelector = useAppSelector(s => (moId: string) => getModifierOptionById(s.ws.modifierOptions, moId)!);
-  const baseProductInstance = useAppSelector(s => getProductInstanceById(s.ws.productInstances, product.p.PRODUCT_CLASS.baseProductId)!);
+  const baseProductInstance = useAppSelector(s => SelectBaseProductByProductId(s.ws, product.p.productId));
   const menu = useAppSelector(s => s.ws.menu!);
   const visibleOptions = useMemo(() => {
     const filterUnavailable = modifierTypeEntry.modifierType.displayFlags.omit_options_if_not_available;
@@ -279,7 +280,7 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
       visibleOptions.map((option, i: number) =>
         <WModifierOptionCheckboxComponent key={i} option={option} />
       )}</FormGroup>
-  }, [menu, mtid, product.p.PRODUCT_CLASS.id, visibleOptions]);
+  }, [menu, mtid, product.p.productId, visibleOptions]);
   return (
     <FormControl fullWidth {...other}>
       <FormLabel id={`modifier_control_${mtid}`}>
@@ -390,7 +391,7 @@ interface ProcessOrderGuideProps {
 const ProcessOrderGuide = function ({ catModSelectors, product, pifGetter, guide }: ProcessOrderGuideProps) {
   return guide.map(x => pifGetter(x)).reduce((acc, x) => {
     if (x !== undefined) {
-      const result = WFunctional.ProcessProductInstanceFunction(product, x, catModSelectors);
+      const result = WFunctional.ProcessProductInstanceFunction(product.modifiers, x, catModSelectors);
       if (result) {
         return [...acc, result as string];
       }
@@ -410,17 +411,18 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
   const SelectProductInstanceFunctionById = useAppSelector(s => (id: string) => getProductInstanceFunctionById(s.ws.productInstanceFunctions, id));
   const catalog = useAppSelector(s => CatalogSelectors(s.ws));
   const categoryId = useAppSelector(s => s.customizer.categoryId);
-  const selectedProduct = useAppSelector(s => selectSelectedProduct(s));
+  const selectedProduct = useAppSelector(s => selectSelectedWProduct(s));
+  const selectedIProduct = useAppSelector(s=> selectIProductOfSelectedProduct(s));
   const cartEntry = useAppSelector(selectCartEntryBeingCustomized);
   const allowAdvancedOptionPrompt = useAppSelector(s => selectAllowAdvancedPrompt(s));
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const showAdvanced = useAppSelector(s => selectShowAdvanced(s));
   const hasAdvancedOptionSelected = useMemo(() => selectedProduct?.m.advanced_option_selected ?? false, [selectedProduct?.m.advanced_option_selected]);
   const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
-  const customizerTitle = useMemo(() => selectedProduct !== null && selectedProduct.p.PRODUCT_CLASS.displayFlags.singular_noun ? `your ${selectedProduct.p.PRODUCT_CLASS.displayFlags.singular_noun}` : "it", [selectedProduct]);
+  const customizerTitle = useMemo(() => selectedIProduct !== null && selectedIProduct.displayFlags.singular_noun ? `your ${selectedIProduct.displayFlags.singular_noun}` : "it", [selectedIProduct]);
   const filteredModifiers = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).filter(FilterModifiersCurry(modifierTypeEntrySelector)) : [], [selectedProduct, modifierTypeEntrySelector]);
-  const orderGuideMessages = useMemo(() => suppressGuide || selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.displayFlags.order_guide.suggestions, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, suppressGuide, SelectProductInstanceFunctionById]);
-  const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedProduct.p.PRODUCT_CLASS.displayFlags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, SelectProductInstanceFunctionById]);
+  const orderGuideMessages = useMemo(() => suppressGuide || selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedIProduct!.displayFlags.order_guide.suggestions, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, selectedIProduct, suppressGuide, SelectProductInstanceFunctionById]);
+  const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedIProduct!.displayFlags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, selectedIProduct, SelectProductInstanceFunctionById]);
   const orderGuideErrors = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).reduce(
     (msgs, [mtId, v]) => {
       const modifierType = modifierTypeEntrySelector(mtId)!.modifierType;
@@ -440,7 +442,7 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
     dispatch(clearCustomizer());
   }
   const confirmCustomization = () => {
-    const matchingCartEntry = FindDuplicateInCart(cart, catalog.modifierEntry, categoryId, selectedProduct, cartEntry?.id);
+    const matchingCartEntry = FindDuplicateInCart(cart, catalog.modifierEntry, catalog.productEntry, categoryId, selectedProduct, cartEntry?.id);
     if (matchingCartEntry) {
       const amountToAdd = cartEntry?.quantity ?? 1;
       const newQuantity = matchingCartEntry.quantity + amountToAdd;

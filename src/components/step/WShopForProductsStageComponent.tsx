@@ -45,12 +45,12 @@ export function WShopForProductsStage({ categoryId, onProductSelection }: WShopF
   useEffect(() => {
     if (serviceDateTime !== null && selectedService !== null && categoryId !== null) {
       const extras = menu.categories[categoryId].children.length ? menu.categories[categoryId].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
-      if (extras.length !== subCategories.length) {
+      if (activePanel >= extras.length) {
         setActivePanel(0);
       }
       setSubCategories(extras);
     }
-  }, [categoryId, subCategories.length, serviceDateTime, menu, selectedService]);
+  }, [categoryId, serviceDateTime, menu, selectedService]);
 
   const toggleAccordion = useCallback((event: React.SyntheticEvent<Element, Event>, i: number) => {
     event.preventDefault();
