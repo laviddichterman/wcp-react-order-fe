@@ -1,56 +1,125 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography, BoxProps } from '@mui/material';
 import { ExpandMore } from "@mui/icons-material";
 import { ClickableProductDisplay } from '../WProductComponent';
-import { FilterEmptyCategories, FilterProduct, IMenu, IProductInstance } from '@wcp/wcpshared';
-import { useAppSelector } from '../../app/useHooks';
+import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { scrollToElementOffsetAfterDelay } from '@wcp/wario-ux-shared';
+import { getModifierTypeEntryById, getProductEntryById, getProductInstanceById, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory, SelectProductMetadata, SocketIoState } from '@wcp/wario-ux-shared';
+import { RootState, SelectMenuNameFromCategoryById, SelectMenuSubtitleFromCategoryById, SelectProductInstanceHasSelectableModifiersByProductInstanceId, SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData } from '../../app/store';
+import { CreateWCPProduct, WProduct } from '@wcp/wcpshared';
+import { cloneDeep } from 'lodash';
+import { addToCart, FindDuplicateInCart, getCart, updateCartQuantity } from '../../app/slices/WCartSlice';
+import { enqueueSnackbar } from 'notistack';
+import { customizeProduct } from '../../app/slices/WCustomizerSlice';
+import { setTimeToFirstProductIfUnset } from '../../app/slices/WMetricsSlice';
 
-export interface OrderHideable {
-  order: {
-    hide: boolean;
-  };
-}
-// NOTE: any calls to this are going to need the order_time properly piped because right now it's just getting the fulfillment.dt.day
-export const FilterProductWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentId: string) {
-  return (item: IProductInstance) => FilterProduct(item, menu, (x: T) => x.order.hide, order_time, fulfillmentId)
+export interface ShopClickableProductDisplayProps {
+  productInstanceId: string;
+  returnToId: string;
+  sourceCategoryId: string;
+  setScrollToOnReturn: (value: React.SetStateAction<string>) => void
 };
 
-export const FilterEmptyCategoriesWrapper = function <T extends OrderHideable>(menu: IMenu, order_time: Date | number, fulfillmentId: string) {
-  return FilterEmptyCategories(menu, (x: T) => x.order.hide, order_time, fulfillmentId);
-};
 
-export const ProductsForCategoryFilteredAndSortedFxnGen = function (menu: IMenu | null, serviceDateTime: Date | null, fulfillmentId: string) {
-  return serviceDateTime !== null && menu !== null ?
-    ((category: string) => menu.categories[category].menu.filter(FilterProductWrapper(menu, serviceDateTime, fulfillmentId)).sort((p) => p.displayFlags.order.ordinal)) :
-    ((_: string) => [])
+function ShopClickableProductDisplay({ productInstanceId, returnToId, sourceCategoryId, setScrollToOnReturn, ...props }: ShopClickableProductDisplayProps & BoxProps) {
+  const dispatch = useAppDispatch();
+  const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
+  const modiferEntrySelector = useAppSelector(s => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id));
+  const cart = useAppSelector(s => getCart(s.cart.cart));
+  const productInstance = useAppSelector(s => getProductInstanceById(s.ws.productInstances, productInstanceId));
+  const productMetadata = useAppSelector(s => SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData(s, productInstanceId));
+  const productHasSelectableModifiers = useAppSelector(s => SelectProductInstanceHasSelectableModifiersByProductInstanceId(s, productInstanceId));
+  const onProductSelection = useCallback(() => {
+    // either dispatch to the customizer or to the cart
+    if (productInstance && productMetadata) {
+      const productCopy: WProduct = { p: CreateWCPProduct(productInstance.productId, productInstance.modifiers), m: cloneDeep(productMetadata) };
+      if ((!productCopy.m.incomplete && productInstance.displayFlags.order.skip_customization) || !productHasSelectableModifiers) {
+        const matchInCart = FindDuplicateInCart(cart, modiferEntrySelector, productEntrySelector, sourceCategoryId, productCopy.p);
+        if (matchInCart !== null) {
+          enqueueSnackbar(`Changed ${productCopy.m.name} quantity to ${matchInCart.quantity + 1}.`, { variant: 'success' });
+          dispatch(updateCartQuantity({ id: matchInCart.id, newQuantity: matchInCart.quantity + 1 }));
+        }
+        else {
+          // it's a new entry!
+          enqueueSnackbar(`Added ${productCopy.m.name} to order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
+          dispatch(setTimeToFirstProductIfUnset(Date.now()));
+          dispatch(addToCart({ categoryId: sourceCategoryId, product: productCopy }));
+        }
+      }
+      else {
+        // add to the customizer
+        dispatch(customizeProduct({ product: productCopy, categoryId: sourceCategoryId }));
+        scrollToIdOffsetAfterDelay('WARIO_order', 0);
+      }
+      setScrollToOnReturn(returnToId);
+    }
+  }, [cart, dispatch, enqueueSnackbar, productEntrySelector, modiferEntrySelector]);
+
+  return <ClickableProductDisplay
+    {...props}
+    onClick={onProductSelection}
+    productMetadata={productMetadata}
+    allowAdornment
+    description
+    dots
+    price
+    displayContext="order"
+  />
 }
 
+interface AccordionSubCategoryProps {
+  activePanel: number;
+  isExpanded: boolean;
+  toggleAccordion: (event: React.SyntheticEvent<Element, Event>, i: number) => void,
+  index: number;
+}
 
-export function WShopForProductsStage({ categoryId, onProductSelection }: WShopForProductsStageProps) {
-  // TODO: we need to handle if this is null by choice. how to we bypass this stage?
-  const menu = useAppSelector(s => s.ws.menu!);
+function AccordionSubCategory({ categoryId, activePanel, isExpanded, toggleAccordion, index, setScrollToOnReturn }: WShopForProductsStageProps & AccordionSubCategoryProps) {
   const selectedService = useAppSelector(s => s.fulfillment.selectedService!);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
+  const productInstancesIdsInCategory = useAppSelector(s => SelectProductInstanceIdsInCategory(s.ws.categories, s.ws.products, s.ws.productInstances, s.ws.modifierOptions, categoryId, 'Order', serviceDateTime!, selectedService));
+  const menuName = useAppSelector(s => SelectMenuNameFromCategoryById(s.ws.categories, categoryId));
+  const subtitle = useAppSelector(s => SelectMenuSubtitleFromCategoryById(s.ws.categories, categoryId));
+  return (<Accordion id={`accordion-${categoryId}`} key={index} expanded={activePanel === index && isExpanded} onChange={(e) => toggleAccordion(e, index)} >
+    <AccordionSummary expandIcon={activePanel === index && isExpanded ? <ExpandMore /> : <ExpandMore />}>
+      <Typography variant='h5' sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menuName }} /></Typography>
+    </AccordionSummary>
+    <AccordionDetails>
+      <Grid container>
+        {subtitle &&
+          <Grid item xs={12}>
+            <Typography variant='body1' dangerouslySetInnerHTML={{ __html: subtitle }}></Typography>
+          </Grid>}
+        {productInstancesIdsInCategory.map((pIId: string, j: number) =>
+          <Grid item xs={12} sx={{ pt: 2.5, pb: 1, px: 0.25 }} key={j}>
+            <ShopClickableProductDisplay 
+              returnToId={`accordion-${categoryId}`} 
+              setScrollToOnReturn={setScrollToOnReturn} 
+              sourceCategoryId={categoryId}
+              productInstanceId={pIId}
+            />
+          </Grid>)}
+      </Grid>
+    </AccordionDetails>
+  </Accordion>);
+}
+
+export function WShopForProductsStage({ categoryId, setScrollToOnReturn }: WShopForProductsStageProps) {
+  // TODO: we need to handle if this is null by choice. how to we bypass this stage?
+  const selectedService = useAppSelector(s => s.fulfillment.selectedService!);
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
+  const populatedSubcategories = useAppSelector(s => SelectPopulatedSubcategoryIdsInCategory(s.ws.categories, s.ws.products, s.ws.productInstances, s.ws.modifierOptions, categoryId, 'Order', serviceDateTime!, selectedService));
+  const productInstancesIdsInCategory = useAppSelector(s => SelectProductInstanceIdsInCategory(s.ws.categories, s.ws.products, s.ws.productInstances, s.ws.modifierOptions, categoryId, 'Order', serviceDateTime!, selectedService));
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [subCategories, setSubCategories] = useState<string[]>([]);
-  const ProductsForCategoryFilteredAndSorted = useCallback((category: string) =>
-    ProductsForCategoryFilteredAndSortedFxnGen(menu, serviceDateTime, selectedService)(category),
-    [menu, serviceDateTime, selectedService]);
 
   // reinitialize the accordion if the expanded is still in range 
   useEffect(() => {
-    if (serviceDateTime !== null && selectedService !== null && categoryId !== null) {
-      const extras = menu.categories[categoryId].children.length ? menu.categories[categoryId].children.filter(FilterEmptyCategoriesWrapper(menu, serviceDateTime, selectedService)) : [];
-      if (activePanel >= extras.length) {
-        setActivePanel(0);
-      }
-      setSubCategories(extras);
+    if (activePanel >= populatedSubcategories.length) {
+      setActivePanel(0);
     }
-  }, [categoryId, serviceDateTime, menu, selectedService]);
+  }, [populatedSubcategories, activePanel]);
 
   const toggleAccordion = useCallback((event: React.SyntheticEvent<Element, Event>, i: number) => {
     event.preventDefault();
@@ -69,46 +138,27 @@ export function WShopForProductsStage({ categoryId, onProductSelection }: WShopF
 
   return (
     <Grid container>
-      {ProductsForCategoryFilteredAndSorted(categoryId).map((p: IProductInstance, i: number) =>
+      {productInstancesIdsInCategory.map((pIId: string, i: number) =>
         <Grid item xs={12} md={6} lg={4} xl={3} key={i} >
-          <ClickableProductDisplay
+          <ShopClickableProductDisplay
             sx={{ mb: 3.75, mx: 2 }}
-            onClick={(e) => onProductSelection('WARIO_order', categoryId, p.id)}
-            productMetadata={menu.product_instance_metadata[p.id]}
-            allowAdornment
-            description
-            dots
-            price
-            displayContext="order"
+            returnToId={'WARIO_order'} 
+            setScrollToOnReturn={setScrollToOnReturn} 
+            sourceCategoryId={categoryId}
+            productInstanceId={pIId}
           />
         </Grid>)}
 
-      {subCategories.map((catId, i) =>
-        <Accordion id={`accordion-${catId}`} key={i} expanded={activePanel === i && isExpanded} onChange={(e) => toggleAccordion(e, i)} >
-          <AccordionSummary expandIcon={activePanel === i && isExpanded ? <ExpandMore /> : <ExpandMore />}>
-            <Typography variant='h5' sx={{ ml: 4 }}><span dangerouslySetInnerHTML={{ __html: menu!.categories[catId].menu_name }} /></Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Grid container>
-              {menu.categories[catId].subtitle &&
-                <Grid item xs={12}>
-                  <Typography variant='body1' dangerouslySetInnerHTML={{ __html: menu!.categories[catId].subtitle || "" }}></Typography>
-                </Grid>}
-              {ProductsForCategoryFilteredAndSorted(catId).map((p: IProductInstance, j: number) =>
-                <Grid item xs={12} sx={{ pt: 2.5, pb: 1, px: 0.25 }} key={j}>
-                  <ClickableProductDisplay
-                    onClick={() => onProductSelection(`accordion-${catId}`, catId, p.id)}
-                    productMetadata={menu!.product_instance_metadata[p.id]}
-                    allowAdornment
-                    description
-                    dots
-                    price
-                    displayContext="order"
-                  />
-                </Grid>)}
-            </Grid>
-          </AccordionDetails>
-        </Accordion>)}
+      {populatedSubcategories.map((catId, i) =>
+        <AccordionSubCategory 
+          key={i}
+          categoryId={catId} 
+          setScrollToOnReturn={setScrollToOnReturn} 
+          activePanel={activePanel} 
+          index={i} 
+          isExpanded={isExpanded} 
+          toggleAccordion={toggleAccordion} />
+      )}
     </Grid>
   );
 }

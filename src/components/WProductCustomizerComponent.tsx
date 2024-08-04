@@ -3,55 +3,117 @@ import { useSnackbar } from 'notistack';
 import { FormControl, FormControlProps, FormGroup, FormLabel, Radio, RadioGroup, Grid, Button, IconButton, Checkbox, FormControlLabel } from '@mui/material';
 import { SettingsTwoTone, Circle, CircleOutlined } from "@mui/icons-material";
 import { ProductDisplay } from './WProductComponent';
-import { scrollToIdOffsetAfterDelay, CustomizerFormControlLabel, ErrorResponseOutput, OkResponseOutput, Separator, StageTitle, WarioButton, WarningResponseOutput, getProductInstanceFunctionById, DialogContainer, getModifierTypeEntryById, getModifierOptionById, CatalogSelectors, SelectBaseProductByProductId } from '@wcp/wario-ux-shared';
-import { WProduct, MetadataModifierMapEntry, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID, DISABLE_REASON, IProductInstanceFunction, WFunctional, WCPProduct, IOption, ICatalogModifierSelectors, CatalogModifierEntry, Selector } from '@wcp/wcpshared';
+import { scrollToIdOffsetAfterDelay, CustomizerFormControlLabel, Separator, StageTitle, WarioButton, DialogContainer, getModifierTypeEntryById, getModifierOptionById, SelectCatalogSelectors, SelectBaseProductByProductId, getProductEntryById } from '@wcp/wario-ux-shared';
+import { WProduct, DisableDataCheck, OptionPlacement, OptionQualifier, IOptionState, MTID_MOID, DISABLE_REASON, IOption, CatalogModifierEntry, ProductModifierEntry, WCPProductGenerateMetadata, ICatalogSelectors, WCPProduct } from '@wcp/wcpshared';
 import {
   clearCustomizer,
   setAdvancedModifierOption,
   setShowAdvanced,
-  updateModifierOptionStateCheckbox,
-  updateModifierOptionStateToggleOrRadio
+  updateCustomizerProduct
 } from '../app/slices/WCustomizerSlice';
 import {
+  FilterUnselectableModifierOption,
+  RootState,
   selectAllowAdvancedPrompt,
   selectCartEntryBeingCustomized,
   selectIProductOfSelectedProduct,
+  SelectModifierTypeNameFromModifierTypeId,
   selectOptionState,
+  SelectProductMetadataFromCustomProductWithCurrentFulfillmentData,
   selectSelectedWProduct,
-  selectShowAdvanced
+  SelectShouldFilterModifierTypeDisplay,
+  selectShowAdvanced,
+  SortProductModifierEntries,
+  SortProductModifierOptions
 } from '../app/store';
 import { useAppDispatch, useAppSelector } from '../app/useHooks';
 import { addToCart, FindDuplicateInCart, getCart, removeFromCart, unlockCartEntry, updateCartProduct, updateCartQuantity } from '../app/slices/WCartSlice';
 import { SelectServiceDateTime } from '../app/slices/WFulfillmentSlice';
 import { ModifierOptionTooltip } from './ModifierOptionTooltip';
 import { setTimeToFirstProductIfUnset } from '../app/slices/WMetricsSlice';
+import { createSelector } from '@reduxjs/toolkit';
+import { OrderGuideErrorsComponent, OrderGuideMessagesComponent, OrderGuideWarningsComponent } from './WOrderGuideMessages';
+import { cloneDeep } from 'lodash';
 
 interface IModifierOptionToggle {
   toggleOptionChecked: IOption;
   toggleOptionUnchecked: IOption;
 }
 
+const UpdateModifierOptionStateToggleOrRadio = (mtId: string, moId: string, selectedProduct: WProduct, catalogSelectors: ICatalogSelectors, serviceTime: number | Date, fulfillmentId: string) => {
+  const newModifierOptions = [{ placement: OptionPlacement.WHOLE, qualifier: OptionQualifier.REGULAR, optionId: moId }];
+  const modifierEntryIndex = selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === mtId);
+  const newProductModifiers = cloneDeep(selectedProduct.p.modifiers);
+  if (modifierEntryIndex === -1) {
+    newProductModifiers.push({ modifierTypeId: mtId, options: newModifierOptions });
+    SortProductModifierEntries(newProductModifiers, catalogSelectors.modifierEntry);
+  } else {
+    newProductModifiers[modifierEntryIndex].options = newModifierOptions;
+  }
+  // regenerate metadata and return new product object
+  return ({ m: WCPProductGenerateMetadata(selectedProduct.p.productId, newProductModifiers, catalogSelectors, serviceTime, fulfillmentId), p: { productId: selectedProduct.p.productId, modifiers: newProductModifiers } }) as WProduct;
+}
+
+const UpdateModifierOptionStateCheckbox = (mt: CatalogModifierEntry, mo: IOption, optionState: IOptionState, selectedProduct: WProduct, catalogSelectors: ICatalogSelectors, serviceTime: number | Date, fulfillmentId: string) => {
+  const newOptInstance = { ...optionState, optionId: mo.id };
+  const modifierEntryIndex = selectedProduct.p.modifiers.findIndex(x => x.modifierTypeId === mo.modifierTypeId);
+  const newProductModifiers = cloneDeep(selectedProduct.p.modifiers);
+  let newModifierOptions = modifierEntryIndex !== -1 ? newProductModifiers[modifierEntryIndex].options : [];
+  if (optionState.placement === OptionPlacement.NONE) {
+    newModifierOptions = newModifierOptions.filter(x => x.optionId !== mo.id);
+  } else {
+    if (mt.modifierType.min_selected === 0 && mt.modifierType.max_selected === 1) {
+      // checkbox that requires we unselect any other values since it kinda functions like a radio
+      newModifierOptions = [];
+    }
+    const moIdX = newModifierOptions.findIndex(x => x.optionId === mo.id);
+    if (moIdX === -1) {
+      newModifierOptions.push(newOptInstance);
+      SortProductModifierOptions(newModifierOptions, catalogSelectors.option);
+    }
+    else {
+      newModifierOptions[moIdX] = newOptInstance;
+    }
+  }
+  if (modifierEntryIndex === -1 && newModifierOptions.length > 0) {
+    newProductModifiers.push({ modifierTypeId: mo.modifierTypeId, options: newModifierOptions });
+    SortProductModifierEntries(newProductModifiers, catalogSelectors.modifierEntry);
+  } else {
+    if (newModifierOptions.length > 0) {
+      newProductModifiers[modifierEntryIndex].options = newModifierOptions;
+    } else {
+      newProductModifiers.splice(modifierEntryIndex, 1);
+    }
+  }
+  // regenerate metadata required after this call. handled by ListeningMiddleware
+  return ({ m: WCPProductGenerateMetadata(selectedProduct.p.productId, newProductModifiers, catalogSelectors, serviceTime, fulfillmentId), p: { productId: selectedProduct.p.productId, modifiers: newProductModifiers } }) as WProduct;
+}
+
 function WModifierOptionToggle({ toggleOptionChecked, toggleOptionUnchecked }: IModifierOptionToggle) {
   const dispatch = useAppDispatch();
-  const menu = useAppSelector(s => s.ws.menu!);
+  const selectedProduct = useAppSelector(s => s.customizer.selectedProduct);
+  const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
+  const fulfillmentId = useAppSelector(s => s.fulfillment.selectedService);
   const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.modifierTypeId, toggleOptionUnchecked.id);
   const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.modifierTypeId, toggleOptionChecked.id);
   const optionValue = useMemo(() => optionCheckedState?.placement === OptionPlacement.WHOLE, [optionCheckedState?.placement]);
-  if (!optionUncheckedState || !optionCheckedState || !serviceDateTime) {
+  if (!optionUncheckedState || !optionCheckedState || !serviceDateTime || !selectedProduct || !fulfillmentId) {
     return null;
   }
   const toggleOption = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    //dispatch(set appropriate option value)
-    dispatch(updateModifierOptionStateToggleOrRadio({
-      mtId: toggleOptionChecked.modifierTypeId,
-      moId: e.target.checked ? toggleOptionChecked.id : toggleOptionUnchecked.id,
-      menu
-    }));
+    dispatch(updateCustomizerProduct(UpdateModifierOptionStateToggleOrRadio(
+      toggleOptionChecked.modifierTypeId,
+      e.target.checked ? toggleOptionChecked.id : toggleOptionUnchecked.id,
+      selectedProduct,
+      catalogSelectors,
+      serviceDateTime,
+      fulfillmentId)));
   }
   return (
     <ModifierOptionTooltip
+      product={selectedProduct.p}
       option={optionValue ? toggleOptionUnchecked : toggleOptionChecked}
       enableState={optionValue ? optionUncheckedState.enable_whole : optionUncheckedState.enable_whole}
     >
@@ -76,22 +138,21 @@ interface IModifierRadioCustomizerComponent {
 
 export function WModifierRadioComponent({ options }: IModifierRadioCustomizerComponent) {
   const dispatch = useAppDispatch();
-  const menu = useAppSelector(s => s.ws.menu!);
+  const selectedProduct = useAppSelector(s => s.customizer.selectedProduct);
+  const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
+  const fulfillmentId = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const getObjectStateSelector = useAppSelector(selectOptionState);
   const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers.find(x => x.modifierTypeId === options[0].modifierTypeId)?.options ?? [])
   const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].modifierTypeId, moId), [options, getObjectStateSelector]);
-  if (!serviceDateTime) {
+  if (!serviceDateTime || !selectedProduct || !fulfillmentId) {
     return null;
   }
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    dispatch(updateModifierOptionStateToggleOrRadio({
-      mtId: options[0].modifierTypeId,
-      moId: e.target.value,
-      menu
-    }));
+    e.preventDefault(); 
+    dispatch(updateCustomizerProduct(UpdateModifierOptionStateToggleOrRadio(
+      options[0].modifierTypeId, e.target.value, selectedProduct, catalogSelectors, serviceDateTime, fulfillmentId)));
   }
   return (
     <RadioGroup
@@ -103,7 +164,7 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
         {options.map((opt, i) => {
           const optionState = getOptionState(opt.id);
           return (<Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-            <ModifierOptionTooltip option={opt} enableState={optionState.enable_whole} >
+            <ModifierOptionTooltip product={selectedProduct.p} option={opt} enableState={optionState.enable_whole} >
               <CustomizerFormControlLabel
                 value={opt.id}
                 control={<Radio
@@ -124,28 +185,29 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
 
 function useModifierOptionCheckbox(option: IOption) {
   const dispatch = useAppDispatch();
-  const menu = useAppSelector(s => s.ws.menu!);
   const optionState = useAppSelector(selectOptionState)(option.modifierTypeId, option.id);
-  const modifierTypeEntry = useAppSelector(s=>getModifierTypeEntryById(s.ws.modifierEntries, option.modifierTypeId)!)
+  const modifierTypeEntry = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, option.modifierTypeId)!)
   const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
   const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);
   const isRight = useMemo(() => optionState.placement === OptionPlacement.RIGHT, [optionState.placement]);
-  const onUpdateOption = (newState: IOptionState, serviceDateTime: Date) => {
-    dispatch(updateModifierOptionStateCheckbox({
-      mt: modifierTypeEntry,
-      mo: option,
-      optionState: newState,
-      menu
-    }));
+  const selectedProduct = useAppSelector(s => s.customizer.selectedProduct);
+  const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
+  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
+  const fulfillmentId = useAppSelector(s => s.fulfillment.selectedService);
+
+  const onUpdateOption = (newState: IOptionState) => {
+    if (selectedProduct && serviceDateTime && fulfillmentId) {
+      dispatch(updateCustomizerProduct(UpdateModifierOptionStateCheckbox(modifierTypeEntry, option, newState, selectedProduct, catalogSelectors, serviceDateTime, fulfillmentId)));
+    }
   };
-  const onClickWhole = (serviceDateTime: Date) => {
-    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier }, serviceDateTime);
+  const onClickWhole = () => {
+    onUpdateOption({ placement: +!isWhole * OptionPlacement.WHOLE, qualifier: optionState.qualifier });
   }
-  const onClickLeft = (serviceDateTime: Date) => {
-    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier }, serviceDateTime);
+  const onClickLeft = () => {
+    onUpdateOption({ placement: +!isLeft * OptionPlacement.LEFT, qualifier: optionState.qualifier });
   }
-  const onClickRight = (serviceDateTime: Date) => {
-    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier }, serviceDateTime);
+  const onClickRight = () => {
+    onUpdateOption({ placement: +!isRight * OptionPlacement.RIGHT, qualifier: optionState.qualifier });
   }
   return {
     onClickWhole,
@@ -164,16 +226,15 @@ interface IModifierOptionCheckboxCustomizerComponent {
 }
 
 function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCustomizerComponent) {
+  const selectedProduct = useAppSelector(s => s.customizer.selectedProduct!);
   const dispatch = useAppDispatch();
   const { onClickWhole, onClickLeft, onClickRight,
     isWhole, isLeft, isRight,
     optionState } = useModifierOptionCheckbox(option);
-
-  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const canShowAdvanced = useAppSelector(selectShowAdvanced);
   const showAdvanced = useMemo(() => canShowAdvanced && (optionState.enable_left || optionState.enable_right), [canShowAdvanced, optionState]);
   const advancedOptionSelected = useMemo(() => optionState.placement === OptionPlacement.LEFT || optionState.placement === OptionPlacement.RIGHT || optionState.qualifier !== OptionQualifier.REGULAR, [optionState.placement, optionState.qualifier]);
-  if (optionState === null || serviceDateTime === null) {
+  if (optionState === null) {
     return null;
   }
   const onClickAdvanced = () => {
@@ -182,7 +243,7 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
 
   return (
     <Grid item xs={12} sm={6} md={4} lg={3}>
-      <ModifierOptionTooltip option={option} enableState={optionState.enable_whole} >
+      <ModifierOptionTooltip option={option} enableState={optionState.enable_whole} product={selectedProduct.p} >
         <CustomizerFormControlLabel
           disabled={optionState.enable_whole.enable !== DISABLE_REASON.ENABLED}
           control={
@@ -196,7 +257,7 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableTouchRipple
                   disabled={optionState.enable_whole.enable !== DISABLE_REASON.ENABLED}
                   checked={isWhole}
-                  onClick={() => onClickWhole(serviceDateTime)} />}
+                  onClick={() => onClickWhole()} />}
               {(isLeft || (optionState.enable_whole.enable !== DISABLE_REASON.ENABLED && optionState.enable_left.enable === DISABLE_REASON.ENABLED)) &&
                 <Checkbox
                   disableRipple
@@ -204,7 +265,7 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableTouchRipple
                   disabled={optionState.enable_left.enable !== DISABLE_REASON.ENABLED}
                   checked={isLeft}
-                  onClick={() => onClickLeft(serviceDateTime)} />}
+                  onClick={() => onClickLeft()} />}
               {(isRight || (optionState.enable_whole.enable !== DISABLE_REASON.ENABLED && optionState.enable_right.enable === DISABLE_REASON.ENABLED)) &&
                 <Checkbox
                   disableRipple
@@ -212,7 +273,7 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
                   disableTouchRipple
                   disabled={optionState.enable_right.enable !== DISABLE_REASON.ENABLED}
                   checked={isRight}
-                  onClick={() => onClickRight(serviceDateTime)} />}
+                  onClick={() => onClickRight()} />}
             </span>}
           // onClick={() => {
           //   console.log(optionState)
@@ -227,36 +288,36 @@ function WModifierOptionCheckboxComponent({ option }: IModifierOptionCheckboxCus
 };
 
 
-const FilterUnselectable = (mmEntry: MetadataModifierMapEntry, moid: string) => {
-  const optionMapEntry = mmEntry.options[moid];
-  return optionMapEntry.enable_left.enable === DISABLE_REASON.ENABLED || optionMapEntry.enable_right.enable === DISABLE_REASON.ENABLED || optionMapEntry.enable_whole.enable === DISABLE_REASON.ENABLED;
-}
 interface IModifierTypeCustomizerComponent {
   mtid: string;
-  product: WProduct;
+  product: WCPProduct;
 }
+
+const SelectVisibleModifierOptions = createSelector(
+  (s: RootState, productId: string, modifiers: ProductModifierEntry[], _mtId: string) => SelectProductMetadataFromCustomProductWithCurrentFulfillmentData(s, productId, modifiers),
+  (s: RootState, _productId: string, _modifiers: ProductModifierEntry[], mtId: string) => getModifierTypeEntryById(s.ws.modifierEntries, mtId),
+  (s: RootState, _productId: string, _modifiers: ProductModifierEntry[], _mtId: string) => SelectCatalogSelectors(s.ws).option,
+  (s: RootState, _productId: string, _modifiers: ProductModifierEntry[], _mtId: string) => SelectServiceDateTime(s.fulfillment)!,
+
+  (metadata, modifierType, modifierOptionSelector, serviceDateTime) => {
+    const filterUnavailable = modifierType.modifierType.displayFlags.omit_options_if_not_available;
+    const mmEntry = metadata.modifier_map[modifierType.modifierType.id];
+    return modifierType.options.map(o => modifierOptionSelector(o))
+      .sort((a, b) => a.ordinal - b.ordinal)
+      .filter((o) => DisableDataCheck(o.disabled, o.availability, serviceDateTime) && (!filterUnavailable || FilterUnselectableModifierOption(mmEntry, o.id)));
+  }
+);
+
+
 export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IModifierTypeCustomizerComponent & Omit<FormControlProps, 'children'>) {
-  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
-  const modifierTypeEntry = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, mtid))
-  const modifierOptionSelector = useAppSelector(s => (moId: string) => getModifierOptionById(s.ws.modifierOptions, moId)!);
-  const baseProductInstance = useAppSelector(s => SelectBaseProductByProductId(s.ws, product.p.productId));
-  const menu = useAppSelector(s => s.ws.menu!);
-  const visibleOptions = useMemo(() => {
-    const filterUnavailable = modifierTypeEntry.modifierType.displayFlags.omit_options_if_not_available;
-    const mmEntry = product.m.modifier_map[mtid];
-    if (serviceDateTime === null) {
-      return [];
-    }
-    return modifierTypeEntry.options.map(o=>modifierOptionSelector(o))
-      .sort((a,b)=>a.ordinal-b.ordinal)
-      .filter((o) => DisableDataCheck(o.disabled, o.availability, serviceDateTime) && (!filterUnavailable || FilterUnselectable(mmEntry, o.id)));
-  }, [menu.modifiers, mtid, product.m.modifier_map, serviceDateTime]);
+  const baseProductInstance = useAppSelector(s => SelectBaseProductByProductId(s.ws, product.productId));
+  const visibleOptions = useAppSelector(s => SelectVisibleModifierOptions(s, product.productId, product.modifiers, mtid));
+  const modifierType = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, mtid).modifierType);
+  const modifierTypeName = useAppSelector(s => SelectModifierTypeNameFromModifierTypeId(s.ws.modifierEntries, mtid));
   const modifierOptionsHtml = useMemo(() => {
-    const mEntry = menu.modifiers[mtid];
-    const mt = mEntry.modifier_type
-    if (mt.max_selected === 1) {
-      if (mt.min_selected === 1) {
-        if (mt.displayFlags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
+    if (modifierType.max_selected === 1) {
+      if (modifierType.min_selected === 1) {
+        if (modifierType.displayFlags.use_toggle_if_only_two_options && visibleOptions.length === 2) {
           // if we've found the modifier assigned to the base product, and the modifier option assigned to the base product is visible 
           const mtidx = baseProductInstance.modifiers.findIndex(x => x.modifierTypeId === mtid);
           if (mtidx !== -1 && baseProductInstance.modifiers[mtidx].options.length === 1) {
@@ -280,11 +341,11 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
       visibleOptions.map((option, i: number) =>
         <WModifierOptionCheckboxComponent key={i} option={option} />
       )}</FormGroup>
-  }, [menu, mtid, product.p.productId, visibleOptions]);
+  }, [modifierType, mtid, product.productId, visibleOptions]);
   return (
     <FormControl fullWidth {...other}>
       <FormLabel id={`modifier_control_${mtid}`}>
-        {menu.modifiers[mtid].modifier_type.displayName ? menu.modifiers[mtid].modifier_type.displayName : menu.modifiers[mtid].modifier_type.name}:
+        {modifierTypeName}:
       </FormLabel>
       {modifierOptionsHtml}
     </FormControl>);
@@ -294,21 +355,18 @@ interface IOptionDetailModal {
 }
 function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
   const dispatch = useAppDispatch();
-  const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
-  const option = useAppSelector(s=>getModifierOptionById(s.ws.modifierOptions, mtid_moid[1])!);
+  const option = useAppSelector(s => getModifierOptionById(s.ws.modifierOptions, mtid_moid[1])!);
   const { onClickWhole, onClickLeft, onClickRight, onUpdateOption,
     isWhole, isLeft, isRight,
     optionState } = useModifierOptionCheckbox(option);
   const intitialOptionState = useAppSelector(s => s.customizer.advancedModifierInitialState);
-  if (serviceDateTime === null) {
-    return null;
-  }
+
   const onConfirmCallback = () => {
     dispatch(setAdvancedModifierOption(null));
   }
   const onCancelCallback = () => {
     // set the modifier option state to what it was before we opened this modal
-    onUpdateOption(intitialOptionState, serviceDateTime);
+    onUpdateOption(intitialOptionState);
     onConfirmCallback();
   };
 
@@ -326,7 +384,7 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
                 <Checkbox
                   disabled={!optionState.enable_left}
                   checked={isLeft}
-                  onChange={() => onClickLeft(serviceDateTime)} />
+                  onChange={() => onClickLeft()} />
               }
               label={null}
             />
@@ -337,7 +395,7 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
                 <Checkbox
                   disabled={!optionState.enable_whole}
                   checked={isWhole}
-                  onChange={() => onClickWhole(serviceDateTime)} />
+                  onChange={() => onClickWhole()} />
               }
               label={null}
             />
@@ -348,7 +406,7 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
                 <Checkbox
                   disabled={!optionState.enable_right}
                   checked={isRight}
-                  onChange={() => onClickRight(serviceDateTime)} />
+                  onChange={() => onClickRight()} />
               }
               label={null}
             />
@@ -371,34 +429,21 @@ function WOptionDetailModal({ mtid_moid }: IOptionDetailModal) {
     />);
 }
 
-const FilterModifiersCurry = function (modifierTypeEntrySelector: Selector<CatalogModifierEntry>) {
-  return function ([mtid, entry]: [string, MetadataModifierMapEntry]) {
-    const modifierTypeDisplayFlags = modifierTypeEntrySelector(mtid)!.modifierType.displayFlags;
-    const omit_section_if_no_available_options = modifierTypeDisplayFlags.omit_section_if_no_available_options;
-    const hidden = modifierTypeDisplayFlags.hidden;
-    // cases to not show:
-    // modifier.display_flags.omit_section_if_no_available_options && (has selected item, all other options cannot be selected, currently selected items cannot be deselected)
-    // modifier.display_flags.hidden is true
-    return !hidden && (!omit_section_if_no_available_options || entry.has_selectable);
-  };
-}
-interface ProcessOrderGuideProps {
-  product: WCPProduct;
-  catModSelectors: ICatalogModifierSelectors;
-  pifGetter: (id: string) => IProductInstanceFunction | undefined;
-  guide: string[]
-}
-const ProcessOrderGuide = function ({ catModSelectors, product, pifGetter, guide }: ProcessOrderGuideProps) {
-  return guide.map(x => pifGetter(x)).reduce((acc, x) => {
-    if (x !== undefined) {
-      const result = WFunctional.ProcessProductInstanceFunction(product.modifiers, x, catModSelectors);
-      if (result) {
-        return [...acc, result as string];
-      }
-    }
-    return acc;
-  }, [] as string[])
-}
+const CustomizerSelectOrderedModifiersVisibleForCustomProduct = createSelector(
+  (s: RootState) => s.customizer.selectedProduct !== null ? SelectProductMetadataFromCustomProductWithCurrentFulfillmentData(s, s.customizer.selectedProduct.p.productId, s.customizer.selectedProduct.p.modifiers) : null,
+  (s: RootState) => s.customizer.selectedProduct !== null ? getProductEntryById(s.ws.products, s.customizer.selectedProduct.p.productId) : null,
+  (s: RootState) => s.fulfillment.selectedService!,
+  (s: RootState) => (modifierTypeId: string, hasSelectable: boolean) => SelectShouldFilterModifierTypeDisplay(s, modifierTypeId, hasSelectable),
+  (s: RootState) => (modifierTypeId: string) => getModifierTypeEntryById(s.ws.modifierEntries, modifierTypeId).modifierType.ordinal,
+  (metadata, productEntry, fulfillmentId, shouldFilter, getOrdinal) => productEntry && metadata ? 
+  // TODO: do we need/want to check the product modifier definition enable function?
+    productEntry.product.modifiers
+      .filter(x=>x.serviceDisable.indexOf(fulfillmentId) === -1)
+      .filter(x=>shouldFilter(x.mtid, metadata.modifier_map[x.mtid].has_selectable))
+      .sort((a, b) => getOrdinal(a.mtid)-getOrdinal(b.mtid)) : []
+);
+
+const SelectProductMetadataFromCustomSelectedProductWithCurrentFulfillmentData = (s: RootState) => s.customizer.selectedProduct? SelectProductMetadataFromCustomProductWithCurrentFulfillmentData(s, s.customizer.selectedProduct.p.productId, s.customizer.selectedProduct.p.modifiers) : null;
 
 interface IProductCustomizerComponentProps {
   suppressGuide?: boolean;
@@ -407,28 +452,22 @@ interface IProductCustomizerComponentProps {
 export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCustomizerComponentProps>(({ suppressGuide, scrollToWhenDone }, ref) => {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
-  const modifierTypeEntrySelector = useAppSelector(s => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id));
-  const SelectProductInstanceFunctionById = useAppSelector(s => (id: string) => getProductInstanceFunctionById(s.ws.productInstanceFunctions, id));
-  const catalog = useAppSelector(s => CatalogSelectors(s.ws));
+  const catalog = useAppSelector(s => SelectCatalogSelectors(s.ws));
   const categoryId = useAppSelector(s => s.customizer.categoryId);
   const selectedProduct = useAppSelector(s => selectSelectedWProduct(s));
-  const selectedIProduct = useAppSelector(s=> selectIProductOfSelectedProduct(s));
+  const selectedProductMetadata = useAppSelector(SelectProductMetadataFromCustomSelectedProductWithCurrentFulfillmentData)
+  const customizerTitle = useAppSelector(s => { 
+    const selectedIProduct = selectIProductOfSelectedProduct(s);
+    return selectedIProduct?.displayFlags.singular_noun ? `your ${selectedIProduct.displayFlags.singular_noun}` : "it"; 
+  });
+  const filteredModifiers = useAppSelector(CustomizerSelectOrderedModifiersVisibleForCustomProduct);
   const cartEntry = useAppSelector(selectCartEntryBeingCustomized);
   const allowAdvancedOptionPrompt = useAppSelector(s => selectAllowAdvancedPrompt(s));
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const showAdvanced = useAppSelector(s => selectShowAdvanced(s));
-  const hasAdvancedOptionSelected = useMemo(() => selectedProduct?.m.advanced_option_selected ?? false, [selectedProduct?.m.advanced_option_selected]);
   const mtid_moid = useAppSelector(s => s.customizer.advancedModifierOption);
-  const customizerTitle = useMemo(() => selectedIProduct !== null && selectedIProduct.displayFlags.singular_noun ? `your ${selectedIProduct.displayFlags.singular_noun}` : "it", [selectedIProduct]);
-  const filteredModifiers = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).filter(FilterModifiersCurry(modifierTypeEntrySelector)) : [], [selectedProduct, modifierTypeEntrySelector]);
-  const orderGuideMessages = useMemo(() => suppressGuide || selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedIProduct!.displayFlags.order_guide.suggestions, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, selectedIProduct, suppressGuide, SelectProductInstanceFunctionById]);
-  const orderGuideWarnings = useMemo(() => selectedProduct === null ? [] : ProcessOrderGuide({ catModSelectors: catalog, product: selectedProduct.p, guide: selectedIProduct!.displayFlags.order_guide.warnings, pifGetter: SelectProductInstanceFunctionById }), [catalog, selectedProduct, selectedIProduct, SelectProductInstanceFunctionById]);
-  const orderGuideErrors = useMemo(() => selectedProduct !== null ? Object.entries(selectedProduct.m.modifier_map).reduce(
-    (msgs, [mtId, v]) => {
-      const modifierType = modifierTypeEntrySelector(mtId)!.modifierType;
-      return v.meets_minimum ? msgs :
-      [...msgs, `Please select your choice of ${String(modifierType.displayName ?? modifierType.name).toLowerCase()}`]}, [] as String[]) : [], [selectedProduct, modifierTypeEntrySelector]);
-  if (categoryId === null || selectedProduct === null) {
+  const hasAdvancedOptionSelected = useMemo(() => selectedProductMetadata?.advanced_option_selected ?? false, [selectedProductMetadata?.advanced_option_selected]);
+  if (categoryId === null || selectedProduct === null || selectedProductMetadata === null) {
     return null;
   }
   const toggleAllowAdvancedOption = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,17 +481,17 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
     dispatch(clearCustomizer());
   }
   const confirmCustomization = () => {
-    const matchingCartEntry = FindDuplicateInCart(cart, catalog.modifierEntry, catalog.productEntry, categoryId, selectedProduct, cartEntry?.id);
+    const matchingCartEntry = FindDuplicateInCart(cart, catalog.modifierEntry, catalog.productEntry, categoryId, selectedProduct.p, cartEntry?.id);
     if (matchingCartEntry) {
       const amountToAdd = cartEntry?.quantity ?? 1;
       const newQuantity = matchingCartEntry.quantity + amountToAdd;
       dispatch(updateCartQuantity({ id: matchingCartEntry.id, newQuantity }));
-      if (cartEntry) { 
+      if (cartEntry) {
         dispatch(removeFromCart(cartEntry.id));
-        enqueueSnackbar(`Merged duplicate ${selectedProduct.m.name} in your order.`, { variant: 'success', autoHideDuration: 3000 });
+        enqueueSnackbar(`Merged duplicate ${selectedProductMetadata.name} in your order.`, { variant: 'success', autoHideDuration: 3000 });
       }
       else {
-        enqueueSnackbar(`Updated quantity of ${selectedProduct.m.name} to ${newQuantity}`, { variant: 'success', autoHideDuration: 3000 });
+        enqueueSnackbar(`Updated quantity of ${selectedProductMetadata.name} to ${newQuantity}`, { variant: 'success', autoHideDuration: 3000 });
       }
     }
     else {
@@ -460,12 +499,12 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       if (cartEntry === undefined) {
         dispatch(setTimeToFirstProductIfUnset(Date.now()));
         dispatch(addToCart({ categoryId, product: selectedProduct }))
-        enqueueSnackbar(`Added ${selectedProduct.m.name} to your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
+        enqueueSnackbar(`Added ${selectedProductMetadata.name} to your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
       }
       else {
         dispatch(updateCartProduct({ id: cartEntry.id, product: selectedProduct }))
         dispatch(unlockCartEntry(cartEntry.id));
-        enqueueSnackbar(`Updated ${selectedProduct.m.name} in your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
+        enqueueSnackbar(`Updated ${selectedProductMetadata.name} in your order.`, { variant: 'success', autoHideDuration: 3000, disableWindowBlurListener: true });
       }
     }
     unselectProduct();
@@ -475,22 +514,23 @@ export const WProductCustomizerComponent = forwardRef<HTMLDivElement, IProductCu
       {mtid_moid !== null && <WOptionDetailModal mtid_moid={mtid_moid} />}
       <StageTitle>Customize {customizerTitle}!</StageTitle>
       <Separator sx={{ pb: 3 }} />
-      <ProductDisplay productMetadata={selectedProduct.m} description price displayContext="order" />
+      <ProductDisplay productMetadata={selectedProductMetadata} description price displayContext="order" />
       <Separator />
       <Grid container>
-        {filteredModifiers.map(([mtid, _], i) =>
-          <Grid item container key={i} xs={12}><WModifierTypeCustomizerComponent mtid={mtid} product={selectedProduct} /></Grid>
+        {filteredModifiers.map((productModifier, i) =>
+          <Grid item container key={i} xs={12}><WModifierTypeCustomizerComponent mtid={productModifier.mtid} product={selectedProduct.p} /></Grid>
         )}
       </Grid>
-      {orderGuideMessages.map((msg, i) => <OkResponseOutput key={`${i}guide`}>{msg}</OkResponseOutput>)}
-      {orderGuideWarnings.map((msg, i) => <WarningResponseOutput key={`${i}warnguide`}>{msg}</WarningResponseOutput>)}
-      {orderGuideErrors.map((msg, i) => <ErrorResponseOutput key={`${i}err`}>{msg}</ErrorResponseOutput>)}
+      {suppressGuide === true ? <></> : <OrderGuideMessagesComponent productId={selectedProduct.p.productId} productModifierEntries={selectedProduct.p.modifiers} />}
+      <OrderGuideWarningsComponent productId={selectedProduct.p.productId} productModifierEntries={selectedProduct.p.modifiers} />
+      <OrderGuideErrorsComponent modifierMap={selectedProductMetadata.modifier_map} />
       {allowAdvancedOptionPrompt ? <FormControlLabel
         control={<Checkbox disabled={hasAdvancedOptionSelected} value={showAdvanced} onChange={toggleAllowAdvancedOption} />}
         label="I really, really want to do some advanced customization of my pizza. I absolutely know what I'm doing and won't complain if I later find out I didn't know what I was doing." /> : ""}
       <Grid container item xs={12} sx={{ py: 3, flexDirection: 'row-reverse' }}>
         <Grid item sx={{ display: "flex", width: "200px", justifyContent: "flex-end" }}>
-          <WarioButton disabled={!selectedProduct || selectedProduct.m.incomplete || orderGuideErrors.length > 0}
+          {/* We don't need to check for orderGuideErrors.length > 0 as selectedProduct.m.incomplete is the same check */}
+          <WarioButton disabled={!selectedProduct || selectedProductMetadata.incomplete}
             onClick={confirmCustomization}>
             {cartEntry === undefined ? "Add to order" : "Save changes"}
           </WarioButton>

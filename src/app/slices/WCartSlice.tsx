@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createEntityAdapter, EntityState } from "@reduxjs/toolkit";
-import { CartEntry, CatalogModifierEntry, CatalogProductEntry, Selector, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
+import { CartEntry, CatalogModifierEntry, CatalogProductEntry, Selector, WCPProduct, WProduct, WProductCompare, WProductEquals } from "@wcp/wcpshared";
+
 
 const DeadCartAdapter = createEntityAdapter<CartEntry>();
 
@@ -82,11 +83,11 @@ export const {
  * @param skipId the cart entry ID to ignore in a search for a match
  * @returns the CartEntry if a match is found for the product attempting to be added, otherwise null
  */
-export const FindDuplicateInCart = (cart: CartEntry[], catalogModifierEntrySelector: Selector<CatalogModifierEntry>, productEntrySelector: Selector<CatalogProductEntry>, categoryId: string, product: WProduct, skipId: string | null = null) => {
+export const FindDuplicateInCart = (cart: CartEntry[], catalogModifierEntrySelector: Selector<CatalogModifierEntry>, productEntrySelector: Selector<CatalogProductEntry>, categoryId: string, product: WCPProduct, skipId: string | null = null) => {
   for (let i = 0; i < cart.length; ++i) {
     const entry = cart[i];
     if (categoryId === entry.categoryId) {
-      if (skipId !== entry.id && WProductEquals(WProductCompare(entry.product.p, product.p, { modifierEntry: catalogModifierEntrySelector, productEntry: productEntrySelector }))) {
+      if (skipId !== entry.id && WProductEquals(WProductCompare(entry.product.p, product, { modifierEntry: catalogModifierEntrySelector, productEntry: productEntrySelector }))) {
         return entry;
       }
     }

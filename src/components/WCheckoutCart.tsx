@@ -1,5 +1,5 @@
 import { useAppSelector } from '../app/useHooks';
-import { CatalogSelectors, WCheckoutCartComponent, selectGroupedAndOrderedCart, SelectTaxRate } from '@wcp/wario-ux-shared';
+import { SelectCatalogSelectors, WCheckoutCartComponent, selectGroupedAndOrderedCart, SelectTaxRate } from '@wcp/wario-ux-shared';
 import { SelectDiscountsApplied, SelectPaymentsApplied, SelectTaxAmount, SelectTipValue, SelectTotal } from '../app/store';
 import { getCart } from '../app/slices/WCartSlice';
 
@@ -8,7 +8,7 @@ export function WCheckoutCart() {
   const cart = useAppSelector(s => selectGroupedAndOrderedCart(s, getCart(s.cart.cart)));
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
   const TAX_RATE = useAppSelector(SelectTaxRate);
-  const catalogSelectors = useAppSelector(s => CatalogSelectors(s.ws));
+  const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
   const tipValue = useAppSelector(SelectTipValue);
   const taxValue = useAppSelector(SelectTaxAmount);
   const paymentsApplied = useAppSelector(SelectPaymentsApplied);

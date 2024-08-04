@@ -1,4 +1,4 @@
-import { configureStore, createSelector, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, createSelector, combineReducers, EntityState } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
   IProductInstancesAdapter,
@@ -11,11 +11,14 @@ import {
   getProductEntryById,
   getFulfillmentById,
   getCategoryEntryById,
-  weakMapCreateSelector
+  weakMapCreateSelector,
+  getProductInstanceById,
+  SelectProductMetadata,
+  getModifierTypeEntryById,
 } from '@wcp/wario-ux-shared';
 import WCartReducer, { getCart, getCartEntry } from './slices/WCartSlice';
 import WCustomizerReducer from './slices/WCustomizerSlice';
-import WFulfillmentReducer from './slices/WFulfillmentSlice';
+import WFulfillmentReducer, { SelectServiceDateTime } from './slices/WFulfillmentSlice';
 import WMetricsReducer from './slices/WMetricsSlice';
 import WCustomerInfoReducer from "./slices/WCustomerInfoSlice";
 import StepperReducer from "./slices/StepperSlice";
@@ -23,7 +26,6 @@ import { SocketIoMiddleware } from "./slices/SocketIoMiddleware";
 import ListeningMiddleware from "./slices/ListeningMiddleware";
 import {
   ComputeCartSubTotal,
-  IMenu,
   ComputeTipBasis,
   ComputeTipValue,
   ComputeProductCategoryMatchCount,
@@ -53,7 +55,15 @@ import {
   WFulfillmentStatus,
   PaymentMethod,
   ComputeGratuityServiceCharge,
-  DetermineCartBasedLeadTime
+  DetermineCartBasedLeadTime,
+  CatalogModifierEntry,
+  ProductModifierEntry,
+  CatalogCategoryEntry,
+  Selector,
+  IOption,
+  IOptionInstance,
+  DISABLE_REASON,
+  MetadataModifierMapEntry
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
 import { differenceInMinutes, formatISO, startOfDay } from "date-fns";
@@ -82,13 +92,30 @@ export type AppDispatch = typeof store.dispatch;
 export const IProductInstancesSelectors = IProductInstancesAdapter.getSelectors((state: RootState) => state.ws.productInstances);
 export const ProductInstanceFunctionsSelectors = ProductInstanceFunctionsAdapter.getSelectors((state: RootState) => state.ws.productInstanceFunctions);
 
+export const SelectDisplayFlagOmitSectionIfNoAvailableOptionsFromModifierByModifierTypeId = createSelector(
+  (s: RootState, mtId: string) => getModifierTypeEntryById(s.ws.modifierEntries, mtId),
+  (mt) => mt.modifierType.displayFlags.omit_section_if_no_available_options
+);
+export const SelectDisplayFlagHiddenFromModifierByModifierTypeId = createSelector(
+  (s: RootState, mtId: string) => getModifierTypeEntryById(s.ws.modifierEntries, mtId),
+  (mt) => mt.modifierType.displayFlags.hidden
+);
 
-export const GetSelectableModifiers = (mMap: MetadataModifierMap, menu: IMenu) => Object.entries(mMap).reduce((acc, [k, v]) => {
-  const modifierEntry = menu.modifiers[k];
-  const omit_section_if_no_available_options = modifierEntry.modifier_type.displayFlags.omit_section_if_no_available_options;
-  const hidden = modifierEntry.modifier_type.displayFlags.hidden;
-  return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
-}, {} as MetadataModifierMap);
+export const GetSelectableModifiers = (mMap: MetadataModifierMap, modifierTypeSelector: (id: string) => CatalogModifierEntry) =>
+  Object.entries(mMap).reduce((acc, [k, v]) => {
+    const modifierEntry = modifierTypeSelector(k);
+    const omit_section_if_no_available_options = modifierEntry.modifierType.displayFlags.omit_section_if_no_available_options;
+    const hidden = modifierEntry.modifierType.displayFlags.hidden;
+    return (!hidden && (!omit_section_if_no_available_options || v.has_selectable)) ? { ...acc, k: v } : acc;
+  }, {} as MetadataModifierMap);
+
+
+export const SelectSelectableModifiers = createSelector(
+  (s: RootState, _mMap: MetadataModifierMap) => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id),
+  (_s: RootState, mMap: MetadataModifierMap) => mMap,
+  (modifierGetter, mMap) => GetSelectableModifiers(mMap, modifierGetter)
+);
+
 
 const SelectSomethingFromFulfillment = <T extends keyof FulfillmentConfig>(field: T) => weakMapCreateSelector(
   (s: RootState) => s.ws.fulfillments,
@@ -145,15 +172,6 @@ export const SelectServiceTimeDisplayString = createSelector(
     minDuration !== null && service !== null && selectedTime !== null ?
       (minDuration === 0 ? WDateUtils.MinutesToPrintTime(selectedTime) : `${WDateUtils.MinutesToPrintTime(selectedTime)} to ${WDateUtils.MinutesToPrintTime(selectedTime + minDuration)}`) : "");
 
-
-// todo: decouple this from the cart entry and just take in the modifier map
-export const GetSelectableModifiersForCartEntry = createSelector(
-  (s: RootState, cartEntryId: string, _: IMenu) => getCartEntry(s.cart.cart, cartEntryId),
-  (_: RootState, __: string, menu: IMenu) => menu,
-  (entry, menu) =>
-    entry ? GetSelectableModifiers(entry.product.m.modifier_map, menu) : {}
-);
-
 export const SelectCartSubTotal = createSelector(
   (s: RootState) => getCart(s.cart.cart),
   ComputeCartSubTotal
@@ -180,7 +198,7 @@ export const SelectSubtotalPreDiscount = createSelector(
 export const SelectDiscountsApplied = createSelector(
   SelectSubtotalPreDiscount,
   (s: RootState) => s.payment.storeCreditValidations.filter(x => x.validation.credit_type === StoreCreditType.DISCOUNT),
-  (subtotalPreDiscount: IMoney, discounts) => ComputeDiscountsApplied(subtotalPreDiscount, discounts.map(x=>({createdAt: x.createdAt, t: DiscountMethod.CreditCodeAmount, status: TenderBaseStatus.AUTHORIZED, discount: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
+  (subtotalPreDiscount: IMoney, discounts) => ComputeDiscountsApplied(subtotalPreDiscount, discounts.map(x => ({ createdAt: x.createdAt, t: DiscountMethod.CreditCodeAmount, status: TenderBaseStatus.AUTHORIZED, discount: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
 
 export const SelectDiscountsAmountApplied = createSelector(
   SelectDiscountsApplied,
@@ -228,9 +246,9 @@ export const SelectPaymentsApplied = createSelector(
   SelectTotal,
   SelectTipValue,
   (s: RootState) => s.payment.storeCreditValidations.filter(x => x.validation.credit_type === StoreCreditType.MONEY),
-  (totalWithTip, tipAmount, moneyCredits) => ComputePaymentsApplied(totalWithTip, tipAmount, moneyCredits.map(x=>({createdAt: x.createdAt, t: PaymentMethod.StoreCredit, status: TenderBaseStatus.PROPOSED, payment: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
+  (totalWithTip, tipAmount, moneyCredits) => ComputePaymentsApplied(totalWithTip, tipAmount, moneyCredits.map(x => ({ createdAt: x.createdAt, t: PaymentMethod.StoreCredit, status: TenderBaseStatus.PROPOSED, payment: { balance: x.validation.amount, code: x.code, lock: x.validation.lock } }))));
 
-export const SelectPaymentAmountsApplied = createSelector( 
+export const SelectPaymentAmountsApplied = createSelector(
   SelectPaymentsApplied,
   (paymentsApplied) => ({ amount: paymentsApplied.reduce((acc, x) => acc + x.amount.amount, 0), currency: CURRENCY.USD }));
 
@@ -241,12 +259,12 @@ export const SelectBalanceAfterPayments = createSelector(
 );
 
 const SelectPaymentsProposedForSubmission = createSelector(
-  (_: RootState, nonce: string|null) => nonce,
+  (_: RootState, nonce: string | null) => nonce,
   SelectPaymentsApplied,
   SelectTotal,
   SelectTipValue,
   SelectBalanceAfterPayments,
-  (nonce, payments, totalWithTip, tipAmount, balance) => balance.amount > 0 && nonce ? ComputePaymentsApplied(totalWithTip, tipAmount, [...payments, { createdAt: Date.now(), t: PaymentMethod.CreditCard, status: TenderBaseStatus.PROPOSED, payment: { sourceId: nonce }}]) : payments
+  (nonce, payments, totalWithTip, tipAmount, balance) => balance.amount > 0 && nonce ? ComputePaymentsApplied(totalWithTip, tipAmount, [...payments, { createdAt: Date.now(), t: PaymentMethod.CreditCard, status: TenderBaseStatus.PROPOSED, payment: { sourceId: nonce } }]) : payments
 );
 
 export const SelectMainCategoryTreeIdList = createSelector(
@@ -313,13 +331,15 @@ export const GetNextAvailableServiceDateTime = createSelector(
   (nextAvailableForServiceFunction, selectedService, currentTime, defaultFulfillment) => {
     if (selectedService !== null) {
       const nextAvailableForSelectedService = nextAvailableForServiceFunction(selectedService);
-      if (nextAvailableForSelectedService) {  
+      if (nextAvailableForSelectedService) {
         return nextAvailableForSelectedService;
       }
     }
-    return (nextAvailableForServiceFunction(defaultFulfillment) ?? 
-      { selectedDate: WDateUtils.formatISODate(currentTime), 
-        selectedTime: differenceInMinutes(currentTime, startOfDay(currentTime))}) as FulfillmentTime;
+    return (nextAvailableForServiceFunction(defaultFulfillment) ??
+    {
+      selectedDate: WDateUtils.formatISODate(currentTime),
+      selectedTime: differenceInMinutes(currentTime, startOfDay(currentTime))
+    }) as FulfillmentTime;
   });
 
 export const SelectHasSpaceForPartyOf = createSelector(
@@ -331,15 +351,15 @@ export const SelectMetricsForSubmission = createSelector(
   (s: RootState) => s.metrics,
   (s: RootState) => s.ws.pageLoadTime,
   (s: RootState) => s.ws.pageLoadTimeLocal,
-  (metrics, pageLoadTime, pageLoadTimeLocal) => ({ 
-    ...metrics, 
-    pageLoadTime, 
-    submitTime: metrics.submitTime - pageLoadTimeLocal, 
-    timeToFirstProduct: metrics.timeToFirstProduct - pageLoadTimeLocal, 
+  (metrics, pageLoadTime, pageLoadTimeLocal) => ({
+    ...metrics,
+    pageLoadTime,
+    submitTime: metrics.submitTime - pageLoadTimeLocal,
+    timeToFirstProduct: metrics.timeToFirstProduct - pageLoadTimeLocal,
     timeToServiceDate: metrics.timeToServiceDate - pageLoadTimeLocal,
     timeToServiceTime: metrics.timeToServiceTime - pageLoadTimeLocal,
-    timeToStage: metrics.timeToStage.map(x=>x-pageLoadTimeLocal)
-   } as Metrics)
+    timeToStage: metrics.timeToStage.map(x => x - pageLoadTimeLocal)
+  } as Metrics)
 )
 
 export const SelectWarioSubmissionArguments = createSelector(
@@ -350,7 +370,7 @@ export const SelectWarioSubmissionArguments = createSelector(
   SelectMetricsForSubmission,
   (s: RootState) => s.payment.selectedTip!,
   SelectDiscountsApplied,
-  (s: RootState, nonce: string|null) => SelectPaymentsProposedForSubmission(s, nonce),
+  (s: RootState, nonce: string | null) => SelectPaymentsProposedForSubmission(s, nonce),
   (fulfillmentInfo, customerInfo, cart, specialInstructions, metrics, tipSelection, discountsApplied, paymentsApplied) => {
     return {
       customerInfo,
@@ -363,3 +383,86 @@ export const SelectWarioSubmissionArguments = createSelector(
       tip: tipSelection,
     } as CreateOrderRequestV2;
   })
+
+/**
+ * Selects/Computes the product metadata for a catalog product instance using the currently populated fulfillment info
+ */
+export const SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData = createSelector(
+  (s: RootState, productInstanceId: string) => getProductInstanceById(s.ws.productInstances, productInstanceId),
+  (s: RootState, _productInstanceId: string) => s.ws,
+  (s: RootState, _productInstanceId: string) => SelectServiceDateTime(s.fulfillment)!,
+  (s: RootState, _productInstanceId: string) => s.fulfillment.selectedService!,
+  (productInstance, socketIoState, service_time, fulfillmentId) => SelectProductMetadata(socketIoState, productInstance.productId, productInstance.modifiers, service_time, fulfillmentId),
+);
+
+export const SelectProductInstanceHasSelectableModifiersByProductInstanceId = weakMapCreateSelector(
+  (s: RootState, _productInstanceId: string) => s,
+  (s: RootState, productInstanceId: string) => SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData(s, productInstanceId),
+  (s, metadata) => Object.values(SelectSelectableModifiers(s, metadata.modifier_map)).length > 0
+)
+
+export const SelectModifierTypeNameFromModifierTypeId = createSelector(
+  getModifierTypeEntryById,
+  (modifierTypeEntry) => modifierTypeEntry.modifierType.displayName ?? modifierTypeEntry.modifierType.name
+);
+
+export const SelectModifierTypeOrdinalFromModifierTypeId = createSelector(
+  getModifierTypeEntryById,
+  (modifierTypeEntry) => modifierTypeEntry.modifierType.ordinal
+);
+
+export const SelectMenuNameFromCategoryById = createSelector(
+  getCategoryEntryById,
+  (categoryEntry) => categoryEntry.category.description || categoryEntry.category.name
+);
+export const SelectMenuSubtitleFromCategoryById = createSelector(
+  getCategoryEntryById,
+  (categoryEntry) => categoryEntry.category.subheading || null
+);
+export const SelectMenuFooterFromCategoryById = createSelector(
+  getCategoryEntryById,
+  (categoryEntry) => categoryEntry.category.footnotes || null
+);
+export const SelectMenuNestingFromCategoryById = createSelector(
+  getCategoryEntryById,
+  (categoryEntry) => categoryEntry.category.display_flags.nesting
+);
+
+export const SelectCategoryExistsAndIsAllowedForFulfillment = createSelector(
+  (state: EntityState<CatalogCategoryEntry, string>, categoryId: string, _fulfillmentId: string) => getCategoryEntryById(state, categoryId),
+  (_state: EntityState<CatalogCategoryEntry, string>, _categoryId: string, fulfillmentId: string) => fulfillmentId,
+  (categoryEntry, fulfillmentId) => categoryEntry && categoryEntry.category.serviceDisable.indexOf(fulfillmentId) === -1
+);
+
+/**
+* Selects/Computes the product metadata for a potentially custom product (product class ID and selected modifiers) using the currently populated fulfillment info
+*/
+export const SelectProductMetadataFromCustomProductWithCurrentFulfillmentData = weakMapCreateSelector(
+  (_s: RootState, productId: string, _modifiers: ProductModifierEntry[]) => productId,
+  (_s: RootState, _productId: string, modifiers: ProductModifierEntry[]) => modifiers,
+  (s: RootState, _productInstanceId: string, _modifiers: ProductModifierEntry[]) => s.ws,
+  (s: RootState, _productInstanceId: string) => SelectServiceDateTime(s.fulfillment)!,
+  (s: RootState, _productInstanceId: string) => s.fulfillment.selectedService!,
+  (productId, modifiers, socketIoState, service_time, fulfillmentId) => SelectProductMetadata(socketIoState, productId, modifiers, service_time, fulfillmentId),
+);  
+
+/** move this to WCPShared */
+export const FilterUnselectableModifierOption = (mmEntry: MetadataModifierMapEntry, moid: string) => {
+  const optionMapEntry = mmEntry.options[moid];
+  return optionMapEntry.enable_left.enable === DISABLE_REASON.ENABLED || optionMapEntry.enable_right.enable === DISABLE_REASON.ENABLED || optionMapEntry.enable_whole.enable === DISABLE_REASON.ENABLED;
+}
+
+export const SortProductModifierEntries = (mods: ProductModifierEntry[], modifierTypeSelector: Selector<CatalogModifierEntry>) =>
+  mods.sort((a, b) => modifierTypeSelector(a.modifierTypeId)!.modifierType.ordinal - modifierTypeSelector(b.modifierTypeId)!.modifierType.ordinal)
+
+export const SortProductModifierOptions = (mods: IOptionInstance[], modifierOptionSelector: Selector<IOption>) =>
+  mods.sort((a, b) => modifierOptionSelector(a.optionId)!.ordinal - modifierOptionSelector(b.optionId)!.ordinal)
+
+export const SelectShouldFilterModifierTypeDisplay = weakMapCreateSelector(
+  (s: RootState, modifierTypeId: string, _hasSelectable: boolean) => getModifierTypeEntryById(s.ws.modifierEntries, modifierTypeId),
+  (_s: RootState, _modifierTypeId: string, hasSelectable: boolean) => hasSelectable,
+  // cases to not show:
+  // modifier.display_flags.omit_section_if_no_available_options && (has selected item, all other options cannot be selected, currently selected items cannot be deselected)
+  // modifier.display_flags.hidden is true
+  (modifierTypeEntry, hasSelectable) => !modifierTypeEntry.modifierType.displayFlags.hidden && (!modifierTypeEntry.modifierType.displayFlags.omit_section_if_no_available_options || hasSelectable)
+)

@@ -1,19 +1,20 @@
 import { useAppSelector } from '../app/useHooks';
 import { useMemo } from 'react';
-import { OptionEnableState, DISABLE_REASON, WFunctional, IOption } from '@wcp/wcpshared';
+import { OptionEnableState, DISABLE_REASON, WFunctional, IOption, WCPProduct } from '@wcp/wcpshared';
 import { Tooltip } from '@mui/material';
-import { CatalogSelectors, getFulfillments, getProductInstanceFunctionById } from '@wcp/wario-ux-shared';
+import { SelectCatalogSelectors, getFulfillments, getProductInstanceFunctionById } from '@wcp/wario-ux-shared';
 
 interface ModifierOptionTooltipProps {
   enableState: OptionEnableState;
   option: IOption;
+  // passing the product in allows us to use this for the general case, not just the customizer
+  product: WCPProduct;
   children: React.ReactNode;
 }
 
-export function ModifierOptionTooltip({ enableState, option, children }: ModifierOptionTooltipProps) {
+export function ModifierOptionTooltip({ enableState, option, product, children }: ModifierOptionTooltipProps) {
   const fulfillments = useAppSelector(s => getFulfillments(s.ws.fulfillments));
-  const selectedProduct = useAppSelector(s=>s.customizer.selectedProduct);
-  const catalogSelectors = useAppSelector(s=>CatalogSelectors(s.ws));
+  const catalogSelectors = useAppSelector(s=>SelectCatalogSelectors(s.ws));
   const pifGetter = useAppSelector(s=>(pifId : string)=> getProductInstanceFunctionById(s.ws.productInstanceFunctions, pifId));
   
   const tooltipText = useMemo(() => {
@@ -39,14 +40,14 @@ export function ModifierOptionTooltip({ enableState, option, children }: Modifie
         return `Adding ${displayName} would exceed the maximum modifiers allowed of this type.`;
       case DISABLE_REASON.DISABLED_FUNCTION:
         const PIF = pifGetter(enableState.functionId);
-        if (PIF && selectedProduct) {
-          const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(selectedProduct.p.modifiers, PIF.expression, catalogSelectors);
+        if (PIF) {
+          const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(product.modifiers, PIF.expression, catalogSelectors);
           return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalogSelectors)}`;
         }
         return `${displayName} is not available with the current combination of options.`;
     }
     //return displayName;
-  }, [enableState, option, fulfillments, pifGetter, catalogSelectors, selectedProduct]);
+  }, [enableState, option, fulfillments, pifGetter, catalogSelectors, product.modifiers]);
   return enableState.enable === DISABLE_REASON.ENABLED ?
     <span>{children}</span> :
     <Tooltip arrow title={tooltipText}>

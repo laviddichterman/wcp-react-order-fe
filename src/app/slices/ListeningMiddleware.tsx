@@ -1,10 +1,10 @@
 import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } from '@reduxjs/toolkit'
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
-import { RootState, AppDispatch, GetNextAvailableServiceDateTime } from '../store'
+import { RootState, AppDispatch, GetNextAvailableServiceDateTime, SelectCategoryExistsAndIsAllowedForFulfillment } from '../store'
 import { SelectOptionsForServicesAndDate } from '../store'
-import { CatalogSelectors, scrollToIdOffsetAfterDelay, setCurrentTime, receiveFulfillments, receiveSettings, receiveCatalog, setMenu } from '@wcp/wario-ux-shared';
+import { SelectCatalogSelectors, scrollToIdOffsetAfterDelay, setCurrentTime, receiveFulfillments, receiveSettings, receiveCatalog } from '@wcp/wario-ux-shared';
 import { enqueueSnackbar } from 'notistack'
-import { CanThisBeOrderedAtThisTimeAndFulfillment, CartEntry, GenerateMenu, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
+import { CanThisBeOrderedAtThisTimeAndFulfillmentCatalog, CartEntry, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
 
 import { incrementTimeBumps, setTimeToStage } from './WMetricsSlice';
@@ -12,8 +12,7 @@ import { STEPPER_STAGE_ENUM } from '../../config';
 import { addToCart, getCart, getDeadCart, killAllCartEntries, removeFromCart, reviveAllCartEntries, updateCartQuantity, updateManyCartProducts } from './WCartSlice';
 import { setSelectedTimeExpired, setService, setTime, setDate, setSelectedDateExpired, SelectServiceDateTime } from './WFulfillmentSlice';
 import { backStage, nextStage, setStage } from './StepperSlice';
-import { clearCustomizer, updateCustomizerProductMetadata, updateModifierOptionStateCheckbox, updateModifierOptionStateToggleOrRadio } from './WCustomizerSlice';
-// import { isEqual } from 'lodash';
+import { clearCustomizer, updateCustomizerProduct } from './WCustomizerSlice';
 
 
 export const ListeningMiddleware = createListenerMiddleware()
@@ -88,36 +87,23 @@ ListeningMiddleware.startListening({
 });
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(updateModifierOptionStateToggleOrRadio, updateModifierOptionStateCheckbox),
-  effect: (_, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    const s = api.getState(); 
-    const catalog = CatalogSelectors(s.ws);
-    const customizerProduct = s.customizer.selectedProduct!;
-    const service = api.getState().fulfillment.selectedService!;
-    const serviceTime = SelectServiceDateTime(api.getState().fulfillment)!;
-    api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct.p.productId, customizerProduct.p.modifiers, catalog, serviceTime, service)));
-  }
-});
-
-ListeningMiddleware.startListening({
   matcher: isAnyOf(receiveCatalog, setTime, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
-    const catalog = CatalogSelectors(api.getState().ws);
+    const socketIoState = api.getState().ws;
+    const catalog = SelectCatalogSelectors(socketIoState);
     const currentTime = api.getState().ws.currentTime;
     const fulfillments = api.getState().ws.fulfillments;
     if (catalog !== null && currentTime !== 0 && fulfillments !== null) {
       const service = api.getState().fulfillment.selectedService ?? Object.keys(fulfillments)[0];
       const menuTime = SelectServiceDateTime(api.getState().fulfillment) ?? WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTime(api.getState()));
-      const MENU = GenerateMenu(catalog, api.getState().ws.catalog?.version ?? "", menuTime, service);
       // determine if anything we have in the cart or the customizer is impacted and update accordingly
       const customizerProduct = api.getState().customizer.selectedProduct;
       const customizerCategoryId = api.getState().customizer.categoryId;
       let regenerateCustomizerMetadata = false;
       if (customizerProduct !== null) {
-        if (!CanThisBeOrderedAtThisTimeAndFulfillment(customizerProduct.p, MENU, catalog, menuTime, service, false) ||
-          (customizerCategoryId !== null &&
-            (!Object.hasOwn(MENU.categories, customizerCategoryId) ||
-              MENU.categories[customizerCategoryId].serviceDisable.indexOf(service) !== -1))) {
+        if (!CanThisBeOrderedAtThisTimeAndFulfillmentCatalog(customizerProduct.p.productId, customizerProduct.p.modifiers, catalog, menuTime, service, false) ||
+          (customizerCategoryId !== null && 
+            !SelectCategoryExistsAndIsAllowedForFulfillment(socketIoState.categories, customizerCategoryId, service))) {
           enqueueSnackbar(`${customizerProduct.m.name} as configured is no longer available. Please check availability and try again.`, { variant: 'warning' });
           api.dispatch(clearCustomizer());
         }
@@ -129,8 +115,8 @@ ListeningMiddleware.startListening({
       const deadCart = getDeadCart(api.getState().cart.deadCart);
       const toKill: CartEntry[] = [];
       const toRefreshMetadata: CartEntry[] = [];
-      cart.forEach(x => !CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service, true) || !Object.hasOwn(MENU.categories, x.categoryId) || MENU.categories[x.categoryId].serviceDisable.indexOf(service) !== -1 ? toKill.push(x) : toRefreshMetadata.push(x));
-      const toRevive = deadCart.filter(x => CanThisBeOrderedAtThisTimeAndFulfillment(x.product.p, MENU, catalog, menuTime, service, true) && Object.hasOwn(MENU.categories, x.categoryId) && MENU.categories[x.categoryId].serviceDisable.indexOf(service) === -1);
+      cart.forEach(x => !CanThisBeOrderedAtThisTimeAndFulfillmentCatalog(x.product.p.productId, x.product.p.modifiers, catalog, menuTime, service, true) || !SelectCategoryExistsAndIsAllowedForFulfillment(socketIoState.categories, x.categoryId, service) ? toKill.push(x) : toRefreshMetadata.push(x));
+      const toRevive = deadCart.filter(x => CanThisBeOrderedAtThisTimeAndFulfillmentCatalog(x.product.p.productId, x.product.p.modifiers, catalog, menuTime, service, true) && SelectCategoryExistsAndIsAllowedForFulfillment(socketIoState.categories, x.categoryId, service));
 
       if (toKill.length > 0) {
         if (toKill.length < 4) {
@@ -140,11 +126,8 @@ ListeningMiddleware.startListening({
         }
         api.dispatch(killAllCartEntries(toKill));
       }
-      // if (!isEqual(api.getState().ws.menu, MENU)) {
-        api.dispatch(setMenu(MENU));
-      // }
       if (regenerateCustomizerMetadata) {
-        api.dispatch(updateCustomizerProductMetadata(WCPProductGenerateMetadata(customizerProduct!.p.productId, customizerProduct!.p.modifiers, catalog, menuTime, service)));
+        api.dispatch(updateCustomizerProduct({ p: customizerProduct!.p, m: WCPProductGenerateMetadata(customizerProduct!.p.productId, customizerProduct!.p.modifiers, catalog, menuTime, service) }));
       }
       if (toRefreshMetadata.length > 0) {
         api.dispatch(updateManyCartProducts(toRefreshMetadata.map(x=>({id: x.id, product: {...x.product, m: WCPProductGenerateMetadata(x.product.p.productId, x.product.p.modifiers, catalog, menuTime, service)}}))));

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from "../../app/useHooks";
 import { Typography, Grid } from '@mui/material';
-import { IMenu, CategoryEntry, IProductInstance, MoneyToDisplayString, IMoney, IProduct } from '@wcp/wcpshared';
-import { getProductEntryById } from '@wcp/wario-ux-shared';
+import { IProductInstance, MoneyToDisplayString, IMoney, IProduct } from '@wcp/wcpshared';
+import { getProductEntryById, getProductInstanceById } from '@wcp/wario-ux-shared';
 
 import {
   GridColDef, GridDetailPanelToggleCell, GridValueGetterParams, GRID_DETAIL_PANEL_TOGGLE_COL_DEF,
@@ -15,6 +15,7 @@ import {
   useKeepGroupedColumnsHidden,
   useGridApiRef
 } from '@mui/x-data-grid-premium';
+import { SelectProductInstanceIdsInCategoryForNextAvailableTime } from './WMenuComponent';
 
 export interface ToolbarAction {
   size: number; elt: React.ReactNode;
@@ -46,7 +47,7 @@ function CustomToolbar({ showQuickFilter, quickFilterProps, title, actions = [] 
   );
 }
 
-interface WMenuDisplayProps { menu: IMenu; category: CategoryEntry; };
+interface WMenuDisplayProps { categoryId: string; };
 interface DGEmbeddedMetadata { size: number; ordinal: number; key: string };
 const DataGridMetadataPrefix = /DG_(S(?<size>\d)_)?(O(?<ordinal>-?\d)_)?(?<name>.*)/;
 interface IProductInstanceForMenu {
@@ -102,7 +103,7 @@ function ConvertProductToMenuProduct(pi: IProductInstance, productEntrySelector:
 
 
 type IProductInstanceValueGetter = GridValueGetterParams<IProductInstanceForMenu>;
-export function WMenuDataGrid({ menu, category }: WMenuDisplayProps) {
+export function WMenuDataGrid({ categoryId }: WMenuDisplayProps) {
   const [rowGroupingModel, setRowGroupingModel] =
     React.useState<GridRowGroupingModel>(['category', 'subcategoryI', 'subcategoryII']);
   const apiRef = useGridApiRef();
@@ -118,18 +119,22 @@ export function WMenuDataGrid({ menu, category }: WMenuDisplayProps) {
         // },
       },
     });
-  const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
-  const productRows = useMemo(() => [...category.menu, ...category.children.map(x => menu.categories[x].menu).flat()], [menu, category]);
+    const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
+    const productInstanceSelector = useAppSelector(s => (id: string) => getProductInstanceById(s.ws.productInstances, id));
+  const productRows = useAppSelector(s=>SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
   const dynamicColumns: GridColDef<IProductInstanceForMenu>[] = useMemo(() => {
     const acc: Record<string, DGEmbeddedMetadata> = {};
-    productRows.forEach((pi) => pi.externalIDs.forEach(md => {
+    productRows.forEach((piid) => {
+      const pi = productInstanceSelector(piid)
+      return pi.externalIDs.forEach(md => {
       if (md.value.length > 0) {
         const keyMatch = md.key.match(DataGridMetadataPrefix);
         if (keyMatch?.groups) {
           acc[keyMatch.groups.name] = { ordinal: Number.parseInt(keyMatch.groups.ordinal ?? "1"), size: Number.parseInt(keyMatch.groups.ordinal ?? "3"), key: md.key };
         }
       }
-    }));
+    })}
+  );
     //{ headerName: "Ordinal", field: "ordinal", valueGetter: (v: ValueGetterRow) => v.row.category.ordinal, flex: 3 },
 
     return Object.entries(acc).map((entry) => ({ flex: entry[1].size, headerName: entry[0], field: entry[0], valueGetter: (v: IProductInstanceValueGetter) => v.row.metadata[entry[0]] ?? "" }));
@@ -139,7 +144,10 @@ export function WMenuDataGrid({ menu, category }: WMenuDisplayProps) {
   // const isTreeDataGrid = useMemo(() => {
 
   // }, [])
-  const massagedProduct = useMemo(() => productRows.map(x=>ConvertProductToMenuProduct(x, productEntrySelector)), [productRows, productEntrySelector]);
+  const massagedProduct = useMemo(() => productRows.map(x=> {
+    const pi = productInstanceSelector(x);
+    return ConvertProductToMenuProduct(pi, productEntrySelector);
+  }), [productRows, productEntrySelector, productInstanceSelector]);
   // console.log({ massagedProduct });
   return (
     <DataGridPremium
