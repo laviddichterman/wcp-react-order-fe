@@ -10,6 +10,7 @@ import { getProductInstanceById, isNonProduction, LoadingScreen, ProductCategory
 import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
 import { createSelector } from '@reduxjs/toolkit';
+import { WMenuDataGrid } from './WMenuTableComponent';
 // import useRenderingTrace from '../../utils/useRenderingTrace';
 
 export const SelectProductMetadataForMenu = createSelector(
@@ -187,16 +188,16 @@ function WMenuFlat({ categoryId }: WMenuDisplayProps) {
     </Box>);
 }
 
-WMenuRecursive = (props: WMenuDisplayProps) => {
-  const nesting = useAppSelector(s=>SelectMenuNestingFromCategoryById(s.ws.categories, props.categoryId));
-  const hasPopulatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, props.categoryId, 'Menu').length > 0);
+WMenuRecursive = ({ categoryId }: WMenuDisplayProps) => {
+  const nesting = useAppSelector(s=>SelectMenuNestingFromCategoryById(s.ws.categories, categoryId));
+  const hasPopulatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
   switch (nesting) {
     case CategoryDisplay.FLAT:
-      return <WMenuFlat {...props} />;
+      return <WMenuFlat categoryId={categoryId} />;
     case CategoryDisplay.TAB:
-      return hasPopulatedSubcategories ? <WMenuTabbed {...props} /> : <WMenuFlat {...props} />;
+      return hasPopulatedSubcategories ? <WMenuTabbed categoryId={categoryId} /> : <WMenuFlat categoryId={categoryId} />;
     case CategoryDisplay.ACCORDION:
-      return hasPopulatedSubcategories ? <WMenuAccordion {...props} /> : <WMenuFlat {...props} />;
+      return hasPopulatedSubcategories ? <WMenuAccordion categoryId={categoryId} /> : <WMenuFlat categoryId={categoryId} />;
     case CategoryDisplay.TABLE:
       if (isNonProduction()) {
         // dev code
@@ -206,7 +207,7 @@ WMenuRecursive = (props: WMenuDisplayProps) => {
       // child categories have no child categories
       // metadata fields used to populate columns
       // description used to 
-      return <></>;// <WMenuDataGrid {...props} />;
+      return <WMenuDataGrid categoryId={categoryId} />;
   }
 }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from "../../app/useHooks";
 import { Typography, Grid } from '@mui/material';
 import { IProductInstance, MoneyToDisplayString, IMoney, IProduct } from '@wcp/wcpshared';
-import { getProductEntryById, getProductInstanceById } from '@wcp/wario-ux-shared';
+import { getProductEntryById, getProductInstanceById, weakMapCreateSelector } from '@wcp/wario-ux-shared';
 
 import {
   GridColDef, GridDetailPanelToggleCell, GridValueGetterParams, GRID_DETAIL_PANEL_TOGGLE_COL_DEF,
@@ -13,9 +13,12 @@ import {
   DataGridPremium,
   GridRowGroupingModel,
   useKeepGroupedColumnsHidden,
-  useGridApiRef
+  useGridApiRef,
+  GRID_TREE_DATA_GROUPING_FIELD
 } from '@mui/x-data-grid-premium';
-import { SelectProductInstanceIdsInCategoryForNextAvailableTime } from './WMenuComponent';
+import { createStructuredSelector } from 'reselect';
+import { SelectProductInstanceIdsInCategoryForNextAvailableTime, SelectProductMetadataForMenu } from './WMenuComponent';
+import { RootState } from '../../app/store';
 
 export interface ToolbarAction {
   size: number; elt: React.ReactNode;
@@ -46,21 +49,21 @@ function CustomToolbar({ showQuickFilter, quickFilterProps, title, actions = [] 
     </GridToolbarContainer>
   );
 }
-
+type RowType = { id: string; }
 interface WMenuDisplayProps { categoryId: string; };
 interface DGEmbeddedMetadata { size: number; ordinal: number; key: string };
 const DataGridMetadataPrefix = /DG_(S(?<size>\d)_)?(O(?<ordinal>-?\d)_)?(?<name>.*)/;
-interface IProductInstanceForMenu {
-  id: string;
-  categories: string[];
-  category: string;
-  subcategoryI?: string;
-  subcategoryII?: string;
-  subcategoryIII?: string;
-  name: string;
-  price: string;
-  metadata: { [index: string]: string; };
-}
+// interface IProductInstanceForMenu {
+//   id: string;
+//   categories: string[];
+//   category: string;
+//   subcategoryI?: string;
+//   subcategoryII?: string;
+//   subcategoryIII?: string;
+//   name: string;
+//   price: string;
+//   metadata: { [index: string]: string; };
+// }
 // interface HierarchicalProductStructure {
 //   category: string;
 //   subcategories: { [index: string]: HierarchicalProductStructure };
@@ -82,79 +85,97 @@ interface IProductInstanceForMenu {
 //   }
 //   return { ...acc, products: [...acc.products, curr] } as HierarchicalProductStructure;
 // }
+const SelectProductInstanceForMenu = createStructuredSelector(
+  { 
+    categories: (s: RootState, productInstanceId: string) => {
+      const pi = getProductInstanceById(s.ws.productInstances, productInstanceId);
+      console.log( { ext: pi.externalIDs})
+      return (pi.externalIDs.find(ext => ext.key === "Categories")?.value ?? "").split(',') 
+    },
+    name: (s: RootState, productInstanceId: string) => SelectProductMetadataForMenu(s, productInstanceId).name,
+    price: (s: RootState, productInstanceId: string) => MoneyToDisplayString(SelectProductMetadataForMenu(s, productInstanceId).price, false),
+    metadata: (s: RootState, productInstanceId: string) => getProductInstanceById(s.ws.productInstances, productInstanceId)!.externalIDs.reduce((acc, kv)=> kv.value.length ? {...acc, [kv.key]: kv.value } : acc ,{})
+  },
+  weakMapCreateSelector
+);
 
-function ConvertProductToMenuProduct(pi: IProductInstance, productEntrySelector: (id: string) => {
-  product: IProduct;
-  instances: string[];
-}): IProductInstanceForMenu {
-  const cats = (pi.externalIDs.find(ext => ext.key === "Categories")?.value ?? "").split(',');
-  return {
-    id: pi.id,
-    categories: (pi.externalIDs.find(ext => ext.key === "Categories")?.value ?? "").split(','),
-    category: cats.length > 0 ? cats[0] : "",
-    subcategoryI: cats.length > 1 ? cats[1] : undefined,
-    subcategoryII: cats.length > 2 ? cats[2] : undefined,
-    subcategoryIII: cats.length > 3 ? cats[3] : undefined,
-    metadata: {},//pi.externalIDs.reduce((acc, kv)=> kv.value.length ? {...acc, [kv.value]: kv.value } : acc ,{}),
-    name: pi.displayName,
-    price: MoneyToDisplayString(productEntrySelector(pi.productId)!.product.price, false)
-  }
+const ProductName = (params: GridRenderCellParams<RowType>) => {
+  const displayString = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).name);
+  return <>{displayString}</>;
+}
+const ProductPrice = (params: GridRenderCellParams<RowType>) => {
+  const displayString = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).price);
+  return <>{displayString}</>;
 }
 
+const ProductCategories = (params: GridRenderCellParams<RowType>) => {
+  const cats = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).categories);
+  const metadata = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).metadata);
+  console.log({metadata});
+  return <>{cats.length > 0 ? cats[0] : ""}</>;
+}
 
-type IProductInstanceValueGetter = GridValueGetterParams<IProductInstanceForMenu>;
+const ProductCategories1 = (params: GridRenderCellParams<RowType>) => {
+  const cats = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).categories);
+  return <>{cats.length > 1 ? cats[1] : ""}</>;
+}
+const ProductCategories2 = (params: GridRenderCellParams<RowType>) => {
+  const cats = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).categories);
+  return <>{cats.length > 2 ? cats[2] : ""}</>;
+}
+const ProductCategories3 = (params: GridRenderCellParams<RowType>) => {
+  const cats = useAppSelector(s => SelectProductInstanceForMenu(s, params.row.id).categories);
+  return <>{cats.length > 3 ? cats[3] : ""}</>;
+}
+
 export function WMenuDataGrid({ categoryId }: WMenuDisplayProps) {
+  const SelectCategoryListForProductInstanceId = useAppSelector(s=>(productInstanceId: string) => SelectProductInstanceForMenu(s, productInstanceId).categories);
   const [rowGroupingModel, setRowGroupingModel] =
     React.useState<GridRowGroupingModel>(['category', 'subcategoryI', 'subcategoryII']);
   const apiRef = useGridApiRef();
 
-  const initialState = useKeepGroupedColumnsHidden({
+  const initialState = ({
       apiRef,
       initialState: {
-        rowGrouping: {
-          model: ['category', 'subcategoryI', 'subcategoryII'],
+        pinnedColumns: {
+          left: [GRID_TREE_DATA_GROUPING_FIELD],
         },
-        // sorting: {
-        //   sortModel: [{ field: 'category', sort: 'desc' }, { field: 'subcategoryI', sort: 'desc'}, { field: 'subcategoryII', sort: 'desc'}, { field: 'name', sort: 'desc'} ],
-        // },
       },
     });
-    const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
-    const productInstanceSelector = useAppSelector(s => (id: string) => getProductInstanceById(s.ws.productInstances, id));
   const productRows = useAppSelector(s=>SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
-  const dynamicColumns: GridColDef<IProductInstanceForMenu>[] = useMemo(() => {
-    const acc: Record<string, DGEmbeddedMetadata> = {};
-    productRows.forEach((piid) => {
-      const pi = productInstanceSelector(piid)
-      return pi.externalIDs.forEach(md => {
-      if (md.value.length > 0) {
-        const keyMatch = md.key.match(DataGridMetadataPrefix);
-        if (keyMatch?.groups) {
-          acc[keyMatch.groups.name] = { ordinal: Number.parseInt(keyMatch.groups.ordinal ?? "1"), size: Number.parseInt(keyMatch.groups.ordinal ?? "3"), key: md.key };
-        }
-      }
-    })}
-  );
-    //{ headerName: "Ordinal", field: "ordinal", valueGetter: (v: ValueGetterRow) => v.row.category.ordinal, flex: 3 },
+  // const dynamicColumns: GridColDef<{ id: string; }>[] = useMemo(() => {
+  //   const acc: Record<string, DGEmbeddedMetadata> = {};
+  //   productRows.forEach((piid) => {
+  //     const pi = productInstanceSelector(piid)
+  //     return pi.externalIDs.forEach(md => {
+  //     if (md.value.length > 0) {
+  //       const keyMatch = md.key.match(DataGridMetadataPrefix);
+  //       if (keyMatch?.groups) {
+  //         acc[keyMatch.groups.name] = { ordinal: Number.parseInt(keyMatch.groups.ordinal ?? "1"), size: Number.parseInt(keyMatch.groups.ordinal ?? "3"), key: md.key };
+  //       }
+  //     }
+  //   })}
+  // );
+  //   //{ headerName: "Ordinal", field: "ordinal", valueGetter: (v: ValueGetterRow) => v.row.category.ordinal, flex: 3 },
 
-    return Object.entries(acc).map((entry) => ({ flex: entry[1].size, headerName: entry[0], field: entry[0], valueGetter: (v: IProductInstanceValueGetter) => v.row.metadata[entry[0]] ?? "" }));
-  }, [productRows]);
+  //   return Object.entries(acc).map((entry) => ({ flex: entry[1].size, headerName: entry[0], field: entry[0], valueGetter: (v: IProductInstanceValueGetter) => v.row.id ?? "" }));
+  // }, [productRows]);
   // const categorizedProducts = useMemo(() => productRows.reduce((acc: HierarchicalProductStructure, curr: IProductInstance) =>
   // GenerateHierarchicalProductStructure(acc, curr, 0), { category: "", products: [], subcategories: {} } as HierarchicalProductStructure), [productRows]);
   // const isTreeDataGrid = useMemo(() => {
 
   // }, [])
-  const massagedProduct = useMemo(() => productRows.map(x=> {
-    const pi = productInstanceSelector(x);
-    return ConvertProductToMenuProduct(pi, productEntrySelector);
-  }), [productRows, productEntrySelector, productInstanceSelector]);
+  // const massagedProduct = useMemo(() => productRows.map(x=> {
+  //   const pi = productInstanceSelector(x);
+  //   return ConvertProductToMenuProduct(pi, productEntrySelector);
+  // }), [productRows, productEntrySelector, productInstanceSelector]);
   // console.log({ massagedProduct });
   return (
     <DataGridPremium
       apiRef={apiRef}
-      // treeData
+      treeData
       // defaultGroupingExpansionDepth={1}
-      // getTreeDataPath={(row: IProductInstanceForMenu) => row.categories }
+      getTreeDataPath={(row) => SelectCategoryListForProductInstanceId(row.id) }
       // groupingColDef={{ leafField: 'Category' }}
 
       density="compact"
@@ -169,7 +190,7 @@ export function WMenuDataGrid({ categoryId }: WMenuDisplayProps) {
       // }
       // rowGroupingModel={rowGroupingModel}
       // onRowGroupingModelChange={(model) => setRowGroupingModel(model)}
-      initialState={initialState}
+      // initialState={initialState}
       // initialState={{
       //   sorting: {
       //     sortModel: [{ field: 'category', sort: 'desc' }, { field: 'subcategoryI', sort: 'desc'}, { field: 'subcategoryII', sort: 'desc'}, { field: 'name', sort: 'desc'} ],
@@ -181,29 +202,14 @@ export function WMenuDataGrid({ categoryId }: WMenuDisplayProps) {
       disableColumnReorder
       // getRowId={(row) => row.id}
       columns={[
-        { headerName: "Category", field: "category" },
-        { headerName: "SubCategory I", field: "subcategoryI", flex: 1.5 },
-        { headerName: "SubCategory II", field: "subcategoryII", flex: 2 },
-        { headerName: "Name", field: "name", valueGetter: (v: IProductInstanceValueGetter) => v.row.name, flex: 5 },
+        { headerName: "Category", field: "category", renderCell: (params: GridRenderCellParams<RowType>) => <ProductCategories {...params} /> },
+        // { headerName: "SubCategory I", field: "subcategoryI", renderCell: (params: GridRenderCellParams<RowType>) => <ProductCategories1 {...params} />, flex: 1.5 },
+        // { headerName: "SubCategory II", field: "subcategoryII", renderCell: (params: GridRenderCellParams<RowType>) => <ProductCategories2 {...params} />, flex: 2 },
+        { headerName: "Name", field: "name",  renderCell: (params) => <ProductName {...params} />, flex: 5 },
         //...dynamicColumns,
-        { headerName: "Price", field: "price", valueGetter: (v: IProductInstanceValueGetter) => v.row.price, flex: 1 }
+        { headerName: "Price", field: "price", renderCell: (params) => <ProductPrice {...params} />, flex: 1 }
       ]}
-      rows={massagedProduct}
+      rows={productRows.map((x) => ({ id: x}))}
     />
   );
 }
-// return (
-//   <Box>
-//     {category.children.map((subSection) => {
-//       const subCategory = menu.categories[subSection];
-//       return (
-//         <Box sx={{ pt: 4 }} key={subSection}>
-//           <Typography variant="h4" sx={{ ml: 2 }} dangerouslySetInnerHTML={{ __html: subCategory.menu_name }} />
-//           <Separator />
-//           <WMenuRecursive menu={menu} category={subCategory} />
-//         </Box>)
-//     })}
-//     <WMenuSection menu={menu} category={category} />
-//   </Box>);
-// }
-

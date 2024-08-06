@@ -15,7 +15,6 @@ interface ModifierOptionTooltipProps {
 export function ModifierOptionTooltip({ enableState, option, product, children }: ModifierOptionTooltipProps) {
   const fulfillments = useAppSelector(s => getFulfillments(s.ws.fulfillments));
   const catalogSelectors = useAppSelector(s=>SelectCatalogSelectors(s.ws));
-  const pifGetter = useAppSelector(s=>(pifId : string)=> getProductInstanceFunctionById(s.ws.productInstanceFunctions, pifId));
   
   const tooltipText = useMemo(() => {
     const displayName = option.displayName;
@@ -39,7 +38,7 @@ export function ModifierOptionTooltip({ enableState, option, product, children }
       case DISABLE_REASON.DISABLED_MAXIMUM:
         return `Adding ${displayName} would exceed the maximum modifiers allowed of this type.`;
       case DISABLE_REASON.DISABLED_FUNCTION:
-        const PIF = pifGetter(enableState.functionId);
+        const PIF = catalogSelectors.productInstanceFunction(enableState.functionId);
         if (PIF) {
           const trackedFailure = WFunctional.ProcessAbstractExpressionStatementWithTracking(product.modifiers, PIF.expression, catalogSelectors);
           return `${displayName} requires ${WFunctional.AbstractExpressionStatementToHumanReadableString(trackedFailure[1][0], catalogSelectors)}`;
@@ -47,7 +46,7 @@ export function ModifierOptionTooltip({ enableState, option, product, children }
         return `${displayName} is not available with the current combination of options.`;
     }
     //return displayName;
-  }, [enableState, option, fulfillments, pifGetter, catalogSelectors, product.modifiers]);
+  }, [enableState, option, fulfillments, catalogSelectors, product.modifiers]);
   return enableState.enable === DISABLE_REASON.ENABLED ?
     <span>{children}</span> :
     <Tooltip arrow title={tooltipText}>
