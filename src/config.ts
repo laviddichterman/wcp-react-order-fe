@@ -1,6 +1,6 @@
 // API
 // ----------------------------------------------------------------------
-import { LicenseInfo } from '@mui/x-license-pro';
+import { LicenseInfo } from '@mui/x-license';
 
 export enum STEPPER_STAGE_ENUM {
   TIMING,

@@ -11,7 +11,6 @@ import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
 import { createSelector } from '@reduxjs/toolkit';
 import { WMenuDataGrid } from './WMenuTableComponent';
-// import useRenderingTrace from '../../utils/useRenderingTrace';
 
 export const SelectProductMetadataForMenu = createSelector(
   (s: RootState, productInstanceId: string) => getProductInstanceById(s.ws.productInstances, productInstanceId),

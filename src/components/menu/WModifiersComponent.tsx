@@ -1,5 +1,5 @@
 import { Grid, Box } from "@mui/material";
-import { ProductPrice, ProductTitle, ProductDescription, getModifierOptionById, getModifierTypeEntryById, SelectParentProductEntryFromProductInstanceId, SelectDefaultFulfillmentId, SelectCatalogSelectors, weakMapCreateSelector, getProductInstanceById } from "@wcp/wario-ux-shared";
+import { ProductPrice, ProductTitle, ProductDescription, getModifierOptionById, getModifierTypeEntryById, SelectParentProductEntryFromProductInstanceId, SelectDefaultFulfillmentId, SelectCatalogSelectors, getProductInstanceById } from "@wcp/wario-ux-shared";
 import { DISABLE_REASON, DisableDataCheck, IProductModifier, MoneyToDisplayString, WDateUtils } from "@wcp/wcpshared";
 import { useAppSelector } from "../../app/useHooks";
 import { FilterUnselectableModifierOption, GetNextAvailableServiceDateTime, RootState, SelectShouldFilterModifierTypeDisplay } from "../../app/store";
