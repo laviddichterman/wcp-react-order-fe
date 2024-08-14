@@ -87,7 +87,7 @@ ListeningMiddleware.startListening({
 });
 
 ListeningMiddleware.startListening({
-  matcher: isAnyOf(receiveCatalog, setTime, setService),
+  matcher: isAnyOf(receiveCatalog, setTime, setDate, setService),
   effect: (_: any, api: ListenerEffectAPI<RootState, AppDispatch>) => {
     const socketIoState = api.getState().ws;
     const catalog = SelectCatalogSelectors(socketIoState);

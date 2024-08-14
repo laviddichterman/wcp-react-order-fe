@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { FulfillmentType, WDateUtils } from '@wcp/wcpshared';
 import { Autocomplete, Grid, Checkbox, Radio, RadioGroup, TextField, FormControlLabel } from '@mui/material';
 import { LocalizationProvider, StaticDatePicker } from '@mui/x-date-pickers';
@@ -38,7 +38,6 @@ export default function WFulfillmentStageComponent() {
       (serviceServiceEnum !== FulfillmentType.DineIn || dineInInfo !== null) &&
       (serviceServiceEnum !== FulfillmentType.Delivery || deliveryInfo !== null);
   }, [selectedService, serviceServiceEnum, serviceDate, serviceTime, serviceTerms, hasAgreedToTerms, dineInInfo, deliveryInfo]);
-
   const OptionsForDate = useCallback((d: string | null) => {
     if (selectedService !== null && d !== null) {
       const parsedDate = parseISO(d);
@@ -48,6 +47,10 @@ export default function WFulfillmentStageComponent() {
     }
     return [];
   }, [OptionsForServicesAndDate, selectedService]);
+
+  const hasOptionsForSameDay = useMemo(() => {
+    return OptionsForDate(formatISO(currentTime, { representation: 'date' })).length > 0;
+  }, [OptionsForDate, currentTime]);
 
   const canSelectService = useCallback((fId: string) => true, []);
 
@@ -92,6 +95,12 @@ export default function WFulfillmentStageComponent() {
     dispatch(setDineInInfo({ partySize: v }));
   }
 
+  // if the service date is null and there are options for the same day, set the service date to the current time
+  useEffect(() => { 
+    if (serviceDate === null && hasOptionsForSameDay) {
+      onSetServiceDate(currentTime);
+    }
+  }, [serviceDate, hasOptionsForSameDay, onSetServiceDate]);
   return (<>
     <StageTitle>How and when would you like your order?</StageTitle>
     <Separator sx={{ pb: 3 }} />
@@ -128,9 +137,9 @@ export default function WFulfillmentStageComponent() {
       <Grid item xs={12} xl={serviceTerms.length > 0 ? 6 : 4} lg={6} sx={{ justifyContent: 'center', alignContent: 'center', display: 'flex', pb: 3, ...(selectedService === null ? { display: 'none' } : {}) }}>
         <LocalizationProvider dateAdapter={DateAdapter}>
           <StaticDatePicker
-          slotProps={{ }}
             displayStaticWrapperAs="desktop"
             openTo="day"
+            disableHighlightToday={!hasOptionsForSameDay}
             disablePast
             minDate={startOfDay(currentTime)}
             maxDate={add(currentTime, { days: 6 })}
