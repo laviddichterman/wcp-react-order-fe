@@ -297,12 +297,13 @@ function MenuDataGridInner({ productRows }: { productRows: RowType[] }) {
   });
   return (
     <div style={{ overflow: 'hidden' }}>
-      <Stack direction="row" gap={1} mb={1} mx={1} flexWrap="wrap">
+      <Stack direction="row" gap={1} m={1} flexWrap="wrap">
         {predefinedFiltersRowCountLevel0.length > 2 && predefinedFiltersRowCountLevel0
           .filter(({ index }) => (index === 0 || predefinedFiltersRowCountLevel1.length < 2 || index === selectedFilterModel0 || selectedFilterModel0 === 0))
           .map(({ count, index }) => {
             return (
               <WarioToggleButton
+              sx={{px: "9px",}}
                 key={predefinedFiltersForLevel0[index].label}
                 onClick={() => handleSelectFilterModelLevel0(index)}
                 selected={selectedFilterModel0 === index}
@@ -315,12 +316,13 @@ function MenuDataGridInner({ productRows }: { productRows: RowType[] }) {
       {selectedFilterModel0 !== 0 && predefinedFiltersRowCountLevel1.length > 1 &&
         <>
           <Separator />
-          <Stack direction="row" gap={1} mb={1} mx={1} flexWrap="wrap">
+          <Stack direction="row" gap={1} m={1} flexWrap="wrap">
             {predefinedFiltersRowCountLevel1
               .filter(({ index }) => ((index === 0 || predefinedFiltersRowCountLevel2.length < 2) || (index === selectedFilterModel1) || selectedFilterModel1 === 0))
               .map(({ count, index }) => {
                 return (
                   <WarioToggleButton
+                  sx={{px: "9px",}}
                     key={predefinedFiltersForLevel1[index].label}
                     onClick={() => handleSelectFilterModelLevel1(index)}
                     selected={selectedFilterModel1 === index}
@@ -335,12 +337,13 @@ function MenuDataGridInner({ productRows }: { productRows: RowType[] }) {
       {selectedFilterModel1 !== 0 && predefinedFiltersRowCountLevel2.length > 1 &&
         <>
           <Separator />
-          <Stack direction="row" gap={1} mb={1} mx={1} flexWrap="wrap">
+          <Stack direction="row" gap={1} m={1} flexWrap="wrap">
             {predefinedFiltersRowCountLevel2
               .filter(({ index }) => ((index === 0 || predefinedFiltersRowCountLevel3.length < 2) || (index === selectedFilterModel2) || selectedFilterModel2 === 0))
               .map(({ count, index }) => {
                 return (
                   <WarioToggleButton
+                  sx={{px: "9px",}}
                     key={predefinedFiltersForLevel2[index].label}
                     onClick={() => handleSelectFilterModelLevel2(index)}
                     selected={selectedFilterModel2 === index}
@@ -354,12 +357,13 @@ function MenuDataGridInner({ productRows }: { productRows: RowType[] }) {
       {selectedFilterModel2 !== 0 && predefinedFiltersRowCountLevel3.length > 1 &&
         <>
           <Separator />
-          <Stack direction="row" gap={1} mb={1} mx={1} flexWrap="wrap">
+          <Stack direction="row" gap={1} m={1} flexWrap="wrap">
             {predefinedFiltersRowCountLevel3
               //.filter(({ index }) => ((index === 0) || (index === selectedFilterModel3) || selectedFilterModel3 === 0))
               .map(({ count, index }) => {
                 return (
                   <WarioToggleButton
+                  sx={{px: "9px",}}
                     key={predefinedFiltersForLevel3[index].label}
                     onClick={() => handleSelectFilterModelLevel3(index)}
                     selected={selectedFilterModel3 === index}

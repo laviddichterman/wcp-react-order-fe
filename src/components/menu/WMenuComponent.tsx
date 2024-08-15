@@ -49,35 +49,35 @@ export const SelectProductInstanceIdsInCategoryForNextAvailableTime = createSele
 interface WMenuDisplayProps { categoryId: string; };
 
 
-function MenuNameTypography({ categoryId, ...props }: WMenuDisplayProps & TypographyProps ) {
-  const menuName = useAppSelector(s=>SelectMenuNameFromCategoryById(s.ws.categories, categoryId));
+function MenuNameTypography({ categoryId, ...props }: WMenuDisplayProps & TypographyProps) {
+  const menuName = useAppSelector(s => SelectMenuNameFromCategoryById(s.ws.categories, categoryId));
   return <Typography {...props} dangerouslySetInnerHTML={{ __html: menuName }} />
 }
 
-function WMenuProductInstanceDisplay({ productInstanceId } : { productInstanceId: string; }) {
-  const product = useAppSelector(s=>getProductInstanceById(s.ws.productInstances, productInstanceId));
+function WMenuProductInstanceDisplay({ productInstanceId }: { productInstanceId: string; }) {
+  const product = useAppSelector(s => getProductInstanceById(s.ws.productInstances, productInstanceId));
   const productClass = useAppSelector(s => SelectParentProductEntryFromProductInstanceId(s.ws, productInstanceId));
-  const productMetadata = useAppSelector(s=>SelectProductMetadataForMenu(s, productInstanceId));
+  const productMetadata = useAppSelector(s => SelectProductMetadataForMenu(s, productInstanceId));
 
-  return productClass ? 
-  <Box sx={{ pt: 4 }}>
-    <ProductDisplay
-      description
-      allowAdornment
-      dots
-      displayContext="menu"
-      price
-      productMetadata={productMetadata}
-    />
-    {product.displayFlags.menu.show_modifier_options && productClass.product.modifiers.length &&
-      <WModifiersComponent productInstanceId={productInstanceId} />}
-  </Box> : <></>
+  return productClass ?
+    <Box sx={{ pt: 4 }}>
+      <ProductDisplay
+        description
+        allowAdornment
+        dots
+        displayContext="menu"
+        price
+        productMetadata={productMetadata}
+      />
+      {product.displayFlags.menu.show_modifier_options && productClass.product.modifiers.length &&
+        <WModifiersComponent productInstanceId={productInstanceId} />}
+    </Box> : <></>
 }
 
 function WMenuSection({ categoryId }: WMenuDisplayProps) {
-  const subtitle = useAppSelector(s=>SelectMenuSubtitleFromCategoryById(s.ws.categories, categoryId));
-  const footnotes = useAppSelector(s=>SelectMenuFooterFromCategoryById(s.ws.categories, categoryId));
-  const productsInstanceIds = useAppSelector(s=>SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
+  const subtitle = useAppSelector(s => SelectMenuSubtitleFromCategoryById(s.ws.categories, categoryId));
+  const footnotes = useAppSelector(s => SelectMenuFooterFromCategoryById(s.ws.categories, categoryId));
+  const productsInstanceIds = useAppSelector(s => SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
   return (
     // TODO: need to fix the location of the menu subtitle
     <Box sx={{ pt: 0 }}>
@@ -96,8 +96,8 @@ function WMenuSection({ categoryId }: WMenuDisplayProps) {
 let WMenuRecursive: ({ categoryId }: WMenuDisplayProps) => JSX.Element;
 
 function WMenuAccordion({ categoryId }: WMenuDisplayProps) {
-  const hasProductsToDisplay = useAppSelector(s=>SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
-  const populatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
+  const hasProductsToDisplay = useAppSelector(s => SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
+  const populatedSubcategories = useAppSelector(s => SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
   const [activePanel, setActivePanel] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
   const toggleAccordion = useCallback((event: React.SyntheticEvent<Element, Event>, i: number) => {
@@ -138,9 +138,9 @@ function WMenuAccordion({ categoryId }: WMenuDisplayProps) {
 
 
 function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
-  const populatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
-  const hasProductsToDisplay = useAppSelector(s=>SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
-  const menuName = useAppSelector(s=>SelectMenuNameFromCategoryById(s.ws.categories, categoryId));
+  const populatedSubcategories = useAppSelector(s => SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
+  const hasProductsToDisplay = useAppSelector(s => SelectProductInstanceIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
+  const menuName = useAppSelector(s => SelectMenuNameFromCategoryById(s.ws.categories, categoryId));
   const [active, setActive] = useState<string>(populatedSubcategories[0]);
   return (
     <Box>
@@ -148,7 +148,7 @@ function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
         <WMenuSection categoryId={categoryId} />
       )}
       <TabContext value={active}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider'}}>
           <TabList
             TabIndicatorProps={{ hidden: true }}
             scrollButtons={false}
@@ -157,7 +157,31 @@ function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
             aria-label={`${menuName} tab navigation`}
           >
             {populatedSubcategories.map((section, i) => (
-              <Tab wrapped key={i} label={<MenuNameTypography variant='h6' categoryId={section} />} value={section} />
+              <Tab sx={[
+                {
+                  '&.Mui-selected': {
+                    color: "white",
+                  },
+                },
+                {
+                  '&:hover': {
+                    color: "white",
+                    backgroundColor: "#c59d5f"
+                  },
+                }, {
+                  fontFamily: 'Cabin',
+                  color: "#fff",
+                  backgroundColor: "#252525",
+                  mx: 0.5,
+                  my: .5,
+                  transition: 'all .15s',
+                  padding: "6px 15px",
+                  fontSize: "12px",
+                  letterSpacing: '.15em',
+                  borderRadius: '3px',
+                  fontWeight: 400,
+                  textSizeAdjust: "100%"
+                }]} wrapped key={i} label={<MenuNameTypography variant='h6' categoryId={section} sx={{ fontWeight: 400, fontSize: "12px", color: '#fff' }} />} value={section} />
             ))}
           </TabList>
         </Box>
@@ -173,7 +197,7 @@ function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
 }
 
 function WMenuFlat({ categoryId }: WMenuDisplayProps) {
-  const populatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
+  const populatedSubcategories = useAppSelector(s => SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu'));
   return (
     <Box>
       {populatedSubcategories.map((subSection) => (
@@ -188,8 +212,8 @@ function WMenuFlat({ categoryId }: WMenuDisplayProps) {
 }
 
 WMenuRecursive = ({ categoryId }: WMenuDisplayProps) => {
-  const nesting = useAppSelector(s=>SelectMenuNestingFromCategoryById(s.ws.categories, categoryId));
-  const hasPopulatedSubcategories = useAppSelector(s=>SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
+  const nesting = useAppSelector(s => SelectMenuNestingFromCategoryById(s.ws.categories, categoryId));
+  const hasPopulatedSubcategories = useAppSelector(s => SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime(s, categoryId, 'Menu').length > 0);
   switch (nesting) {
     case CategoryDisplay.FLAT:
       return <WMenuFlat categoryId={categoryId} />;
