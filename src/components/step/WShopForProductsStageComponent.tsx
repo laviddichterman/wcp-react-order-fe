@@ -5,8 +5,8 @@ import { ClickableProductDisplay } from '../WProductComponent';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { SelectServiceDateTime } from '../../app/slices/WFulfillmentSlice';
 import { WShopForProductsStageProps } from './WShopForProductsStageContainer';
-import { getModifierTypeEntryById, getProductEntryById, getProductInstanceById, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory, SelectProductMetadata, SocketIoState } from '@wcp/wario-ux-shared';
-import { RootState, SelectMenuNameFromCategoryById, SelectMenuSubtitleFromCategoryById, SelectProductInstanceHasSelectableModifiersByProductInstanceId, SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData } from '../../app/store';
+import { getProductInstanceById, scrollToElementOffsetAfterDelay, scrollToIdOffsetAfterDelay, SelectCatalogSelectors, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory } from '@wcp/wario-ux-shared';
+import { SelectMenuNameFromCategoryById, SelectMenuSubtitleFromCategoryById, SelectProductInstanceHasSelectableModifiersByProductInstanceId, SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData } from '../../app/store';
 import { CreateWCPProduct, WProduct } from '@wcp/wcpshared';
 import { cloneDeep } from 'lodash';
 import { addToCart, FindDuplicateInCart, getCart, updateCartQuantity } from '../../app/slices/WCartSlice';
@@ -24,8 +24,8 @@ export interface ShopClickableProductDisplayProps {
 
 function ShopClickableProductDisplay({ productInstanceId, returnToId, sourceCategoryId, setScrollToOnReturn, ...props }: ShopClickableProductDisplayProps & BoxProps) {
   const dispatch = useAppDispatch();
-  const productEntrySelector = useAppSelector(s => (id: string) => getProductEntryById(s.ws.products, id));
-  const modiferEntrySelector = useAppSelector(s => (id: string) => getModifierTypeEntryById(s.ws.modifierEntries, id));
+  const productEntrySelector = useAppSelector(s => SelectCatalogSelectors(s.ws).productEntry);
+  const modiferEntrySelector = useAppSelector(s => SelectCatalogSelectors(s.ws).modifierEntry);
   const cart = useAppSelector(s => getCart(s.cart.cart));
   const productInstance = useAppSelector(s => getProductInstanceById(s.ws.productInstances, productInstanceId));
   const productMetadata = useAppSelector(s => SelectProductMetadataFromProductInstanceIdWithCurrentFulfillmentData(s, productInstanceId));
@@ -54,7 +54,7 @@ function ShopClickableProductDisplay({ productInstanceId, returnToId, sourceCate
       }
       setScrollToOnReturn(returnToId);
     }
-  }, [cart, dispatch, enqueueSnackbar, productEntrySelector, modiferEntrySelector]);
+  }, [cart, dispatch, productEntrySelector, modiferEntrySelector, productInstance, productMetadata, productHasSelectableModifiers, sourceCategoryId, returnToId, setScrollToOnReturn]);
 
   return <ClickableProductDisplay
     {...props}
