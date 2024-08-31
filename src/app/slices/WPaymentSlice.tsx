@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type * as Square from '@square/web-sdk';
-import { CreateValidateStoreCreditThunk, scrollToIdOffsetAfterDelay } from "@wcp/wario-ux-shared";
+import { CreateValidateStoreCreditThunk, scrollToIdOffsetAfterDelay, setCurrentTime } from "@wcp/wario-ux-shared";
 import { TipSelection, CrudOrderResponse, ValidateAndLockCreditResponseValid } from "@wcp/wcpshared";
 import axiosInstance from "../../utils/axios";
 import { AppDispatch, RootState, SelectWarioSubmissionArguments } from "../store";
@@ -18,6 +18,7 @@ export const submitToWario = createAsyncThunk<CrudOrderResponse, string|null, {d
       return result.data;
     }
     catch (err : any) { 
+      thunkApi.dispatch(setCurrentTime({ currentLocalTime: Date.now(), ticksElapsed: 0 }));
       console.log(err);
       try {
         thunkApi.dispatch(setOrderSubmitErrors(err!.error.map(((x : any) => x.detail))));

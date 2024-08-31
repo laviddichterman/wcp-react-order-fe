@@ -11,6 +11,7 @@ import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
 import { setTimeToServiceDate, setTimeToServiceTime } from '../../app/slices/WMetricsSlice';
 import { StageTitle, Separator, SelectDateFnsAdapter, ErrorResponseOutput, getFulfillments } from '@wcp/wario-ux-shared';
+import { enqueueSnackbar } from 'notistack';
 
 
 export default function WFulfillmentStageComponent() {
@@ -32,12 +33,30 @@ export default function WFulfillmentStageComponent() {
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
   const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired);
   const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
+  const hasAgreedToTermsIfAny = useMemo(() => (serviceTerms.length === 0 || hasAgreedToTerms), [serviceTerms, hasAgreedToTerms]);
+  const hasCompletedDineInInfoIfNeeded = useMemo(() => (serviceServiceEnum !== FulfillmentType.DineIn || dineInInfo !== null), [serviceServiceEnum, dineInInfo]);
+  const hasCompletedDeliveryInfoIfNeeded = useMemo(() => (serviceServiceEnum !== FulfillmentType.Delivery || deliveryInfo !== null), [serviceServiceEnum, deliveryInfo]);
+  const hasSelectedServiceDateAndTime = useMemo(() => selectedService !== null && serviceDate !== null && serviceTime !== null && serviceServiceEnum !== null, [serviceDate, serviceTime, selectedService, serviceServiceEnum]);
+  const missingInformationText = useMemo(() => {
+    if (!hasSelectedServiceDateAndTime) {
+      return "Please select a service, date, and time.";
+    }
+    if (!hasAgreedToTermsIfAny) {
+      return "Please agree to the terms and conditions above.";
+    }
+    if (!hasCompletedDineInInfoIfNeeded) {
+      return "Please select a party size.";
+    }
+    if (!hasCompletedDeliveryInfoIfNeeded) {
+      return "Please fill out the delivery information.";
+    }
+  }, [hasSelectedServiceDateAndTime, hasAgreedToTermsIfAny, hasCompletedDineInInfoIfNeeded, hasCompletedDeliveryInfoIfNeeded]);
   const valid = useMemo(() => {
-    return selectedService !== null && serviceDate !== null && serviceTime !== null && serviceServiceEnum !== null &&
-      (serviceTerms.length === 0 || hasAgreedToTerms) &&
-      (serviceServiceEnum !== FulfillmentType.DineIn || dineInInfo !== null) &&
-      (serviceServiceEnum !== FulfillmentType.Delivery || deliveryInfo !== null);
-  }, [selectedService, serviceServiceEnum, serviceDate, serviceTime, serviceTerms, hasAgreedToTerms, dineInInfo, deliveryInfo]);
+    return hasSelectedServiceDateAndTime &&
+      hasAgreedToTermsIfAny &&
+      hasCompletedDineInInfoIfNeeded &&
+      hasCompletedDeliveryInfoIfNeeded;
+  }, [hasSelectedServiceDateAndTime, hasAgreedToTermsIfAny, hasCompletedDineInInfoIfNeeded, hasCompletedDeliveryInfoIfNeeded]);
   const OptionsForDate = useCallback((d: string | null) => {
     if (selectedService !== null && d !== null) {
       const parsedDate = parseISO(d);
@@ -193,6 +212,8 @@ export default function WFulfillmentStageComponent() {
         </Grid>}
     </Grid>
     {hasSelectedDateExpired === true && <ErrorResponseOutput>The previously selected service date has expired.</ErrorResponseOutput>}
-    <Navigation hidden={serviceTime === null} hasBack={false} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
+    <Navigation hidden={serviceTime === null} hasBack={false} 
+    onNextWhenDisabled={{ onMouseOver: () => enqueueSnackbar(missingInformationText, { variant: 'warning' })
+ }} canBack={false} canNext={valid} handleBack={() => { return; }} handleNext={() => dispatch(nextStage())} />
   </>);
 }

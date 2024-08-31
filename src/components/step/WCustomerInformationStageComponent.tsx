@@ -53,7 +53,7 @@ export function WCustomerInformationStage() {
           <Grid item sx={{ p: 1 }} xs={12} sm={6} >
             <RHFTextField
               name="givenName"
-              autoComplete="given-name name"
+              autoComplete="given-name"
               label={"First name:"}
             />
           </Grid>

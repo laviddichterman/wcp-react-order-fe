@@ -12,15 +12,14 @@ interface IPhoneInputParams {
   [x: string]: any;
 };
 
-
-
-
 export function RHFPhoneInput({ placeholder, error, label, country, name, ...other }: IPhoneInputParams & Omit<TextFieldProps, 'error' | 'name' | 'label'>) {
 
   const InputComponent = React.forwardRef((props, ref) =>
     <TextField {...props}
       inputRef={ref}
       error={!!error}
+      inputMode="tel"
+      autoComplete="mobile tel"
       helperText={error?.message ?? " "}
       {...other}
     />);
@@ -29,6 +28,7 @@ export function RHFPhoneInput({ placeholder, error, label, country, name, ...oth
   return (
     <PhoneInput
       smartCaret
+      defaultCountry='US'
       control={control}
       name={name}
       label={label}

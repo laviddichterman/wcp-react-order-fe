@@ -2,7 +2,7 @@ import { createListenerMiddleware, addListener, ListenerEffectAPI, isAnyOf } fro
 import type { TypedStartListening, TypedAddListener } from '@reduxjs/toolkit'
 import { RootState, AppDispatch, GetNextAvailableServiceDateTime, SelectCategoryExistsAndIsAllowedForFulfillment } from '../store'
 import { SelectOptionsForServicesAndDate } from '../store'
-import { SelectCatalogSelectors, scrollToIdOffsetAfterDelay, setCurrentTime, receiveFulfillments, receiveSettings, receiveCatalog } from '@wcp/wario-ux-shared';
+import { SelectCatalogSelectors, scrollToIdOffsetAfterDelay, setCurrentTime, receiveFulfillments, receiveSettings, receiveCatalog, getFulfillmentById } from '@wcp/wario-ux-shared';
 import { enqueueSnackbar } from 'notistack'
 import { CanThisBeOrderedAtThisTimeAndFulfillmentCatalog, CartEntry, WCPProductGenerateMetadata, WDateUtils } from '@wcp/wcpshared';
 
@@ -39,8 +39,8 @@ ListeningMiddleware.startListening({
     const previouslySelectedDate = originalState.fulfillment.selectedDate;
     const previouslySelectedTime = originalState.fulfillment.selectedTime;
     const selectedService = api.getState().fulfillment.selectedService;
-    const fulfillments = api.getState().ws.fulfillments!;
-    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && Object.hasOwn(fulfillments, selectedService) && !isAlreadySubmitted) {
+    const selectedFulfillment = api.getState().ws.fulfillments !== null && selectedService !== null ? getFulfillmentById(api.getState().ws.fulfillments!, selectedService!) : null;
+    if (previouslySelectedDate !== null && previouslySelectedTime !== null && selectedService !== null && selectedFulfillment && !isAlreadySubmitted) {
       const newOptions = SelectOptionsForServicesAndDate(api.getState(), previouslySelectedDate, [selectedService]);
       if (!newOptions.find(x => x.value === previouslySelectedTime)) {
         if (newOptions.length > 0) {
