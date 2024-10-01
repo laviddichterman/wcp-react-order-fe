@@ -5,7 +5,7 @@ import { LocalizationProvider, StaticDatePicker } from '@mui/x-date-pickers';
 import { isValid, add, formatISO, parseISO, startOfDay } from 'date-fns';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
 import { setDate, setDineInInfo, setHasAgreedToTerms, setService, setTime } from '../../app/slices/WFulfillmentSlice';
-import { SelectFulfillmentMaxGuests, SelectFulfillmentService, SelectFulfillmentServiceTerms, SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
+import { GetNextAvailableServiceDateTime, SelectFulfillmentMaxGuests, SelectFulfillmentService, SelectFulfillmentServiceTerms, SelectHasOperatingHoursForService, SelectOptionsForServicesAndDate } from '../../app/store';
 import { Navigation } from '../Navigation';
 import { nextStage } from '../../app/slices/StepperSlice';
 import DeliveryInfoForm from '../DeliveryValidationForm';
@@ -33,10 +33,12 @@ export default function WFulfillmentStageComponent() {
   const deliveryInfo = useAppSelector(s => s.fulfillment.deliveryInfo);
   const hasSelectedTimeExpired = useAppSelector(s => s.fulfillment.hasSelectedTimeExpired);
   const hasSelectedDateExpired = useAppSelector(s => s.fulfillment.hasSelectedDateExpired);
+  const nextAvailableDateTime = useAppSelector(s=> GetNextAvailableServiceDateTime(s)?.selectedDate);
   const hasAgreedToTermsIfAny = useMemo(() => (serviceTerms.length === 0 || hasAgreedToTerms), [serviceTerms, hasAgreedToTerms]);
   const hasCompletedDineInInfoIfNeeded = useMemo(() => (serviceServiceEnum !== FulfillmentType.DineIn || dineInInfo !== null), [serviceServiceEnum, dineInInfo]);
   const hasCompletedDeliveryInfoIfNeeded = useMemo(() => (serviceServiceEnum !== FulfillmentType.Delivery || deliveryInfo !== null), [serviceServiceEnum, deliveryInfo]);
   const hasSelectedServiceDateAndTime = useMemo(() => selectedService !== null && serviceDate !== null && serviceTime !== null && serviceServiceEnum !== null, [serviceDate, serviceTime, selectedService, serviceServiceEnum]);
+  
   const missingInformationText = useMemo(() => {
     if (!hasSelectedServiceDateAndTime) {
       return "Please select a service, date, and time.";
@@ -72,7 +74,6 @@ export default function WFulfillmentStageComponent() {
   }, [OptionsForDate, currentTime]);
 
   const canSelectService = useCallback((fId: string) => true, []);
-
   const TimeOptions = useMemo(() => serviceDate !== null ? OptionsForDate(serviceDate).reduce((acc: { [index: number]: { value: number, disabled: boolean } }, v) => ({ ...acc, [v.value]: v }), {}) : {}, [OptionsForDate, serviceDate]);
 
   const ServiceOptions = useMemo(() => {
@@ -160,7 +161,8 @@ export default function WFulfillmentStageComponent() {
             openTo="day"
             disableHighlightToday={!hasOptionsForSameDay}
             disablePast
-            minDate={startOfDay(currentTime)}
+            
+            minDate={startOfDay(parseISO(nextAvailableDateTime))}
             maxDate={add(currentTime, { days: 6 })}
             shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, { representation: 'date' })).length === 0}
             value={serviceDate ? parseISO(serviceDate) : ""}

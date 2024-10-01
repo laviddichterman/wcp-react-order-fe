@@ -341,7 +341,7 @@ export function WModifierTypeCustomizerComponent({ mtid, product, ...other }: IM
       visibleOptions.map((option, i: number) =>
         <WModifierOptionCheckboxComponent key={i} option={option} />
       )}</FormGroup>
-  }, [modifierType, mtid, product.productId, baseProductInstance.modifiers, visibleOptions]);
+  }, [modifierType, mtid, baseProductInstance.modifiers, visibleOptions]);
   return (
     <FormControl fullWidth {...other}>
       <FormLabel id={`modifier_control_${mtid}`}>

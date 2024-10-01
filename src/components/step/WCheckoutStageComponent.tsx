@@ -61,7 +61,7 @@ export function WCheckoutStage() {
           <>
             <Typography variant="body2">
               Payment of {MoneyToDisplayString(payment.amount, true)} received {payment.payment.last4 ? ` from card ending in: ${payment.payment.last4}!` : "!"}
-              <br />Here's your <Link href={payment.payment.receiptUrl} target="_blank">receipt</Link></Typography>
+            </Typography>
           </>);
       case PaymentMethod.StoreCredit:
         const paymentBalance = { amount: payment.payment.balance.amount - payment.amount.amount, currency: payment.amount.currency };
