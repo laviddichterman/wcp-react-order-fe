@@ -28,7 +28,6 @@ export function RHFPhoneInput({ placeholder, error, label, country, name, ...oth
   return (
     <PhoneInput
       smartCaret
-      defaultCountry='US'
       control={control}
       name={name}
       label={label}
