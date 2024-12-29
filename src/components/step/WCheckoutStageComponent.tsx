@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Grid, Input, Link } from '@mui/material';
 import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton, LoadingScreen, SelectTipPreamble } from '@wcp/wario-ux-shared';
-import { CreditCard /*, GooglePay, ApplePay */} from 'react-square-web-payments-sdk';
+import { CreditCard /*, GooglePay, ApplePay */ } from 'react-square-web-payments-sdk';
 
 import { WCheckoutCart } from '../WCheckoutCart';
 import { setTip, submitToWario } from '../../app/slices/WPaymentSlice';
 import { useAppDispatch, useAppSelector } from '../../app/useHooks';
-import { SelectAutoGratutityEnabled, SelectBalanceAfterPayments, SelectTipBasis, SelectTipValue } from '../../app/store';
+import { SelectAllowTipping, SelectAutoGratutityEnabled, SelectBalanceAfterPayments, SelectTipBasis, SelectTipValue } from '../../app/store';
 import { StoreCreditSection } from '../StoreCreditSection';
 import { useEffect } from 'react';
 import { backStage } from '../../app/slices/StepperSlice';
@@ -25,10 +25,9 @@ export function WCheckoutStage() {
   const dispatch = useAppDispatch();
   const tipBasis = useAppSelector(SelectTipBasis);
   const balance = useAppSelector(SelectBalanceAfterPayments);
-  //const selectedTipAmount = useAppSelector(SelectTipValue);
+  const allowTipping = useAppSelector(SelectAllowTipping)
   const submitToWarioResponse = useAppSelector(s => s.payment.warioResponse);
   const submitToWarioStatus = useAppSelector(s => s.payment.submitToWarioStatus);
-  //const specialInstructions = useAppSelector(s => s.payment.specialInstructions);
   const autogratEnabled = useAppSelector(SelectAutoGratutityEnabled);
   const TIP_PREAMBLE = useAppSelector(SelectTipPreamble);
   const selectedTipValue = useAppSelector(SelectTipValue);
@@ -39,17 +38,21 @@ export function WCheckoutStage() {
   const [customTipAmount, setCustomTipAmount] = useState<string>(MoneyToDisplayString(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis), false));
   const customTipAsIMoney = useMemo(() => {
     const parsedCustomTipAmount = parseFloat(customTipAmount);
-    return (!isFinite(parsedCustomTipAmount) || isNaN(parsedCustomTipAmount) || parsedCustomTipAmount < 0) ? 
-    { currency: CURRENCY.USD, amount: 0 } : 
-    { amount : Math.round(parsedCustomTipAmount * 100), currency: CURRENCY.USD }
+    return (!isFinite(parsedCustomTipAmount) || isNaN(parsedCustomTipAmount) || parsedCustomTipAmount < 0) ?
+      { currency: CURRENCY.USD, amount: 0 } :
+      { amount: Math.round(parsedCustomTipAmount * 100), currency: CURRENCY.USD }
   }, [customTipAmount]);
   const squareTokenErrors = useAppSelector(s => s.payment.squareTokenErrors);
   const orderSubmitErrors = useAppSelector(s => s.payment.orderSubmitErrors);
   useEffect(() => {
-    if (currentTipSelection === null || (autogratEnabled && TwentyPercentTipValue.amount > selectedTipValue.amount)) {
-      dispatch(setTip(TIP_SUGGESTION_20));
+    if (allowTipping) {
+      if (currentTipSelection === null || (autogratEnabled && TwentyPercentTipValue.amount > selectedTipValue.amount)) {
+        dispatch(setTip(TIP_SUGGESTION_20));
+      }
+    } else if (currentTipSelection === null) {
+      dispatch(setTip({ value: { amount: 0, currency: CURRENCY.USD }, isPercentage: false, isSuggestion: false }));
     }
-  }, [currentTipSelection, autogratEnabled, TwentyPercentTipValue, selectedTipValue, dispatch])
+  }, [allowTipping, currentTipSelection, autogratEnabled, TwentyPercentTipValue, selectedTipValue, dispatch])
 
   const generatePaymentHtml = useCallback((payment: OrderPaymentAllocated) => {
     switch (payment.t) {
@@ -104,7 +107,7 @@ export function WCheckoutStage() {
       dispatch(incrementTipFixes());
       resetCustomTip();
     } else {
-      const newTipMoney = { amount : Math.round(numericValue * 100), currency: CURRENCY.USD };
+      const newTipMoney = { amount: Math.round(numericValue * 100), currency: CURRENCY.USD };
       setCustomTipAmount(MoneyToDisplayString(newTipMoney, false));
       dispatch(setTip({ value: newTipMoney, isPercentage: false, isSuggestion: false }));
     }
@@ -112,50 +115,52 @@ export function WCheckoutStage() {
   return submitToWarioStatus !== 'SUCCEEDED' ?
     <Box>
       {submitToWarioStatus === 'PENDING' && <LoadingScreen />}
-      <StageTitle>Add gratuity to your order and settle up!</StageTitle>
+      <StageTitle>{allowTipping ? "Add gratuity to your order and settle up!" : "Let's settle up!"}</StageTitle>
       <Separator sx={{ pb: 3 }} />
-      <Typography variant='body1'>{TIP_PREAMBLE}</Typography>
-      <Grid container sx={{ py: 2 }}>
-        {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
-          <Grid key={i} item xs={4} sx={{ px: 0.5 }} >
-            <WarioToggleButton selected={currentTipSelection === tip} sx={{ display: 'table-cell' }} value={tip} fullWidth onClick={() => onSelectSuggestedTip(tip)} >
-              <Grid container sx={{ py: 2 }}>
-                <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='h4'>{((tip.value as number) * 100)}%</Typography></Grid>
-                <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='subtitle2'>{MoneyToDisplayString(ComputeTipValue(tip, tipBasis), false)}</Typography></Grid>
+      {allowTipping && <>
+        <Typography variant='body1'>{TIP_PREAMBLE}</Typography>
+        <Grid container sx={{ py: 2 }}>
+          {tipSuggestionsArray.map((tip: TipSelection, i: number) =>
+            <Grid key={i} item xs={4} sx={{ px: 0.5 }} >
+              <WarioToggleButton selected={currentTipSelection === tip} sx={{ display: 'table-cell' }} value={tip} fullWidth onClick={() => onSelectSuggestedTip(tip)} >
+                <Grid container sx={{ py: 2 }}>
+                  <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='h4'>{((tip.value as number) * 100)}%</Typography></Grid>
+                  <Grid item xs={12}><Typography sx={{ color: 'white' }} variant='subtitle2'>{MoneyToDisplayString(ComputeTipValue(tip, tipBasis), false)}</Typography></Grid>
+                </Grid>
+              </WarioToggleButton>
+            </Grid>
+          )}
+          <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
+            <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipHandler(customTipAmount)} >
+              <Grid container>
+                <Grid item xs={12}>
+                  <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
+                </Grid>
+                <Grid item xs={12} sx={{ height: isCustomTipSelected ? '4em' : '2.5em' }}>
+                  {isCustomTipSelected ?
+                    <Input
+                      sx={{ pt: 0 }}
+                      size='small'
+                      disableUnderline
+                      value={customTipAmount}
+                      onChange={(e) => setCustomTipAmount(e.target.value)}
+                      onBlur={(e) => setCustomTipHandler(e.target.value)}
+                      type="number"
+                      inputProps={{ inputMode: 'decimal', min: 0, sx: { pt: 0, textAlign: 'center', color: 'white' }, step: 1 }}
+                    /> : " "}
+                </Grid>
               </Grid>
             </WarioToggleButton>
           </Grid>
-        )}
-        <Grid item sx={{ px: 0.5, pt: 1 }} xs={12}>
-          <WarioToggleButton selected={isCustomTipSelected} fullWidth value={customTipAmount} onClick={() => setCustomTipHandler(customTipAmount)} >
-            <Grid container>
-              <Grid item xs={12}>
-                <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
-              </Grid>
-              <Grid item xs={12} sx={{ height: isCustomTipSelected ? '4em' : '2.5em' }}>
-                {isCustomTipSelected ?
-                  <Input
-                    sx={{ pt: 0 }}
-                    size='small'
-                    disableUnderline
-                    value={customTipAmount}
-                    onChange={(e) => setCustomTipAmount(e.target.value)}
-                    onBlur={(e) => setCustomTipHandler(e.target.value)}
-                    type="number"
-                    inputProps={{ inputMode: 'decimal', min: 0, sx: { pt: 0, textAlign: 'center', color: 'white' }, step: 1 }}
-                  /> : " "}
-              </Grid>
-            </Grid>
-          </WarioToggleButton>
         </Grid>
-      </Grid>
+      </>}
       <WCheckoutCart />
       <Box>
         <StageTitle>Payment Information:</StageTitle>
         <Grid container>
           <Grid item container xs={12} sx={{ px: 2, pb: 4 }}><StoreCreditSection /></Grid>
           <Grid item xs={12}>
-            {balance.amount > 0 ? // && (specialInstructions === null || specialInstructions.length < 50) ?
+            {balance.amount > 0 ?
               <>
                 {/* <ApplePay>Pay with Apple Pay</ApplePay>
                 <GooglePay>Pay with Google Pay</GooglePay> */}
@@ -167,8 +172,8 @@ export function WCheckoutStage() {
                   }}>
                   Submit Order
                 </CreditCard>
-                
-                
+
+
               </> :
               <WarioButton disabled={submitToWarioStatus === 'PENDING'} fullWidth onClick={() => submitNoBalanceDue()} >Submit Order</WarioButton>}
             {squareTokenErrors.length > 0 &&

@@ -95,8 +95,8 @@ function WModifierOptionToggle({ toggleOptionChecked, toggleOptionUnchecked }: I
   const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
   const fulfillmentId = useAppSelector(s => s.fulfillment.selectedService);
-  const optionUncheckedState = useAppSelector(selectOptionState)(toggleOptionUnchecked.modifierTypeId, toggleOptionUnchecked.id);
-  const optionCheckedState = useAppSelector(selectOptionState)(toggleOptionChecked.modifierTypeId, toggleOptionChecked.id);
+  const optionUncheckedState = useAppSelector(s=>selectOptionState(s, toggleOptionUnchecked.modifierTypeId, toggleOptionUnchecked.id));
+  const optionCheckedState = useAppSelector(s=>selectOptionState(s, toggleOptionChecked.modifierTypeId, toggleOptionChecked.id));
   const optionValue = useMemo(() => optionCheckedState?.placement === OptionPlacement.WHOLE, [optionCheckedState?.placement]);
   if (!optionUncheckedState || !optionCheckedState || !serviceDateTime || !selectedProduct || !fulfillmentId) {
     return null;
@@ -142,9 +142,8 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
   const catalogSelectors = useAppSelector(s => SelectCatalogSelectors(s.ws));
   const fulfillmentId = useAppSelector(s => s.fulfillment.selectedService);
   const serviceDateTime = useAppSelector(s => SelectServiceDateTime(s.fulfillment));
-  const getObjectStateSelector = useAppSelector(selectOptionState);
+  const getOptionState = useAppSelector(s=>(moId: string) => selectOptionState(s, options[0].modifierTypeId, moId));
   const modifierOptionState = useAppSelector(s => s.customizer.selectedProduct?.p.modifiers.find(x => x.modifierTypeId === options[0].modifierTypeId)?.options ?? [])
-  const getOptionState = useCallback((moId: string) => getObjectStateSelector(options[0].modifierTypeId, moId), [options, getObjectStateSelector]);
   if (!serviceDateTime || !selectedProduct || !fulfillmentId) {
     return null;
   }
@@ -185,7 +184,7 @@ export function WModifierRadioComponent({ options }: IModifierRadioCustomizerCom
 
 function useModifierOptionCheckbox(option: IOption) {
   const dispatch = useAppDispatch();
-  const optionState = useAppSelector(selectOptionState)(option.modifierTypeId, option.id);
+  const optionState = useAppSelector(s=>selectOptionState(s, option.modifierTypeId, option.id));
   const modifierTypeEntry = useAppSelector(s => getModifierTypeEntryById(s.ws.modifierEntries, option.modifierTypeId)!)
   const isWhole = useMemo(() => optionState.placement === OptionPlacement.WHOLE, [optionState.placement]);
   const isLeft = useMemo(() => optionState.placement === OptionPlacement.LEFT, [optionState.placement]);

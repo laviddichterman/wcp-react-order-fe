@@ -15,7 +15,10 @@ import { CURRENCY, RoundToTwoDecimalPlaces } from '@wcp/wcpshared';
 import { SelectBalanceAfterPayments } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
-import { StepperTitle, SelectSquareAppId, SelectSquareLocationId, isNonProduction } from '@wcp/wario-ux-shared';
+import { StepperTitle, SelectSquareAppId, SelectSquareLocationId } from '@wcp/wario-ux-shared';
+
+const nonProduction: boolean = process.env.REACT_APP_ENV ? process.env.REACT_APP_ENV !== 'production' : true;
+const isNonProduction = () => nonProduction;
 
 const STAGES = [
   {

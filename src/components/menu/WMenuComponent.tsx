@@ -6,7 +6,7 @@ import { Box, Tab, Typography, Accordion, AccordionSummary, AccordionDetails, Ty
 import { TabList, TabPanel, TabContext } from '@mui/lab'
 import { WDateUtils, CategoryDisplay } from '@wcp/wcpshared';
 import { GetNextAvailableServiceDateTime, RootState, SelectMenuCategoryId, SelectMenuFooterFromCategoryById, SelectMenuNameFromCategoryById, SelectMenuNestingFromCategoryById, SelectMenuSubtitleFromCategoryById } from '../../app/store';
-import { getProductInstanceById, isNonProduction, LoadingScreen, ProductCategoryFilter, scrollToElementOffsetAfterDelay, SelectDefaultFulfillmentId, SelectParentProductEntryFromProductInstanceId, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory, SelectProductMetadata, Separator } from '@wcp/wario-ux-shared';
+import { getProductInstanceById, LoadingScreen, ProductCategoryFilter, scrollToElementOffsetAfterDelay, SelectDefaultFulfillmentId, SelectParentProductEntryFromProductInstanceId, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory, SelectProductMetadata, Separator } from '@wcp/wario-ux-shared';
 import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
 import { createSelector } from '@reduxjs/toolkit';
@@ -222,9 +222,6 @@ WMenuRecursive = ({ categoryId }: WMenuDisplayProps) => {
     case CategoryDisplay.ACCORDION:
       return hasPopulatedSubcategories ? <WMenuAccordion categoryId={categoryId} /> : <WMenuFlat categoryId={categoryId} />;
     case CategoryDisplay.TABLE:
-      if (isNonProduction()) {
-        // dev code
-      }
       // expected catalog structure:
       // either 0 child categories and many contained products OR no contained products to many child categories
       // child categories have no child categories

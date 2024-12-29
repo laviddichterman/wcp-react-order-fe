@@ -130,6 +130,7 @@ export const SelectSupplementalCategoryId = SelectSomethingFromFulfillment('orde
 export const SelectMenuCategoryId = SelectSomethingFromFulfillment('menuBaseCategoryId');
 export const SelectMaxPartySize = SelectSomethingFromFulfillment('maxGuests');
 export const SelectServiceFeeSetting = SelectSomethingFromFulfillment('serviceCharge');
+export const SelectAllowTipping = SelectSomethingFromFulfillment('allowTipping');
 export const SelectFulfillmentMinDuration = SelectSomethingFromFulfillment('minDuration');
 export const SelectFulfillmentServiceTerms = SelectSomethingFromFulfillment('terms');
 export const SelectFulfillmentService = SelectSomethingFromFulfillment('service');
@@ -152,7 +153,11 @@ export const selectCartEntryBeingCustomized = createSelector(
   (cartId: string | null, cartEntryGetter) => cartId !== null ? cartEntryGetter(cartId) : undefined
 );
 
-export const selectOptionState = (s: RootState) => (mtId: string, moId: string) => s.customizer.selectedProduct!.m.modifier_map[mtId].options[moId];
+export const selectOptionState = createSelector(
+  (s: RootState, _: string, __: string) => s.customizer.selectedProduct!.m.modifier_map,
+  (_: RootState, mtId: string, __: string) => mtId,
+  (_: RootState, __: string, moId: string) => moId,
+  (modifierMap, mtId, moId) => modifierMap[mtId].options[moId]);
 
 export const selectShowAdvanced = (s: RootState) => s.customizer.showAdvanced;
 

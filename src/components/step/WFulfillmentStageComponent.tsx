@@ -161,7 +161,6 @@ export default function WFulfillmentStageComponent() {
             openTo="day"
             disableHighlightToday={!hasOptionsForSameDay}
             disablePast
-            
             minDate={startOfDay(parseISO(nextAvailableDateTime))}
             maxDate={add(currentTime, { days: 6 })}
             shouldDisableDate={(e: Date) => OptionsForDate(formatISO(e, { representation: 'date' })).length === 0}

@@ -14,6 +14,7 @@ import { themeOptions } from './components/styled/styled';
 import WStoreCreditPurchase from './components/WStoreCreditPurchase';
 import WMenuComponent from './components/menu/WMenuComponent';
 import WOrderingComponent from './components/WOrderingComponent';
+import WNestedInfoComponent from './components/menu/WNestedInfoComponent';
 
 const theme = createTheme(themeOptions);
 
@@ -61,8 +62,10 @@ const App = () => {
             <div id="WARIO_order">
               {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
               {/* {<WStoreCreditPurchase />} */}
-              {/* {<WMenuComponent />} */}
+              {/* <WMenuComponent /> */}
+              {/* <WMenuComponent /> */}
               {<WOrderingComponent />}
+              {/* {<WNestedInfoComponent />} */}
             </div>
           }
         </SnackbarProvider>
