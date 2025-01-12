@@ -41,11 +41,11 @@ export function WOrderCartEntry({ cartEntry, isProductEditDialogOpen, setProduct
       <Grid item sx={{ p: 1, alignContent: 'center' }} xs={12}>
         <CheckedNumericInput
           size='small'
-          type="number"
           fullWidth
           inputProps={{ inputMode: 'numeric', min: 1, max: 99, pattern: '[0-9]*', step: 1 }}
           value={cartEntry.quantity}
           disabled={cartEntry.isLocked}
+          
           onChange={(value) => setEntryQuantity(value)}
           parseFunction={parseInt}
           allowEmpty={false} />

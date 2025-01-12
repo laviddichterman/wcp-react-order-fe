@@ -1,7 +1,7 @@
 {
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3000/",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -12,7 +12,7 @@
     "@mui/x-data-grid-premium": "^7.23.5",
     "@mui/x-date-pickers": "^6.20.2",
     "@reduxjs/toolkit": "^2.5.0",
-    "@wcp/wario-ux-shared": "^2.0.7",
+    "@wcp/wario-ux-shared": "^2.0.8",
     "@wcp/wcpshared": "^4.5.4",
     "axios": "^1.7.9",
     "date-fns": "^3.6.0",
@@ -25,6 +25,7 @@
     "numeral": "^2.0.6",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
+    "react-cookie": "^7.2.2",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "react-imask": "^7.6.1",

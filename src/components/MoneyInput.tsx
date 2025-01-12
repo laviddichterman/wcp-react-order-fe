@@ -51,7 +51,6 @@ export function MoneyInput({ onChange, value, inputProps, parseFunction = parseI
   return (
     <TextField
       {...other}
-      type='number'
       value={dirty ? local_value : value}
       inputProps={{...inputProps, inputMode: 'decimal'}}
       onChange={onChangeLocal}
