@@ -63,7 +63,6 @@ const App = () => {
               {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
               {/* {<WStoreCreditPurchase />} */}
               {/* <WMenuComponent /> */}
-              {/* <WMenuComponent /> */}
               {<WOrderingComponent />}
               {/* {<WNestedInfoComponent />} */}
             </div>

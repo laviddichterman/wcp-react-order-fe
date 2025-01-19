@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Box, Typography, Grid, Input, Link } from '@mui/material';
+import { Box, Typography, Grid, Input } from '@mui/material';
 import { ErrorResponseOutput, Separator, SquareButtonCSS, StageTitle, WarioButton, WarioToggleButton, LoadingScreen, SelectTipPreamble } from '@wcp/wario-ux-shared';
 import { CreditCard /*, GooglePay, ApplePay */ } from 'react-square-web-payments-sdk';
 
@@ -34,7 +34,7 @@ export function WCheckoutStage() {
   const TwentyPercentTipValue = useMemo(() => ComputeTipValue(TIP_SUGGESTION_20, tipBasis), [tipBasis]);
   const tipSuggestionsArray = useMemo(() => TIP_SUGGESTIONS.slice(autogratEnabled ? 1 : 0, autogratEnabled ? TIP_SUGGESTIONS.length : TIP_SUGGESTIONS.length - 1), [autogratEnabled]);
   const currentTipSelection = useAppSelector(s => s.payment.selectedTip);
-  const isCustomTipSelected = useMemo(() => currentTipSelection?.isSuggestion === false ?? false, [currentTipSelection]);
+  const isCustomTipSelected = useMemo(() => currentTipSelection?.isSuggestion === false, [currentTipSelection]);
   const [customTipAmount, setCustomTipAmount] = useState<string>(MoneyToDisplayString(ComputeTipValue(currentTipSelection || TIP_SUGGESTION_20, tipBasis), false));
   const customTipAsIMoney = useMemo(() => {
     const parsedCustomTipAmount = parseFloat(customTipAmount);
@@ -137,14 +137,14 @@ export function WCheckoutStage() {
                   <Typography variant='h4' sx={{ color: 'white' }}>Custom Tip Amount</Typography>
                 </Grid>
                 <Grid item xs={12} sx={{ height: isCustomTipSelected ? '4em' : '2.5em' }}>
-                  {isCustomTipSelected ?
+                    {isCustomTipSelected ?
                     <Input
                       sx={{ pt: 0 }}
                       size='small'
                       disableUnderline
                       value={customTipAmount}
-                      onChange={(e) => setCustomTipAmount(e.target.value)}
-                      onBlur={(e) => setCustomTipHandler(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomTipAmount(e.target.value)}
+                      onBlur={(e: React.FocusEvent<HTMLInputElement>) => setCustomTipHandler(e.target.value)}
                       type="number"
                       inputProps={{ inputMode: 'decimal', min: 0, sx: { pt: 0, textAlign: 'center', color: 'white' }, step: 1 }}
                     /> : " "}
