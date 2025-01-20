@@ -16,7 +16,8 @@ import {
   GridEventListener,
   gridClasses,
   GridFilterModel,
-  getGridStringOperators
+  getGridStringOperators,
+  GridRowId
 } from '@mui/x-data-grid-premium';
 import { createStructuredSelector } from 'reselect';
 import { SelectProductInstanceIdsInCategoryForNextAvailableTime, SelectProductMetadataForMenu } from './WMenuComponent';
@@ -128,7 +129,7 @@ function MenuDataGridInner({ productRows }: { productRows: RowType[] }) {
 
   const getFilteredRowsCount = useCallback(
     (filterModel: GridFilterModel) => {
-      const { filteredRowsLookup } = apiRef.current?.getFilterState(filterModel) ?? { filteredRowsLookup: {} };
+      const { filteredRowsLookup }: { filteredRowsLookup: Record<GridRowId, boolean> } = apiRef.current?.getFilterState(filterModel) ?? { filteredRowsLookup: {} };
       return Object.keys(filteredRowsLookup).filter(
         (rowId) => filteredRowsLookup[rowId] === true,
       ).length;

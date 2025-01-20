@@ -148,7 +148,12 @@ function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
         <WMenuSection categoryId={categoryId} />
       )}
       <TabContext value={active}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider'}}>
+        <Box sx={{
+          padding: "10px 0px 0px 0",
+          border: '0px solid rgba(81, 81, 80, 0.67)',
+          borderBottom: 1,
+          color: "#515150",
+        }}>
           <TabList
             TabIndicatorProps={{ hidden: true }}
             scrollButtons={false}
@@ -175,7 +180,7 @@ function WMenuTabbed({ categoryId }: WMenuDisplayProps) {
                   mx: 0.5,
                   my: .5,
                   transition: 'all .15s',
-                  padding: "6px 15px",
+                  padding: "6px 5px",
                   fontSize: "12px",
                   letterSpacing: '.15em',
                   borderRadius: '3px',

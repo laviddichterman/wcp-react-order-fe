@@ -62,8 +62,8 @@ const App = () => {
             <div id="WARIO_order">
               {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
               {/* {<WStoreCreditPurchase />} */}
-              {/* <WMenuComponent /> */}
-              {<WOrderingComponent />}
+              <WMenuComponent />
+              {/* {<WOrderingComponent />} */}
               {/* {<WNestedInfoComponent />} */}
             </div>
           }
