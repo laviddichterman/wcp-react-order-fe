@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "../../app/useHooks";
 import { Box, Tab, Typography, Accordion, AccordionSummary, AccordionDetails, TypographyProps } from '@mui/material';
 import { TabList, TabPanel, TabContext } from '@mui/lab'
 import { WDateUtils, CategoryDisplay } from '@wcp/wcpshared';
-import { RootState, SelectMenuCategoryId, SelectMenuFooterFromCategoryById, SelectMenuNameFromCategoryById, SelectMenuNestingFromCategoryById, SelectMenuSubtitleFromCategoryById } from '../../app/store';
+import { GetNextAvailableServiceDateTimeForMenu, RootState, SelectMenuCategoryId, SelectMenuFooterFromCategoryById, SelectMenuNameFromCategoryById, SelectMenuNestingFromCategoryById, SelectMenuSubtitleFromCategoryById } from '../../app/store';
 import { getProductInstanceById, LoadingScreen, ProductCategoryFilter, scrollToElementOffsetAfterDelay, SelectDefaultFulfillmentId, SelectParentProductEntryFromProductInstanceId, SelectPopulatedSubcategoryIdsInCategory, SelectProductInstanceIdsInCategory, SelectProductMetadata, Separator } from '@wcp/wario-ux-shared';
 import { setService } from '../../app/slices/WFulfillmentSlice';
 import { ExpandMore } from '@mui/icons-material';
@@ -14,7 +14,7 @@ import { WMenuDataGrid } from './WMenuTableComponent';
 
 export const SelectProductMetadataForMenu = createSelector(
   (s: RootState, productInstanceId: string) => getProductInstanceById(s.ws.productInstances, productInstanceId),
-  (s: RootState, _: string) => s.ws.currentTime,
+  (s: RootState, _: string) => WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTimeForMenu(s)),
   (s: RootState, _: string) => SelectDefaultFulfillmentId(s),
   (s: RootState, _: string) => s.ws,
   (_s: RootState, productInstanceId: string) => productInstanceId,
@@ -28,7 +28,7 @@ export const SelectPopulatedSubcategoryIdsInCategoryForNextAvailableTime = creat
   (_s: RootState, categoryId: string, _filter: ProductCategoryFilter) => categoryId,
   (_s: RootState, _categoryId: string, filter: ProductCategoryFilter) => filter,
   (s: RootState, _categoryId: string, _filter: ProductCategoryFilter) => SelectDefaultFulfillmentId(s),
-  (s: RootState, _: string, _filter: ProductCategoryFilter) => s.ws.currentTime,
+  (s: RootState, _: string, _filter: ProductCategoryFilter) => WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTimeForMenu(s)),
   (s, categoryId, filter, fulfillmentId, nextAvailableTime) => {
     return SelectPopulatedSubcategoryIdsInCategory(s.ws.categories, s.ws.products, s.ws.productInstances, s.ws.modifierOptions, categoryId, filter, nextAvailableTime, fulfillmentId);
   }
@@ -39,7 +39,7 @@ export const SelectProductInstanceIdsInCategoryForNextAvailableTime = createSele
   (_s: RootState, categoryId: string, _filter: ProductCategoryFilter) => categoryId,
   (_s: RootState, _categoryId: string, filter: ProductCategoryFilter) => filter,
   (s: RootState, _categoryId: string, _filter: ProductCategoryFilter) => SelectDefaultFulfillmentId(s),
-  (s: RootState, _: string, _filter: ProductCategoryFilter) => s.ws.currentTime,
+  (s: RootState, _: string, _filter: ProductCategoryFilter) => WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTimeForMenu(s)),
   (s, categoryId, filter, fulfillmentId, nextAvailableTime) => {
     return SelectProductInstanceIdsInCategory(s.ws.categories, s.ws.products, s.ws.productInstances, s.ws.modifierOptions, categoryId, filter, nextAvailableTime, fulfillmentId);
   }
@@ -240,7 +240,7 @@ export default function WMenuComponent() {
   const dispatch = useAppDispatch();
 
   const FulfillmentId = useAppSelector(SelectDefaultFulfillmentId);
-  const currentTime = useAppSelector(s=> s.ws.currentTime);
+  // const currentTime = useAppSelector(s=>WDateUtils.ComputeServiceDateTime(GetNextAvailableServiceDateTimeForMenu(s)));
   // NOTE THIS WILL BE NULL UNTIL WE ASSIGN A FULFILLMENT
   const MENU_CATID = useAppSelector(SelectMenuCategoryId);
   useEffect(() => {
@@ -250,6 +250,6 @@ export default function WMenuComponent() {
   if (!MENU_CATID) {
     return <LoadingScreen />;
   }
-
-  return (<><div>{WDateUtils.formatISODate(currentTime)} {(WDateUtils.MinutesToPrintTime(WDateUtils.ComputeFulfillmentTime(currentTime).selectedTime))}</div><WMenuRecursive categoryId={MENU_CATID} /></>);
+  // console.log(`${WDateUtils.formatISODate(currentTime)} ${WDateUtils.MinutesToPrintTime(WDateUtils.ComputeFulfillmentTime(currentTime).selectedTime)}`);
+  return (<WMenuRecursive categoryId={MENU_CATID} />);
 }

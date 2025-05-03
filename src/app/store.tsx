@@ -51,7 +51,6 @@ import {
   IMoney,
   GetNextAvailableServiceDate,
   Metrics,
-  FulfillmentTime,
   WFulfillmentStatus,
   PaymentMethod,
   ComputeGratuityServiceCharge,
@@ -66,7 +65,7 @@ import {
   MetadataModifierMapEntry
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
-import { differenceInMinutes, formatISO, startOfDay } from "date-fns";
+import { formatISO } from "date-fns";
 
 export const RootReducer = combineReducers({
   fulfillment: WFulfillmentReducer,
@@ -327,6 +326,37 @@ export const GetNextAvailableServiceDateTimeForService = createSelector(
   (fulfillment, now, cartBasedLeadTime) => GetNextAvailableServiceDate([fulfillment], now, cartBasedLeadTime)
 );
 
+const SelectSelectedServiceFulfillment = createSelector(
+  (s: RootState) => s.fulfillment.selectedService,
+  (s: RootState) => s.ws.fulfillments,
+  SelectDefaultFulfillmentId,
+  (selectedService, fulfillments, defaultFulfillment) =>
+    getFulfillmentById(fulfillments, selectedService ?? defaultFulfillment) ?? null
+);
+
+/**
+ * If we don't have a selected service or if we're open now, return the current time
+ * Otherwise, return the next available service date
+ */
+export const GetNextAvailableServiceDateTimeForMenu = createSelector(
+  (s: RootState) => SelectSelectedServiceFulfillment(s),
+  (s: RootState) => s.ws.currentTime,
+  (selectedServiceFulfillment, currentTime) => {
+    if (selectedServiceFulfillment === null || WDateUtils.AreWeOpenNow([selectedServiceFulfillment], currentTime)) {
+      console.log("No selected service, returning now");
+      return WDateUtils.ComputeFulfillmentTime(currentTime);
+    }
+    
+    const nextAvailableServiceDate = GetNextAvailableServiceDate([selectedServiceFulfillment], formatISO(currentTime), 0);
+    if (nextAvailableServiceDate) {
+      return nextAvailableServiceDate;
+    }
+    console.warn("There should be a service date available, falling back to now. Likely a config or programming error.") 
+    return WDateUtils.ComputeFulfillmentTime(currentTime);
+  });
+
+
+
 // Note: this falls back to now if there's really nothing for the selected service or for dine-in
 export const GetNextAvailableServiceDateTime = createSelector(
   (s: RootState) => (service: string) => GetNextAvailableServiceDateTimeForService(s, service, s.ws.currentTime),
@@ -341,10 +371,7 @@ export const GetNextAvailableServiceDateTime = createSelector(
       }
     }
     return (nextAvailableForServiceFunction(defaultFulfillment) ??
-    {
-      selectedDate: WDateUtils.formatISODate(currentTime),
-      selectedTime: differenceInMinutes(currentTime, startOfDay(currentTime))
-    }) as FulfillmentTime;
+      WDateUtils.ComputeFulfillmentTime(currentTime));
   });
 
 export const SelectHasSpaceForPartyOf = createSelector(

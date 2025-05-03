@@ -2,7 +2,7 @@
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3001/",
   "type": "module",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -17,7 +17,7 @@
     "@reduxjs/toolkit": "^2.7.0",
     "@square/web-sdk": "^2.1.0",
     "@wcp/wario-ux-shared": "^2.0.13",
-    "@wcp/wcpshared": "^4.5.6",
+    "@wcp/wcpshared": "^4.6.0",
     "axios": "^1.9.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.18.2",
@@ -64,9 +64,9 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^15.15.0",
     "libphonenumber-metadata-generator": "^1.1.0",
-    "typescript": "^4.9.5",
+    "typescript": "^5.8.3",
     "vite": "^6.3.4",
-    "vite-plugin-checker": "^0.8.0"
+    "vite-plugin-checker": "^0.9.1"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
