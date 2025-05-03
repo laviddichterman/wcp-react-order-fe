@@ -441,3 +441,5 @@ export function WMenuDataGrid({ categoryId }: WMenuDisplayProps) {
   // { headerName: "Ordinal", field: "ordinal", valueGetter: (v: ValueGetterRow) => v.row.category.ordinal, flex: 3 },
   return <MenuDataGridInner productRows={memoizedComputedRows} />;
 }
+
+export default WMenuDataGrid;
