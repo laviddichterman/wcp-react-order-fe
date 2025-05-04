@@ -16,10 +16,10 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react@18.3.1)
       '@hookform/error-message':
         specifier: ^2.0.1
-        version: 2.0.1(react-dom@18.3.1(react@18.3.1))(react-hook-form@7.56.1(react@18.3.1))(react@18.3.1)
+        version: 2.0.1(react-dom@18.3.1(react@18.3.1))(react-hook-form@7.56.2(react@18.3.1))(react@18.3.1)
       '@hookform/resolvers':
         specifier: ^2.9.11
-        version: 2.9.11(react-hook-form@7.56.1(react@18.3.1))
+        version: 2.9.11(react-hook-form@7.56.2(react@18.3.1))
       '@mui/icons-material':
         specifier: ^6.4.11
         version: 6.4.11(@mui/material@6.4.11(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.20)(react@18.3.1)
@@ -90,8 +90,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
-        specifier: ^7.56.1
-        version: 7.56.1(react@18.3.1)
+        specifier: ^7.56.2
+        version: 7.56.2(react@18.3.1)
       react-imask:
         specifier: ^7.6.1
         version: 7.6.1(react@18.3.1)
@@ -2740,8 +2740,8 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
-  react-hook-form@7.56.1:
-    resolution: {integrity: sha512-qWAVokhSpshhcEuQDSANHx3jiAEFzu2HAaaQIzi/r9FNPm1ioAvuJSD4EuZzWd7Al7nTRKcKPnBKO7sRn+zavQ==}
+  react-hook-form@7.56.2:
+    resolution: {integrity: sha512-vpfuHuQMF/L6GpuQ4c3ZDo+pRYxIi40gQqsCmmfUBwm+oqvBhKhwghCuj2o00YCgSfU6bR9KC/xnQGWm3Gr08A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -3732,15 +3732,15 @@ snapshots:
 
   '@floating-ui/utils@0.2.9': {}
 
-  '@hookform/error-message@2.0.1(react-dom@18.3.1(react@18.3.1))(react-hook-form@7.56.1(react@18.3.1))(react@18.3.1)':
+  '@hookform/error-message@2.0.1(react-dom@18.3.1(react@18.3.1))(react-hook-form@7.56.2(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      react-hook-form: 7.56.1(react@18.3.1)
+      react-hook-form: 7.56.2(react@18.3.1)
 
-  '@hookform/resolvers@2.9.11(react-hook-form@7.56.1(react@18.3.1))':
+  '@hookform/resolvers@2.9.11(react-hook-form@7.56.2(react@18.3.1))':
     dependencies:
-      react-hook-form: 7.56.1(react@18.3.1)
+      react-hook-form: 7.56.2(react@18.3.1)
 
   '@humanfs/core@0.19.1': {}
 
@@ -6043,7 +6043,7 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
-  react-hook-form@7.56.1(react@18.3.1):
+  react-hook-form@7.56.2(react@18.3.1):
     dependencies:
       react: 18.3.1
 

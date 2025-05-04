@@ -2,7 +2,7 @@
   "name": "wcp-react-order-fe",
   "proxy": "http://localhost:3001/",
   "type": "module",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -31,7 +31,7 @@
     "react": "^18.3.1",
     "react-cookie": "^7.2.2",
     "react-dom": "^18.3.1",
-    "react-hook-form": "^7.56.1",
+    "react-hook-form": "^7.56.2",
     "react-imask": "^7.6.1",
     "react-phone-number-input": "^3.4.12",
     "react-redux": "^9.2.0",
@@ -68,17 +68,20 @@
     "vite": "^6.3.4",
     "vite-plugin-checker": "^0.9.1"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "generate-libphonenumber-metadata": "libphonenumber-metadata-generator ./src/metadata.custom.json --countries US,CA --extended --types mobile,fixed_line,voip",
     "dev": "vite",
     "build": "vite build",
     "start": "vite --open",
-    "deploy:wmenu": "rsync -avzhe ssh --progress ./build/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wmenu/build/",
-    "deploy:wmenutest": "rsync -avzhe ssh --progress ./build/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wmenutest/build/",
-    "deploy:worder": "rsync -avzhe ssh --progress ./build/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/worder/build/",
-    "deploy:wcredit": "rsync -avzhe ssh --progress ./build/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wcredit/build/",
-    "deploy:wordertest": "rsync -avzhe ssh --progress ./build/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wordertest/build/"
+    "deploy:wmenu": "rsync -avzhe ssh --progress ./dist/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wmenu/dist/",
+    "deploy:wmenutest": "rsync -avzhe ssh --progress ./dist/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wmenutest/dist/",
+    "deploy:worder": "rsync -avzhe ssh --progress ./dist/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/worder/dist/",
+    "deploy:wcredit": "rsync -avzhe ssh --progress ./dist/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wcredit/dist/",
+    "deploy:wordertest": "rsync -avzhe ssh --progress ./dist/* root@windycitypie.com:/var/www/html/wp-content/reactpress/apps/wordertest/dist/"
   },
   "eslintConfig": {
     "extends": [
