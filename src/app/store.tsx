@@ -1,4 +1,4 @@
-import { configureStore, createSelector, combineReducers, EntityState } from "@reduxjs/toolkit";
+import { configureStore, createSelector, combineReducers, EntityState, current } from "@reduxjs/toolkit";
 import {
   SocketIoReducer,
   IProductInstancesAdapter,
@@ -65,7 +65,7 @@ import {
   MetadataModifierMapEntry
 } from "@wcp/wcpshared";
 import { WPaymentReducer } from "./slices/WPaymentSlice";
-import { formatISO } from "date-fns";
+import { formatISO, getDay } from "date-fns";
 
 export const RootReducer = combineReducers({
   fulfillment: WFulfillmentReducer,
@@ -340,10 +340,12 @@ const SelectSelectedServiceFulfillment = createSelector(
  */
 export const GetNextAvailableServiceDateTimeForMenu = createSelector(
   (s: RootState) => SelectSelectedServiceFulfillment(s),
-  (s: RootState) => s.ws.currentTime,
+  (s: RootState) => 1746761380000,
   (selectedServiceFulfillment, currentTime) => {
+    console.log({currentTime, selectedServiceFulfillment});
+    const openNow = WDateUtils.AreWeOpenNow([selectedServiceFulfillment], currentTime);
+    console.log({openNow});
     if (selectedServiceFulfillment === null || WDateUtils.AreWeOpenNow([selectedServiceFulfillment], currentTime)) {
-      console.log("No selected service, returning now");
       return WDateUtils.ComputeFulfillmentTime(currentTime);
     }
     
