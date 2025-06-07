@@ -12,21 +12,18 @@ import { themeOptions } from './components/styled/styled';
 
 //import React from 'react';
 // import WStoreCreditPurchase from './components/WStoreCreditPurchase';
-import WMenuComponent from './components/menu/WMenuComponent';
+// import WMenuComponent from './components/menu/WMenuComponent';
 import WOrderingComponent from './components/WOrderingComponent';
-import WNestedInfoComponent from './components/menu/WNestedInfoComponent';
+// import WNestedInfoComponent from './components/menu/WNestedInfoComponent';
 
 const theme = createTheme(themeOptions);
 
 /**
- * 
  * TO LAUNCH CHECKLIST
  * Fix display of apple pay and google pay
  * Ensure we're passing everything we need to apple/google pay for itemized receipt creation
  * change from react-hook-form to just put shit in the redux state
- * don't let people select a tip if they're not paying due to special instructions or whatever
  * fix the X scrolling in the checkout cart (hide some shit, make it smaller)
-\ * checkout cart formatting and handle the wario payment being processed
  */
 
 
@@ -62,8 +59,8 @@ const App = () => {
             <div id="WARIO_order">
               {/* <Grid item xs={12} height={100} sx={{ pb: 5, minHeight: 100 }}>&nbsp;</Grid> */}
               {/* {<WStoreCreditPurchase />} */}
-              <WMenuComponent />
-              {/* {<WOrderingComponent />} */}
+              {/* <WMenuComponent /> */}
+              {<WOrderingComponent />}
               {/* {<WNestedInfoComponent />} */}
             </div>
           }

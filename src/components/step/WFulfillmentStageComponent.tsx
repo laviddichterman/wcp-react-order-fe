@@ -147,7 +147,7 @@ export default function WFulfillmentStageComponent() {
         <FormControlLabel control={
           <><Checkbox checked={hasAgreedToTerms} onChange={(_, checked) => onSetHasAgreedToTerms(checked)} />
           </>} label={<>
-            REQUIRED: For the health and safety of our staff and fellow guests, you and all members of your party understand and agree to:
+            REQUIRED: Please read the following! By selecting the checkbox, you and all members of your party understand and agree to:
             <ul>
               {serviceTerms.map((term, i) => <li key={i}>{term}</li>)}
             </ul>

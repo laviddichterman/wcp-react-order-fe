@@ -19,4 +19,6 @@ export const SOCKETIO = {
   ns: import.meta.env.VITE_SOCKETIO_NS as string,
 }
 
+export const IS_PRODUCTION = import.meta.env.PROD;
+
 LicenseInfo.setLicenseKey(import.meta.env.VITE_MUI_KEY);

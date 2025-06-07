@@ -16,9 +16,7 @@ import { SelectBalanceAfterPayments } from '../app/store';
 import { submitToWario, setSquareTokenizationErrors } from '../app/slices/WPaymentSlice';
 import { WShopForProductsContainer } from './step/WShopForProductsStageContainer';
 import { StepperTitle, SelectSquareAppId, SelectSquareLocationId } from '@wcp/wario-ux-shared';
-
-const nonProduction: boolean = process.env.REACT_APP_ENV ? process.env.REACT_APP_ENV !== 'production' : true;
-const isNonProduction = () => nonProduction;
+import { IS_PRODUCTION } from '../config';
 
 const STAGES = [
   {
@@ -75,7 +73,7 @@ export default function WOrderingComponent() {
   return (
     <PaymentForm
     overrides={
-      isNonProduction() ? { scriptSrc: 'https://sandbox.web.squarecdn.com/v1/square.js'} : undefined
+      !IS_PRODUCTION ? { scriptSrc: 'https://sandbox.web.squarecdn.com/v1/square.js'} : undefined
     }
       applicationId={squareApplicationId}
       locationId={squareLocationId}
@@ -91,7 +89,7 @@ export default function WOrderingComponent() {
         </Stepper> : <></>
       }
       <Box sx={{ mx: 'auto', pt: 1 }}>
-        {isNonProduction() ? "NON PRODUCTION" : ''}
+        {!IS_PRODUCTION ? "NON PRODUCTION" : ''}
         {STAGES[stage].content}
       </Box>
     </PaymentForm>
